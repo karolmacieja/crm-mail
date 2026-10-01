@@ -1,10 +1,11 @@
 import { onMounted, watch } from 'vue'
+import { initLocale } from '@/lib/i18n.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { useCrmStore } from '@/stores/crm.js'
 
 /**
  * Shared bootstrap for every root app (sidebar, dashboard, popup):
- * loads the persisted session and wipes cached CRM data when the
+ * loads the persisted session and language, and wipes cached CRM data when the
  * signed-in account changes or logs out.
  */
 export function useCrmSession() {
@@ -19,6 +20,7 @@ export function useCrmSession() {
   )
 
   onMounted(() => {
+    initLocale()
     auth.init()
   })
 

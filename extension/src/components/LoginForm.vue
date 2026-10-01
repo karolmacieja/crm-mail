@@ -1,14 +1,14 @@
 <template>
   <form class="space-y-3" novalidate @submit.prevent="submit">
     <div>
-      <h2 class="text-base font-semibold text-gray-900">Sign in to Gmail CRM</h2>
-      <p class="mt-0.5 text-xs text-gray-500">Use the account linked to your license.</p>
+      <h2 class="text-base font-semibold text-gray-900">{{ t('login.title') }}</h2>
+      <p class="mt-0.5 text-xs text-gray-500">{{ t('login.subtitle') }}</p>
     </div>
 
     <AlertMessage v-if="error && !Object.keys(fieldErrors).length" :message="error" />
 
     <div>
-      <label class="gcrm-label" :for="`${uid}-email`">Email</label>
+      <label class="gcrm-label" :for="`${uid}-email`">{{ t('login.email') }}</label>
       <input
         :id="`${uid}-email`"
         v-model.trim="email"
@@ -23,7 +23,7 @@
     </div>
 
     <div>
-      <label class="gcrm-label" :for="`${uid}-password`">Password</label>
+      <label class="gcrm-label" :for="`${uid}-password`">{{ t('login.password') }}</label>
       <input
         :id="`${uid}-password`"
         v-model="password"
@@ -39,13 +39,14 @@
 
     <button type="submit" class="gcrm-btn-primary w-full" :disabled="loading || !email || !password">
       <Spinner v-if="loading" size="xs" />
-      {{ loading ? 'Signing in…' : 'Sign in' }}
+      {{ loading ? t('login.submitting') : t('login.submit') }}
     </button>
   </form>
 </template>
 
 <script setup>
 import { ref, useId } from 'vue'
+import { t } from '@/lib/i18n.js'
 import { useAuthStore } from '@/stores/auth.js'
 import AlertMessage from './AlertMessage.vue'
 import Spinner from './Spinner.vue'

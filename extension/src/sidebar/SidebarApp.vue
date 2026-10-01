@@ -2,7 +2,7 @@
   <div class="gcrm-root space-y-3 bg-white p-3">
     <!-- Booting -->
     <div v-if="!auth.ready || resolving" class="flex items-center gap-2 py-6 text-gray-500">
-      <Spinner /> <span>Loading CRM…</span>
+      <Spinner /> <span>{{ t('common.loadingCrm') }}</span>
     </div>
 
     <!-- Signed out -->
@@ -13,14 +13,14 @@
 
     <!-- No external participant (e.g. a note to self) -->
     <div v-else-if="!activeEmail" class="py-4 text-center text-sm text-gray-500">
-      No external sender found in this conversation.
+      {{ t('sidebar.noExternal') }}
     </div>
 
     <template v-else>
       <!-- Participant switcher for multi-party threads -->
       <div v-if="participants.length > 1">
-        <label class="gcrm-label" :for="`${uid}-participant`">Conversation participant</label>
-        <select :id="`${uid}-participant`" v-model="selectedEmail" class="gcrm-input">
+        <label class="gcrm-label" :for="`${uid}-participant`">{{ t('sidebar.participant') }}</label>
+        <select :id="`${uid}-participant`" v-model="participantModel" class="gcrm-input">
           <option v-for="p in participants" :key="p.email" :value="p.email">
             {{ p.name ? `${p.name} <${p.email}>` : p.email }}
           </option>
@@ -53,15 +53,15 @@
         </div>
 
         <div v-if="!creating" class="rounded-lg border border-dashed border-gray-300 p-3 text-center">
-          <p class="text-sm text-gray-600">This person isn’t in your CRM yet.</p>
-          <button type="button" class="gcrm-btn-primary mt-2" @click="creating = true">Add to CRM</button>
+          <p class="text-sm text-gray-600">{{ t('sidebar.notInCrm') }}</p>
+          <button type="button" class="gcrm-btn-primary mt-2" @click="creating = true">{{ t('sidebar.addToCrm') }}</button>
         </div>
 
         <ContactForm
           v-else
           :initial="{ email: activeEmail, name: activeName, status: 'lead' }"
           :on-save="(payload) => crm.createContact(payload)"
-          submit-label="Create contact"
+          :submit-label="t('sidebar.createContact')"
           @saved="creating = false"
           @cancel="creating = false"
         />
@@ -78,7 +78,7 @@
               <div class="mt-1 flex items-center gap-2">
                 <StatusBadge :status="contact.status" />
                 <span v-if="contact.open_tasks_count" class="text-xs text-gray-500">
-                  {{ contact.open_tasks_count }} open {{ contact.open_tasks_count === 1 ? 'task' : 'tasks' }}
+                  {{ t('sidebar.openTasks', { count: contact.open_tasks_count }) }}
                 </span>
               </div>
             </div>
@@ -88,7 +88,7 @@
               class="gcrm-btn-ghost px-2 py-1 text-xs"
               @click="editing = true"
             >
-              Edit
+              {{ t('common.edit') }}
             </button>
           </div>
 
@@ -102,25 +102,25 @@
 
           <dl v-else class="space-y-1.5 text-sm">
             <div v-if="contact.phone" class="flex gap-2">
-              <dt class="w-12 shrink-0 text-gray-500">Phone</dt>
+              <dt class="w-16 shrink-0 text-gray-500">{{ t('contact.phone') }}</dt>
               <dd><a :href="`tel:${contact.phone}`" class="text-indigo-600 hover:underline">{{ contact.phone }}</a></dd>
             </div>
             <div class="flex gap-2">
-              <dt class="w-12 shrink-0 text-gray-500">Status</dt>
+              <dt class="w-16 shrink-0 text-gray-500">{{ t('contact.status') }}</dt>
               <dd>
                 <select
                   :value="contact.status"
                   class="rounded border-0 bg-transparent p-0 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500/30"
                   :disabled="statusSaving"
-                  aria-label="Change status"
+                  :aria-label="t('sidebar.changeStatus')"
                   @change="changeStatus($event.target.value)"
                 >
-                  <option v-for="s in CONTACT_STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+                  <option v-for="s in CONTACT_STATUSES" :key="s.value" :value="s.value">{{ t(`status.${s.value}`) }}</option>
                 </select>
               </dd>
             </div>
             <div v-if="contact.notes">
-              <dt class="text-gray-500">Notes</dt>
+              <dt class="text-gray-500">{{ t('contact.notes') }}</dt>
               <dd class="mt-0.5 whitespace-pre-wrap break-words rounded bg-gray-50 p-2 text-gray-700">{{ contact.notes }}</dd>
             </div>
           </dl>
@@ -128,31 +128,37 @@
         </section>
 
         <section class="border-t border-gray-100 pt-3">
-          <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Tasks & reminders</h3>
+          <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{{ t('sidebar.tasksHeading') }}</h3>
           <TaskForm :on-submit="(payload) => crm.createTask(contact, payload)" />
           <div class="mt-2">
-            <TaskList :tasks="contact.tasks ?? []" empty-text="No follow-ups planned for this contact." />
+            <TaskList :tasks="contact.tasks ?? []" :empty-text="t('sidebar.noTasks')" />
           </div>
         </section>
 
         <section class="flex items-center justify-between border-t border-gray-100 pt-3">
-          <button type="button" class="gcrm-btn-ghost px-2 text-xs" @click="gmail.openDashboard()">Open dashboard →</button>
+          <button type="button" class="gcrm-btn-ghost px-2 text-xs" @click="gmail.openDashboard()">{{ t('sidebar.openDashboard') }}</button>
           <button type="button" class="gcrm-btn-danger px-2 text-xs" :disabled="deleting" @click="removeContact">
-            Delete contact
+            {{ t('sidebar.deleteContact') }}
           </button>
         </section>
       </template>
     </template>
+
+    <div class="flex justify-end border-t border-gray-100 pt-2">
+      <LanguageSwitch />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, inject, ref, useId, watch } from 'vue'
 import { CONTACT_STATUSES } from '@/lib/config.js'
+import { t } from '@/lib/i18n.js'
 import { useCrmSession } from '@/lib/useCrmSession.js'
 import AlertMessage from '@/components/AlertMessage.vue'
 import Avatar from '@/components/Avatar.vue'
 import ContactForm from '@/components/ContactForm.vue'
+import LanguageSwitch from '@/components/LanguageSwitch.vue'
 import LicenseNotice from '@/components/LicenseNotice.vue'
 import LoginForm from '@/components/LoginForm.vue'
 import Spinner from '@/components/Spinner.vue'
@@ -179,6 +185,13 @@ const deleting = ref(false)
 const actionError = ref('')
 
 const activeEmail = computed(() => selectedEmail.value ?? props.participants[0]?.email ?? null)
+// The select must show the default (first) participant even before the user picks one.
+const participantModel = computed({
+  get: () => activeEmail.value,
+  set: (email) => {
+    selectedEmail.value = email
+  },
+})
 const activeName = computed(() => props.participants.find((p) => p.email === activeEmail.value)?.name ?? '')
 const lookup = computed(() => crm.lookups[activeEmail.value] ?? { status: 'loading', contact: null, error: null })
 const contact = computed(() => lookup.value.contact)
@@ -226,7 +239,7 @@ async function changeStatus(status) {
 }
 
 async function removeContact() {
-  if (!window.confirm(`Delete ${contact.value.name || contact.value.email} and all their tasks?`)) return
+  if (!window.confirm(t('sidebar.confirmDelete', { name: contact.value.name || contact.value.email }))) return
   deleting.value = true
   actionError.value = ''
   try {

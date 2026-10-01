@@ -34,6 +34,109 @@ Karta Gmaila                                        Service worker rozszerzenia 
   jest chroniony middlewarem `license`, który zwraca **HTTP 402** z
   `code: license_expired | license_missing`. Przy każdym 402 rozszerzenie pokazuje komunikat o odnowieniu.
 
+## Szybki start – krok po kroku
+
+### 0. Wymagania
+
+| Narzędzie | Wersja | Sprawdzenie |
+|---|---|---|
+| PHP z rozszerzeniami `pdo_sqlite`, `mbstring`, `xml`, `curl` | 8.2+ | `php -v` |
+| Composer | 2.x | `composer -V` |
+| Node.js | 20.19+ lub 22.12+ | `node -v` |
+| Google Chrome | 114+ | |
+| Git | dowolna | `git --version` |
+
+### 1. Pobierz kod
+
+```bash
+git clone https://github.com/karolmacieja/crm-mail.git
+cd crm-mail
+git checkout claude/gmail-crm-extension-laravel-gsketl
+```
+
+### 2. Uruchom backend (terminal nr 1)
+
+```bash
+cd backend
+composer install
+cp .env.example .env              # Windows: copy .env.example .env
+php artisan key:generate
+touch database/database.sqlite    # Windows: type nul > database\database.sqlite
+php artisan migrate
+
+# utwórz swoje konto z licencją na rok (komenda zapyta o hasło, min. 8 znaków)
+php artisan crm:license twoj@email.pl --days=365 --name="Twoje Imię" --admin
+
+php artisan serve                 # zostaw ten terminal otwarty
+```
+
+Sprawdzenie: http://localhost:8000/up powinno pokazać stronę „Application up”.
+
+### 3. Zdobądź identyfikator InboxSDK
+
+1. Wejdź na https://www.inboxsdk.com/register i zarejestruj aplikację (za darmo).
+2. Skopiuj identyfikator w formacie `sdk_...`.
+
+### 4. Zbuduj rozszerzenie (terminal nr 2)
+
+```bash
+cd extension
+npm install
+cp .env.example .env              # Windows: copy .env.example .env
+```
+
+W pliku `extension/.env` uzupełnij:
+
+```
+VITE_API_BASE_URL=http://localhost:8000/api
+VITE_INBOXSDK_APP_ID=sdk_twoj_identyfikator
+```
+
+Następnie:
+
+```bash
+npm run build                     # wynik trafia do extension/dist
+```
+
+### 5. Załaduj rozszerzenie do Chrome
+
+1. Otwórz `chrome://extensions`.
+2. W prawym górnym rogu włącz **Tryb programisty**.
+3. Kliknij **Załaduj rozpakowane** i wskaż folder `extension/dist`.
+4. Przypnij ikonę „Gmail CRM” na pasku (ikona puzzla → pinezka).
+
+### 6. Zaloguj się i korzystaj
+
+1. Kliknij ikonę rozszerzenia, wybierz język (**PL** / **EN**) i zaloguj się danymi z kroku 2.
+2. Otwórz (lub odśwież) https://mail.google.com.
+3. Otwórz dowolnego maila. Po prawej stronie, w pasku bocznym Gmaila, pojawi się ikona CRM.
+   Kliknij ją, żeby zobaczyć kartę nadawcy, dodać go do CRM i zaplanować zadania.
+4. Pełny **Panel CRM** otworzysz z pozycji w lewym menu Gmaila albo przyciskiem „CRM” w prawym górnym rogu.
+
+### Rozwiązywanie problemów
+
+| Objaw | Co zrobić |
+|---|---|
+| „Brak połączenia z serwerem CRM” | Sprawdź, czy w terminalu nr 1 działa `php artisan serve` |
+| Brak ikony CRM w Gmailu | Odśwież kartę Gmaila (F5). Sprawdź konsolę (F12) pod kątem błędów `[Gmail CRM]`, np. złego `VITE_INBOXSDK_APP_ID` |
+| „Gmail CRM został zaktualizowany” | Po przebudowaniu rozszerzenia kliknij ⟳ przy nim w `chrome://extensions` i odśwież Gmaila |
+| „Twoja licencja wygasła” | `php artisan crm:license twoj@email.pl --days=365`, potem „Licencja odnowiona – sprawdź ponownie” |
+| „Zbyt wiele żądań” przy logowaniu | Limit to 5 prób na minutę. Odczekaj minutę |
+| Zmieniłeś `VITE_API_BASE_URL` | Uruchom ponownie `npm run build` i przeładuj rozszerzenie (adres jest wbudowywany w manifest) |
+
+Podczas pracy nad kodem zamiast `npm run build` możesz użyć `npm run dev`. Zmiany w Vue przeładują się automatycznie.
+
+## Język interfejsu
+
+Rozszerzenie jest dostępne po polsku i angielsku. Domyślny język wynika z ustawień przeglądarki, a przełącznik
+**PL / EN** jest w popupie, w nagłówku Panelu CRM i na dole panelu bocznego. Wybór zapisuje się w
+`chrome.storage.local` i od razu obowiązuje we wszystkich kartach. Wyjątek to etykiety rysowane przez samego
+Gmaila (pozycja w lewym menu), które zmieniają się po odświeżeniu karty.
+
+Rozszerzenie wysyła wybrany język w nagłówku `Accept-Language`, a API (middleware `SetLocaleFromHeader`)
+zwraca w nim komunikaty walidacji i błędów (`lang/pl`, `lang/en`). Tłumaczenia interfejsu są w
+`extension/src/locales/pl.js` i `en.js`.
+
 ## Backend
 
 ```bash
@@ -47,7 +150,7 @@ php artisan migrate
 php artisan crm:license ty@firma.pl --days=365 --name="Ty" --admin
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 21 testów funkcjonalnych
+php artisan test                      # 24 testy funkcjonalne
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
@@ -100,6 +203,7 @@ npm run build    # build produkcyjny w dist/ (API spoza localhost musi używać 
 | `src/background/index.js` | Wstrzykiwanie pageWorld InboxSDK (MV3) i proxy API z autoryzacją |
 | `src/content/content.js` | InboxSDK: panel boczny wątku, własna trasa, pozycja w menu, przycisk na pasku |
 | `src/content/mount.js` | Montowanie Vue w Shadow DOM |
+| `src/lib/i18n.js`, `src/locales/` | Tłumaczenia PL/EN i przełączanie języka |
 | `src/lib/api.js` | Instancja axios, adapter do service workera, ujednolicanie błędów (`ApiError`) |
 | `src/stores/auth.js`, `src/stores/crm.js` | Store'y Pinia (sesja i licencja; cache kontaktów, zadań i dashboardu) |
 | `src/sidebar/SidebarApp.vue` | Karta kontaktu nadawcy: dodawanie, edycja, status, zadania |

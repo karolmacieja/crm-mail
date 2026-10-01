@@ -4,13 +4,14 @@
       <slot>{{ message }}</slot>
     </span>
     <button v-if="retryable" type="button" class="shrink-0 font-medium underline underline-offset-2" @click="$emit('retry')">
-      Retry
+      {{ t('common.retry') }}
     </button>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { t } from '@/lib/i18n.js'
 
 const props = defineProps({
   message: { type: String, default: '' },

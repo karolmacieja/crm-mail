@@ -29,7 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       onApiError((error) => {
         if (error.isLicenseError) {
+          const firstNotice = !licenseError.value
           licenseError.value = { code: error.code, message: error.message }
+          // Cached license data is stale -> fetch the real expiry date to display.
+          if (firstNotice) refreshUser().catch(() => {})
         }
         // 401s: the service worker already cleared storage -> onAuthChanged logs us out.
       })

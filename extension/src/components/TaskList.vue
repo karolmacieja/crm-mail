@@ -6,7 +6,7 @@
         class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-gray-300 accent-indigo-600"
         :checked="task.is_completed"
         :disabled="busy[task.id]"
-        :aria-label="`Mark “${task.title}” as ${task.is_completed ? 'open' : 'done'}`"
+        :aria-label="t(task.is_completed ? 'tasks.markOpen' : 'tasks.markDone', { title: task.title })"
         @change="toggle(task)"
       />
 
@@ -25,7 +25,7 @@
           :class="task.is_overdue ? 'font-medium text-red-600' : 'text-gray-500'"
           :title="formatDateTime(task.due_date)"
         >
-          {{ task.is_overdue ? 'Overdue · ' : '' }}{{ formatRelative(task.due_date) }}
+          {{ task.is_overdue ? `${t('tasks.overdue')} · ` : '' }}{{ formatRelative(task.due_date) }}
         </p>
       </div>
 
@@ -34,7 +34,7 @@
         type="button"
         class="shrink-0 rounded p-1 text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
         :disabled="busy[task.id]"
-        :aria-label="`Delete “${task.title}”`"
+        :aria-label="t('tasks.delete', { title: task.title })"
         @click="remove(task)"
       >
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -47,7 +47,7 @@
       </button>
     </li>
   </ul>
-  <p v-else class="py-2 text-xs text-gray-500">{{ emptyText }}</p>
+  <p v-else class="py-2 text-xs text-gray-500">{{ emptyText || t('tasks.empty') }}</p>
   <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
 </template>
 
@@ -55,12 +55,13 @@
 import { reactive, ref } from 'vue'
 import { useCrmStore } from '@/stores/crm.js'
 import { formatDateTime, formatRelative } from '@/lib/format.js'
+import { t } from '@/lib/i18n.js'
 
 defineProps({
   tasks: { type: Array, required: true },
   showContact: { type: Boolean, default: false },
   removable: { type: Boolean, default: true },
-  emptyText: { type: String, default: 'No tasks yet.' },
+  emptyText: { type: String, default: '' },
 })
 defineEmits(['open-contact'])
 
@@ -83,7 +84,7 @@ async function run(task, action) {
 const toggle = (task) => run(task, () => crm.updateTask(task, { is_completed: !task.is_completed }))
 
 const remove = (task) => {
-  if (!window.confirm(`Delete the task “${task.title}”?`)) return
+  if (!window.confirm(t('tasks.confirmDelete', { title: task.title }))) return
   return run(task, () => crm.deleteTask(task))
 }
 </script>

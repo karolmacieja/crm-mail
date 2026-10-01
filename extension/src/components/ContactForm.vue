@@ -4,13 +4,13 @@
 
     <div :class="compact ? 'space-y-2.5' : 'grid grid-cols-2 gap-3'">
       <div>
-        <label class="gcrm-label" :for="`${uid}-name`">Name</label>
+        <label class="gcrm-label" :for="`${uid}-name`">{{ t('contact.name') }}</label>
         <input :id="`${uid}-name`" v-model.trim="form.name" class="gcrm-input" :class="{ 'gcrm-input-error': fieldErrors.name }" maxlength="255" />
         <p v-if="fieldErrors.name" class="mt-1 text-xs text-red-600">{{ fieldErrors.name }}</p>
       </div>
 
       <div>
-        <label class="gcrm-label" :for="`${uid}-email`">Email</label>
+        <label class="gcrm-label" :for="`${uid}-email`">{{ t('contact.email') }}</label>
         <input
           :id="`${uid}-email`"
           v-model.trim="form.email"
@@ -24,7 +24,7 @@
       </div>
 
       <div>
-        <label class="gcrm-label" :for="`${uid}-phone`">Phone</label>
+        <label class="gcrm-label" :for="`${uid}-phone`">{{ t('contact.phone') }}</label>
         <input
           :id="`${uid}-phone`"
           v-model.trim="form.phone"
@@ -32,22 +32,22 @@
           class="gcrm-input"
           :class="{ 'gcrm-input-error': fieldErrors.phone }"
           maxlength="50"
-          placeholder="+48 600 000 000"
+          :placeholder="t('contact.phonePlaceholder')"
         />
         <p v-if="fieldErrors.phone" class="mt-1 text-xs text-red-600">{{ fieldErrors.phone }}</p>
       </div>
 
       <div>
-        <label class="gcrm-label" :for="`${uid}-status`">Status</label>
+        <label class="gcrm-label" :for="`${uid}-status`">{{ t('contact.status') }}</label>
         <select :id="`${uid}-status`" v-model="form.status" class="gcrm-input" :class="{ 'gcrm-input-error': fieldErrors.status }">
-          <option v-for="status in CONTACT_STATUSES" :key="status.value" :value="status.value">{{ status.label }}</option>
+          <option v-for="status in CONTACT_STATUSES" :key="status.value" :value="status.value">{{ t(`status.${status.value}`) }}</option>
         </select>
         <p v-if="fieldErrors.status" class="mt-1 text-xs text-red-600">{{ fieldErrors.status }}</p>
       </div>
     </div>
 
     <div>
-      <label class="gcrm-label" :for="`${uid}-notes`">Notes</label>
+      <label class="gcrm-label" :for="`${uid}-notes`">{{ t('contact.notes') }}</label>
       <textarea
         :id="`${uid}-notes`"
         v-model="form.notes"
@@ -60,10 +60,10 @@
     </div>
 
     <div class="flex justify-end gap-2 pt-1">
-      <button v-if="cancellable" type="button" class="gcrm-btn-ghost" :disabled="saving" @click="$emit('cancel')">Cancel</button>
+      <button v-if="cancellable" type="button" class="gcrm-btn-ghost" :disabled="saving" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
       <button type="submit" class="gcrm-btn-primary" :disabled="saving || !form.email">
         <Spinner v-if="saving" size="xs" />
-        {{ submitLabel }}
+        {{ submitLabel || t('common.save') }}
       </button>
     </div>
   </form>
@@ -72,6 +72,7 @@
 <script setup>
 import { reactive, ref, useId, watch } from 'vue'
 import { CONTACT_STATUSES } from '@/lib/config.js'
+import { t } from '@/lib/i18n.js'
 import AlertMessage from './AlertMessage.vue'
 import Spinner from './Spinner.vue'
 
@@ -80,7 +81,7 @@ const props = defineProps({
   initial: { type: Object, default: () => ({}) },
   /** Async (payload) => void. Throws ApiError on failure. */
   onSave: { type: Function, required: true },
-  submitLabel: { type: String, default: 'Save' },
+  submitLabel: { type: String, default: '' },
   cancellable: { type: Boolean, default: true },
   compact: { type: Boolean, default: true },
 })

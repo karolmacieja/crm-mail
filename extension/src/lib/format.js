@@ -1,12 +1,23 @@
 import { CONTACT_STATUSES } from './config.js'
+import { locale } from './i18n.js'
 
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
-const relativeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
+// Formatters are cached per language; reading locale.value keeps templates reactive.
+const formatters = new Map()
+
+function formattersFor(code) {
+  if (!formatters.has(code)) {
+    formatters.set(code, {
+      dateTime: new Intl.DateTimeFormat(code, { dateStyle: 'medium', timeStyle: 'short' }),
+      relative: new Intl.RelativeTimeFormat(code, { numeric: 'auto' }),
+    })
+  }
+  return formatters.get(code)
+}
 
 export function formatDateTime(iso) {
   if (!iso) return ''
   const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? '' : dateTimeFormatter.format(date)
+  return Number.isNaN(date.getTime()) ? '' : formattersFor(locale.value).dateTime.format(date)
 }
 
 /** "in 2 days", "3 hours ago", ... */
@@ -14,6 +25,7 @@ export function formatRelative(iso) {
   if (!iso) return ''
   const diffMs = Date.parse(iso) - Date.now()
   if (Number.isNaN(diffMs)) return ''
+  const relativeFormatter = formattersFor(locale.value).relative
 
   const units = [
     ['day', 86_400_000],

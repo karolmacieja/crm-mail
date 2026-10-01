@@ -2,6 +2,7 @@ import * as InboxSDK from '@inboxsdk/core'
 import { createPinia } from 'pinia'
 import { reactive } from 'vue'
 import { DASHBOARD_ROUTE_ID, INBOXSDK_APP_ID } from '@/lib/config.js'
+import { initLocale, t } from '@/lib/i18n.js'
 import DashboardApp from '@/dashboard/DashboardApp.vue'
 import SidebarApp from '@/sidebar/SidebarApp.vue'
 import { mountIsolated } from './mount.js'
@@ -100,9 +101,9 @@ function registerDashboard(sdk, provide) {
     routeView.on('destroy', () => mounted.unmount())
   })
 
-  // Left navigation entry …
+  // Left navigation entry … (Gmail-rendered labels use the language active at load time)
   sdk.NavMenu.addNavItem({
-    name: 'CRM Dashboard',
+    name: t('dashboard.title'),
     routeID: DASHBOARD_ROUTE_ID,
     iconUrl,
     orderHint: 0,
@@ -120,6 +121,8 @@ function registerDashboard(sdk, provide) {
 }
 
 async function main() {
+  await initLocale()
+
   const sdk = await InboxSDK.load(2, INBOXSDK_APP_ID, {
     appName: 'Gmail CRM',
     appIconUrl: iconUrl,

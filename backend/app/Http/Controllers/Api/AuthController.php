@@ -26,7 +26,7 @@ class AuthController extends Controller
 
         if ($user === null || ! Hash::check($request->input('password'), $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['These credentials do not match our records.'],
+                'email' => [__('auth.failed')],
             ]);
         }
 
@@ -53,6 +53,6 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('crm.logged_out')]);
     }
 }

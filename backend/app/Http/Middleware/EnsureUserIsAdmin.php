@@ -11,7 +11,7 @@ class EnsureUserIsAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'This action requires administrator privileges.'], Response::HTTP_FORBIDDEN);
+            return response()->json(['message' => __('crm.admin_only')], Response::HTTP_FORBIDDEN);
         }
 
         return $next($request);

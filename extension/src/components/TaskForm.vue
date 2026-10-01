@@ -4,7 +4,7 @@
       v-model.trim="title"
       class="gcrm-input"
       :class="{ 'gcrm-input-error': fieldErrors.title }"
-      placeholder="Add a follow-up, e.g. “Send the offer”"
+      :placeholder="t('tasks.placeholder')"
       maxlength="255"
       :disabled="saving"
     />
@@ -14,14 +14,14 @@
       <input
         v-model="due"
         type="datetime-local"
-        class="gcrm-input flex-1"
+        class="gcrm-input min-w-0 flex-1"
         :class="{ 'gcrm-input-error': fieldErrors.due_date }"
         :disabled="saving"
-        aria-label="Due date"
+        :aria-label="t('tasks.dueDate')"
       />
       <button type="submit" class="gcrm-btn-primary shrink-0" :disabled="saving || !title">
         <Spinner v-if="saving" size="xs" />
-        Add
+        {{ t('common.add') }}
       </button>
     </div>
     <p v-if="fieldErrors.due_date" class="text-xs text-red-600">{{ fieldErrors.due_date }}</p>
@@ -32,6 +32,7 @@
 <script setup>
 import { ref } from 'vue'
 import { defaultDueInputValue, fromLocalInputValue } from '@/lib/format.js'
+import { t } from '@/lib/i18n.js'
 import Spinner from './Spinner.vue'
 
 const props = defineProps({

@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosHeaders } from 'axios'
 import { API_BASE_URL, API_MESSAGE_TYPE, REQUEST_TIMEOUT_MS } from './config.js'
+import { locale, t } from './i18n.js'
 
 /**
  * Axios adapter that forwards the request to the extension service worker.
@@ -98,16 +99,14 @@ export function toApiError(error) {
   if (error instanceof ApiError) return error
 
   if (error?.code === 'ERR_EXTENSION_CONTEXT' || /context invalidated/i.test(error?.message ?? '')) {
-    return new ApiError({ message: 'Gmail CRM was updated. Please reload this Gmail tab.', code: 'extension_reloaded', cause: error })
+    return new ApiError({ message: t('errors.extensionReloaded'), code: 'extension_reloaded', cause: error })
   }
 
   const response = error?.response
   if (!response) {
     const timedOut = error?.code === AxiosError.ECONNABORTED || error?.code === AxiosError.ETIMEDOUT
     return new ApiError({
-      message: timedOut
-        ? 'The CRM server took too long to respond. Please try again.'
-        : 'Cannot reach the CRM server. Check your connection and try again.',
+      message: timedOut ? t('errors.timeout') : t('errors.network'),
       code: timedOut ? 'timeout' : 'network_error',
       cause: error,
     })
@@ -118,18 +117,18 @@ export function toApiError(error) {
 
   switch (status) {
     case 401:
-      return new ApiError({ status, code: 'unauthenticated', message: 'Your session has expired. Please sign in again.', cause: error })
+      return new ApiError({ status, code: 'unauthenticated', message: t('errors.unauthenticated'), cause: error })
     case 402:
-      return new ApiError({ status, code: data?.code ?? 'license_invalid', message: serverMessage ?? 'Your license is not active.', cause: error })
+      return new ApiError({ status, code: data?.code ?? 'license_invalid', message: t('errors.licenseInvalid'), cause: error })
     case 403:
-      return new ApiError({ status, code: 'forbidden', message: serverMessage ?? 'You are not allowed to do that.', cause: error })
+      return new ApiError({ status, code: 'forbidden', message: t('errors.forbidden'), cause: error })
     case 404:
-      return new ApiError({ status, code: 'not_found', message: 'This record no longer exists.', cause: error })
+      return new ApiError({ status, code: 'not_found', message: t('errors.notFound'), cause: error })
     case 422:
       return new ApiError({
         status,
         code: 'validation_failed',
-        message: serverMessage ?? 'Please correct the highlighted fields.',
+        message: t('errors.validation'),
         fieldErrors: Object.fromEntries(Object.entries(data?.errors ?? {}).map(([field, messages]) => [field, messages[0]])),
         cause: error,
       })
@@ -138,7 +137,7 @@ export function toApiError(error) {
       return new ApiError({
         status,
         code: 'rate_limited',
-        message: retryAfter ? `Too many requests. Try again in ${retryAfter} seconds.` : 'Too many requests. Please slow down.',
+        message: retryAfter ? t('errors.rateLimitedIn', { seconds: retryAfter }) : t('errors.rateLimited'),
         cause: error,
       })
     }
@@ -146,7 +145,7 @@ export function toApiError(error) {
       return new ApiError({
         status,
         code: status >= 500 ? 'server_error' : 'request_failed',
-        message: status >= 500 ? 'The CRM server had a problem. Please try again shortly.' : (serverMessage ?? `Request failed (${status}).`),
+        message: status >= 500 ? t('errors.server') : (serverMessage ?? t('errors.requestFailed', { status })),
         cause: error,
       })
   }
@@ -168,6 +167,12 @@ export const api = axios.create({
     Accept: 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
+})
+
+// The API localises validation messages based on this header.
+api.interceptors.request.use((config) => {
+  config.headers.set('Accept-Language', locale.value)
+  return config
 })
 
 api.interceptors.response.use(

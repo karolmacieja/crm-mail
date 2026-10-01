@@ -31,8 +31,8 @@ class EnsureValidLicense
 
         return response()->json([
             'message' => $status === 'expired'
-                ? 'Your license expired on '.$user->license_expires_at->toDateString().'. Please renew to continue.'
-                : 'No active license found for this account.',
+                ? __('crm.license_expired', ['date' => $user->license_expires_at->toDateString()])
+                : __('crm.license_missing'),
             'code' => $status === 'expired' ? 'license_expired' : 'license_missing',
             'license_expires_at' => $user->license_expires_at?->toIso8601String(),
         ], Response::HTTP_PAYMENT_REQUIRED);

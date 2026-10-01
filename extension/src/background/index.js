@@ -4,7 +4,7 @@ import { API_BASE_URL, API_MESSAGE_TYPE } from '../lib/config.js'
 import { clearAuth, getAuth } from '../lib/storage.js'
 
 const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
-const FORWARDED_HEADERS = new Set(['accept', 'content-type', 'x-requested-with'])
+const FORWARDED_HEADERS = new Set(['accept', 'accept-language', 'content-type', 'x-requested-with'])
 
 /**
  * Executes an API request on behalf of a content script / popup.

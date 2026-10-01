@@ -45,8 +45,8 @@ class StoreContactRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.unique' => 'A contact with this email already exists in your CRM.',
-            'phone.regex' => 'The phone number may only contain digits, spaces and + ( ) . - / x.',
+            'email.unique' => __('crm.contact_email_taken'),
+            'phone.regex' => __('crm.phone_format'),
         ];
     }
 }

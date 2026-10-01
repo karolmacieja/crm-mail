@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureValidLicense;
+use App\Http\Middleware\SetLocaleFromHeader;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'license' => EnsureValidLicense::class,
             'admin' => EnsureUserIsAdmin::class,
         ]);
+
+        $middleware->appendToGroup('api', SetLocaleFromHeader::class);
 
         // There is no web login page: API guests get a JSON 401, never a redirect.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');
