@@ -1,38 +1,38 @@
 # Gmail CRM
 
-A SaaS CRM that lives inside Gmail: a **Chrome extension (Manifest V3, Vue 3, InboxSDK)** backed by a **Laravel 11 API** with Sanctum tokens and per-user licenses.
+CRM w modelu SaaS działający wewnątrz Gmaila: **rozszerzenie Chrome (Manifest V3, Vue 3, InboxSDK)** połączone z **API w Laravel 11**, z tokenami Sanctum i licencjami przypisanymi do użytkowników.
 
 ```
 crm-mail/
-├── backend/     Laravel 11 API (Sanctum, licensing, contacts, tasks, dashboard)
+├── backend/     API w Laravel 11 (Sanctum, licencje, kontakty, zadania, dashboard)
 └── extension/   Vite + CRXJS + Vue 3 + Pinia + Tailwind + InboxSDK
 ```
 
-## How it fits together
+## Jak to działa
 
 ```
-Gmail tab                                           Extension service worker          Laravel API
+Karta Gmaila                                        Service worker rozszerzenia       API Laravel
 ┌─────────────────────────────────────────┐        ┌──────────────────────────┐      ┌───────────────────────┐
 │ content.js (InboxSDK)                   │        │ background/index.js      │      │ auth:sanctum          │
-│  ├ ThreadView → sidebar panel           │ axios  │  • InboxSDK pageWorld    │ fetch│ license (402 if not)  │
-│  │   └ <div> ▸ shadow root ▸ SidebarApp │──msg──▶│  • attaches Bearer token │─────▶│ /contacts /tasks      │
-│  └ custom route → DashboardApp          │        │  • only proxies API_BASE │      │ /dashboard/summary    │
-│ one shared Pinia store (auth + crm)     │        │  • 401 → clears session  │      │ /admin/users/*        │
+│  ├ ThreadView → panel boczny            │ axios  │  • pageWorld InboxSDK    │ fetch│ license (inaczej 402) │
+│  │   └ <div> ▸ shadow root ▸ SidebarApp │──msg──▶│  • dokleja token Bearer  │─────▶│ /contacts /tasks      │
+│  └ własna trasa → DashboardApp          │        │  • tylko adresy API_BASE │      │ /dashboard/summary    │
+│ jeden wspólny store Pinia (auth + crm)  │        │  • 401 → czyści sesję    │      │ /admin/users/*        │
 └─────────────────────────────────────────┘        └──────────────────────────┘      └───────────────────────┘
-                 ▲  chrome.storage.local (session, synced to popup + every tab)
+                 ▲  chrome.storage.local (sesja, wspólna dla popupu i wszystkich kart)
 ```
 
-* **UI isolation:** every Vue app mounts into a wrapper `<div>` with its own Shadow DOM. Tailwind is
-  compiled with `?inline` and injected *inside* the shadow root, so Tailwind's preflight never touches
-  Gmail and Gmail's CSS never reaches the app. Rem units are converted to px at build time because
-  Gmail controls the root font size.
-* **Networking:** the content script's axios instance uses a custom adapter that forwards requests to
-  the service worker. The worker has `host_permissions` for the API, attaches the token, and refuses to
-  proxy anything outside `VITE_API_BASE_URL`. This avoids depending on CORS from the `mail.google.com`
-  origin. The API still ships a strict CORS config for direct calls.
-* **Licensing:** login always works (so the UI can explain the problem), but every CRM endpoint sits
-  behind the `license` middleware, which returns **HTTP 402** with
-  `code: license_expired | license_missing`. The extension shows a "renew" notice on any 402.
+* **Izolacja interfejsu:** każda aplikacja Vue jest montowana w kontenerze `<div>` z własnym Shadow DOM.
+  Tailwind jest kompilowany z `?inline` i wstrzykiwany *do środka* shadow root, więc jego reset stylów
+  (preflight) nie dotyka Gmaila, a style Gmaila nie wpływają na aplikację. Jednostki rem są zamieniane
+  na px podczas budowania, bo bazowy rozmiar czcionki ustala Gmail.
+* **Komunikacja z API:** axios w content scripcie używa własnego adaptera, który przekazuje zapytania do
+  service workera. Worker ma `host_permissions` dla API, dokleja token i odrzuca wszystko, co nie
+  prowadzi do `VITE_API_BASE_URL`. Dzięki temu nie zależymy od CORS dla originu `mail.google.com`.
+  API i tak ma ścisłą konfigurację CORS na wypadek bezpośrednich wywołań.
+* **Licencje:** logowanie działa zawsze (żeby interfejs mógł wyjaśnić problem), ale każdy endpoint CRM
+  jest chroniony middlewarem `license`, który zwraca **HTTP 402** z
+  `code: license_expired | license_missing`. Przy każdym 402 rozszerzenie pokazuje komunikat o odnowieniu.
 
 ## Backend
 
@@ -40,75 +40,75 @@ Gmail tab                                           Extension service worker    
 cd backend
 composer install
 cp .env.example .env && php artisan key:generate
-touch database/database.sqlite        # or configure DB_* for MySQL
+touch database/database.sqlite        # albo ustaw DB_* dla MySQL
 php artisan migrate
 
-# create a user + license (prompts for the password)
-php artisan crm:license you@company.com --days=365 --name="You" --admin
+# utworzenie użytkownika i licencji (komenda zapyta o hasło)
+php artisan crm:license ty@firma.pl --days=365 --name="Ty" --admin
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 21 feature tests
+php artisan test                      # 21 testów funkcjonalnych
 ```
 
-Run the scheduler in production (`php artisan schedule:work` or cron) to prune expired tokens daily.
+Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
 
 ### API
 
-All routes are prefixed with `/api` and accept/return JSON. Send `Authorization: Bearer <token>`.
+Wszystkie ścieżki mają prefiks `/api`, przyjmują i zwracają JSON. Wysyłaj nagłówek `Authorization: Bearer <token>`.
 
-| Method | Path | Middleware | Notes |
+| Metoda | Ścieżka | Middleware | Uwagi |
 |---|---|---|---|
 | POST | `/auth/login` | throttle 5/min | `{email, password, device_name?}` → `{token, expires_at, user}` |
-| GET | `/auth/me` | auth | User and license status (works with an expired license) |
-| POST | `/auth/logout` | auth | Revokes the current token only |
-| GET | `/contacts` | auth, license | `search, status, sort, direction, page, per_page` (paginated, includes `open_tasks_count`) |
-| GET | `/contacts/lookup?email=` | auth, license | Contact and its tasks, or `{"data": null}` |
-| POST/GET/PATCH/DELETE | `/contacts/{id}` | auth, license | `email` is unique per user, `status ∈ lead, prospect, customer, inactive` |
+| GET | `/auth/me` | auth | Dane użytkownika i status licencji (działa też przy wygasłej licencji) |
+| POST | `/auth/logout` | auth | Unieważnia tylko bieżący token |
+| GET | `/contacts` | auth, license | `search, status, sort, direction, page, per_page` (stronicowane, zawiera `open_tasks_count`) |
+| GET | `/contacts/lookup?email=` | auth, license | Kontakt z zadaniami albo `{"data": null}` |
+| POST/GET/PATCH/DELETE | `/contacts/{id}` | auth, license | `email` unikalny w obrębie użytkownika, `status ∈ lead, prospect, customer, inactive` |
 | GET | `/tasks` | auth, license | `status=open\|completed\|overdue\|all`, `contact_id` |
 | POST/GET/PATCH/DELETE | `/tasks/{id}` | auth, license | `{contact_id, title, due_date, is_completed}` |
-| GET | `/dashboard/summary?tz=` | auth, license | Counters and overdue/today/7-day reminder lists, in the user's timezone |
+| GET | `/dashboard/summary?tz=` | auth, license | Liczniki i listy przypomnień (zaległe / dziś / 7 dni) w strefie czasowej użytkownika |
 | GET | `/admin/users` | auth, admin | |
-| POST | `/admin/users/{id}/license` | auth, admin | `{days, regenerate_key?}`. Extends from the current expiry if still active |
-| DELETE | `/admin/users/{id}/license` | auth, admin | Expires the license and revokes all of the user's tokens |
+| POST | `/admin/users/{id}/license` | auth, admin | `{days, regenerate_key?}`. Jeśli licencja jest aktywna, przedłuża ją od obecnej daty wygaśnięcia |
+| DELETE | `/admin/users/{id}/license` | auth, admin | Kończy licencję i unieważnia wszystkie tokeny użytkownika |
 
-Every query is scoped to the authenticated user. Other tenants' records return 404, and a task can only
-be attached to one of your own contacts (validated with `exists` plus a `user_id` constraint).
+Każde zapytanie jest ograniczone do zalogowanego użytkownika. Rekordy innych użytkowników zwracają 404,
+a zadanie można przypiąć tylko do własnego kontaktu (walidacja `exists` z warunkiem na `user_id`).
 
-**CORS** (`config/cors.php`): only `https://mail.google.com` plus `chrome-extension://…` origins, bearer
-tokens only (`supports_credentials=false`). In production, pin your extension ID with
-`CORS_ALLOWED_ORIGINS="https://mail.google.com,chrome-extension://<id>"` and
+**CORS** (`config/cors.php`): dozwolone tylko `https://mail.google.com` i originy `chrome-extension://…`,
+wyłącznie tokeny Bearer (`supports_credentials=false`). Na produkcji przypnij ID swojego rozszerzenia:
+`CORS_ALLOWED_ORIGINS="https://mail.google.com,chrome-extension://<id>"` oraz
 `CORS_ALLOWED_ORIGIN_PATTERNS=`.
 
-## Extension
+## Rozszerzenie
 
 ```bash
 cd extension
 npm install
 cp .env.example .env
 #   VITE_API_BASE_URL=http://localhost:8000/api
-#   VITE_INBOXSDK_APP_ID=sdk_xxx   ← free, from https://www.inboxsdk.com/register
-npm run dev      # HMR build in dist/
-npm run build    # production build in dist/ (https required for non-localhost APIs)
+#   VITE_INBOXSDK_APP_ID=sdk_xxx   ← darmowe, z https://www.inboxsdk.com/register
+npm run dev      # build z HMR w dist/
+npm run build    # build produkcyjny w dist/ (API spoza localhost musi używać https)
 ```
 
-To load it, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `extension/dist`.
+Żeby załadować rozszerzenie, otwórz `chrome://extensions`, włącz tryb programisty, kliknij **Załaduj rozpakowane** i wskaż `extension/dist`.
 
-| File | Purpose |
+| Plik | Do czego służy |
 |---|---|
-| `manifest.config.js` | MV3 manifest (compiled to `dist/manifest.json`). The API origin is injected into `host_permissions` from `.env` |
-| `vite.config.js` | Vue, CRXJS, and copying of InboxSDK's `pageWorld.js` to the extension root |
-| `src/background/index.js` | InboxSDK MV3 page-world injector and authenticated API proxy |
-| `src/content/content.js` | InboxSDK: thread sidebar, custom route, nav item, app toolbar button |
-| `src/content/mount.js` | Shadow-DOM Vue mounting helper |
-| `src/lib/api.js` | axios instance, service-worker adapter, error normalisation (`ApiError`) |
-| `src/stores/auth.js`, `src/stores/crm.js` | Pinia stores (session/license, contacts/tasks/dashboard cache) |
-| `src/sidebar/SidebarApp.vue` | Contact card for the conversation's sender: create, edit, status, tasks |
-| `src/dashboard/DashboardApp.vue` | Full-page dashboard: KPIs, reminders, client table |
-| `src/popup/` | Toolbar popup: login, license status, logout |
+| `manifest.config.js` | Manifest MV3 (kompilowany do `dist/manifest.json`). Origin API trafia do `host_permissions` z `.env` |
+| `vite.config.js` | Vue, CRXJS i kopiowanie `pageWorld.js` z InboxSDK do katalogu głównego rozszerzenia |
+| `src/background/index.js` | Wstrzykiwanie pageWorld InboxSDK (MV3) i proxy API z autoryzacją |
+| `src/content/content.js` | InboxSDK: panel boczny wątku, własna trasa, pozycja w menu, przycisk na pasku |
+| `src/content/mount.js` | Montowanie Vue w Shadow DOM |
+| `src/lib/api.js` | Instancja axios, adapter do service workera, ujednolicanie błędów (`ApiError`) |
+| `src/stores/auth.js`, `src/stores/crm.js` | Store'y Pinia (sesja i licencja; cache kontaktów, zadań i dashboardu) |
+| `src/sidebar/SidebarApp.vue` | Karta kontaktu nadawcy: dodawanie, edycja, status, zadania |
+| `src/dashboard/DashboardApp.vue` | Dashboard pełnoekranowy: liczniki, przypomnienia, tabela klientów |
+| `src/popup/` | Popup na pasku przeglądarki: logowanie, status licencji, wylogowanie |
 
-## Notes
+## Uwagi
 
-* Laravel 11 is past its security-fix window, and `composer audit` reports advisories that are only fixed
-  in 12.x/13.x. Upgrading (`composer require laravel/framework:^12`, then run the test suite) is
-  recommended before going live.
-* The InboxSDK app ID is a real credential tied to your extension. The build fails if it's missing.
+* Laravel 11 nie dostaje już poprawek bezpieczeństwa, a `composer audit` zgłasza podatności naprawione
+  dopiero w wersjach 12.x/13.x. Przed wdrożeniem zalecana jest aktualizacja
+  (`composer require laravel/framework:^12`, a potem uruchomienie testów).
+* ID aplikacji InboxSDK to prawdziwy identyfikator powiązany z Twoim rozszerzeniem. Bez niego build kończy się błędem.
