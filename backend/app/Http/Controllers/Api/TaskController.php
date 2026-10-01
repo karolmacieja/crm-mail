@@ -24,7 +24,7 @@ class TaskController extends Controller
 
         $status = $validated['status'] ?? 'open';
 
-        $tasks = $request->user()->tasks()
+        $tasks = Task::query()
             ->with('contact:id,email,name')
             ->when($validated['contact_id'] ?? null, fn ($q, $id) => $q->where('contact_id', $id))
             ->when($status === 'open', fn ($q) => $q->open())
@@ -71,6 +71,6 @@ class TaskController extends Controller
 
     private function findOwned(Request $request, int $id): Task
     {
-        return $request->user()->tasks()->findOrFail($id);
+        return Task::findOrFail($id);
     }
 }

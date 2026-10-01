@@ -14,21 +14,30 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $license = $this->license;
+        $viewerIsAdmin = (bool) $request->user()?->isMasterAdmin();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'is_admin' => $this->is_admin,
+            'role' => $this->role->value,
+            'is_admin' => $this->isMasterAdmin(),
+            'group' => $this->group_id === null ? null : [
+                'id' => $this->group_id,
+                'name' => $this->group?->name,
+                'timezone' => $this->group?->timezone,
+            ],
             'license' => [
                 'status' => $this->licenseStatus(),
-                'is_valid' => $this->is_admin || $this->hasValidLicense(),
-                'expires_at' => $this->license_expires_at?->toIso8601String(),
-                // The full key is only visible to admins; owners see a masked version.
+                'is_valid' => $this->isMasterAdmin() || $this->hasValidLicense(),
+                'expires_at' => $license?->expires_at?->toIso8601String(),
+                // The full key is only visible to master admins; others see a masked version.
                 'key' => $this->when(
-                    $this->license_key !== null,
-                    fn () => $request->user()?->is_admin
-                        ? $this->license_key
-                        : substr($this->license_key, 0, 9).str_repeat('*', 5).substr($this->license_key, -5),
+                    $license !== null,
+                    fn () => $viewerIsAdmin
+                        ? $license->key
+                        : substr($license->key, 0, 9).str_repeat('*', 5).substr($license->key, -5),
                 ),
             ],
             'created_at' => $this->created_at?->toIso8601String(),

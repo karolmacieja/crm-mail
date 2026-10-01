@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class LicenseController extends Controller
 {
@@ -40,10 +42,16 @@ class LicenseController extends Controller
             'regenerate_key' => ['sometimes', 'boolean'],
         ]);
 
-        DB::transaction(fn () => $user->grantLicense(
-            $validated['days'],
-            (bool) ($validated['regenerate_key'] ?? false),
-        ));
+        try {
+            DB::transaction(fn () => $user->grantLicense(
+                $validated['days'],
+                (bool) ($validated['regenerate_key'] ?? false),
+                $request->user(),
+            ));
+        } catch (DomainException $e) {
+            // No group / no free seat: a client error, not a server error.
+            throw ValidationException::withMessages(['user' => [$e->getMessage()]]);
+        }
 
         return new UserResource($user->refresh());
     }

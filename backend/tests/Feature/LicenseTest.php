@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -42,16 +43,16 @@ class LicenseTest extends TestCase
     {
         $customer = User::factory()->licensed(10)->create();
         $customer->createToken('chrome');
-        $originalExpiry = $customer->license_expires_at;
+        $originalExpiry = $customer->license->expires_at;
 
         Sanctum::actingAs(User::factory()->admin()->create());
 
         $this->postJson("/api/admin/users/{$customer->id}/license", ['days' => 30])
             ->assertOk()
-            ->assertJsonPath('data.license.key', $customer->license_key);
+            ->assertJsonPath('data.license.key', $customer->license->key);
 
         // Extending an active license stacks on top of the remaining time.
-        $this->assertTrue($customer->refresh()->license_expires_at->equalTo($originalExpiry->copy()->addDays(30)));
+        $this->assertTrue($customer->refresh()->license->expires_at->equalTo($originalExpiry->copy()->addDays(30)));
 
         $this->deleteJson("/api/admin/users/{$customer->id}/license")
             ->assertOk()
@@ -70,12 +71,14 @@ class LicenseTest extends TestCase
 
     public function test_license_command_creates_user_and_license(): void
     {
-        $this->artisan('crm:license', ['email' => 'New@Example.com', '--days' => 14])
+        $this->artisan('crm:license', ['email' => 'New@Example.com', '--days' => 14, '--group' => 'Bistro Nowe'])
             ->expectsQuestion('Password for the new user (min. 8 characters)', 'secret-password')
             ->assertSuccessful();
 
         $user = User::where('email', 'new@example.com')->firstOrFail();
         $this->assertTrue($user->hasValidLicense());
-        $this->assertMatchesRegularExpression('/^CRM-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/', $user->license_key);
+        $this->assertSame('Bistro Nowe', $user->group->name);
+        $this->assertSame(UserRole::Manager, $user->role);
+        $this->assertMatchesRegularExpression('/^GFX-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/', $user->license->key);
     }
 }

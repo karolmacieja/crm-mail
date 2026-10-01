@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * @property string|null $license_key
- * @property Carbon|null $license_expires_at
- * @property bool $is_admin
+ * @property int|null $group_id
+ * @property UserRole $role
+ * @property-read License|null $license
  */
 class User extends Authenticatable
 {
@@ -22,8 +24,8 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * License and admin columns are deliberately NOT mass assignable;
-     * they are only changed through grantLicense()/revokeLicense() or by admins.
+     * group_id and role are deliberately NOT mass assignable:
+     * only the Master Admin panel changes them, explicitly.
      *
      * @var list<string>
      */
@@ -39,7 +41,10 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'license_key',
+    ];
+
+    protected $attributes = [
+        'role' => 'staff',
     ];
 
     /**
@@ -50,68 +55,81 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'license_expires_at' => 'datetime',
-            'is_admin' => 'boolean',
+            'role' => UserRole::class,
         ];
     }
 
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    /** The license whose seat this user holds (at most one). */
+    public function license(): HasOneThrough
+    {
+        return $this->hasOneThrough(License::class, LicenseAssignment::class, 'user_id', 'id', 'id', 'license_id');
+    }
+
+    /** Contacts this user created (all group members see every group contact). */
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
     }
 
+    /** Tasks this user created. */
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
     }
 
+    public function assignedTasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
+
+    public function isMasterAdmin(): bool
+    {
+        return $this->role === UserRole::MasterAdmin;
+    }
+
     public function hasValidLicense(): bool
     {
-        return $this->license_key !== null
-            && $this->license_expires_at !== null
-            && $this->license_expires_at->isFuture();
+        return (bool) $this->license?->isActive();
     }
 
-    /**
-     * Machine-readable license state used by the API and the extension UI.
-     */
+    /** 'active' | 'expired' | 'suspended' | 'cancelled' | 'scheduled' | 'missing' */
     public function licenseStatus(): string
     {
-        if ($this->license_key === null || $this->license_expires_at === null) {
-            return 'missing';
-        }
-
-        return $this->license_expires_at->isFuture() ? 'active' : 'expired';
+        return $this->license?->state() ?? 'missing';
     }
 
     /**
-     * Issue (or extend) a license. Extending an active license adds time
-     * on top of the current expiry so customers never lose paid days.
+     * Ensure this user holds a seat and extend that license by N days.
+     * Creates a 1-seat license for the user's group when it has none with a free seat.
      */
-    public function grantLicense(int $days, bool $regenerateKey = false): void
+    public function grantLicense(int $days, bool $regenerateKey = false, ?User $grantedBy = null): License
     {
-        $base = $this->hasValidLicense() ? $this->license_expires_at : now();
-
-        if ($this->license_key === null || $regenerateKey) {
-            $this->license_key = static::generateLicenseKey();
+        if ($this->group_id === null) {
+            throw new DomainException('Users without a group cannot hold a license.');
         }
 
-        $this->license_expires_at = $base->copy()->addDays($days);
-        $this->save();
+        $license = $this->license
+            ?? $this->group->licenses()->active()->get()->first(fn (License $l) => $l->seatsAvailable() > 0)
+            ?? $this->group->licenses()->create(['seats' => 1, 'starts_at' => now(), 'expires_at' => now()]);
+
+        if ($regenerateKey) {
+            $license->key = License::generateKey();
+        }
+
+        $license->extend($days);
+        $license->assignTo($this, $grantedBy);
+
+        return $license;
     }
 
+    /** Remove this user's seat (the group's license itself stays). */
     public function revokeLicense(): void
     {
-        $this->license_expires_at = now();
-        $this->save();
-    }
-
-    public static function generateLicenseKey(): string
-    {
-        do {
-            $key = 'CRM-'.implode('-', str_split(Str::upper(Str::random(20)), 5));
-        } while (static::where('license_key', $key)->exists());
-
-        return $key;
+        $this->license?->unassign($this);
     }
 }

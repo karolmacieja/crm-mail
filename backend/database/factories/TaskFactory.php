@@ -15,8 +15,11 @@ class TaskFactory extends Factory
     {
         return [
             'contact_id' => Contact::factory(),
-            'user_id' => fn (array $attributes) => Contact::find($attributes['contact_id'])->user_id,
+            'group_id' => fn (array $attributes) => Contact::withoutGlobalScopes()->find($attributes['contact_id'])->group_id,
+            'user_id' => null,
             'title' => fake()->sentence(4),
+            'type' => 'follow_up',
+            'priority' => 'normal',
             'due_date' => fake()->dateTimeBetween('-3 days', '+10 days'),
             'is_completed' => false,
         ];

@@ -25,7 +25,7 @@ class AuthTest extends TestCase
             ->assertJsonPath('user.license.status', 'active')
             ->assertJsonPath('user.license.is_valid', true);
 
-        $this->assertNotSame($user->license_key, $response->json('user.license.key'), 'License key must be masked for non-admins.');
+        $this->assertNotSame($user->license->key, $response->json('user.license.key'), 'License key must be masked for non-admins.');
         $this->assertDatabaseHas('personal_access_tokens', ['tokenable_id' => $user->id, 'name' => 'chrome']);
     }
 

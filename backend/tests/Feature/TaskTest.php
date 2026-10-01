@@ -21,7 +21,7 @@ class TaskTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->licensed()->create();
-        $this->contact = Contact::factory()->for($this->user)->create();
+        $this->contact = Contact::factory()->for($this->user->group)->create();
         Sanctum::actingAs($this->user);
     }
 

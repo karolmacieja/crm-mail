@@ -48,14 +48,14 @@ class ContactTest extends TestCase
 
     public function test_validation_errors(): void
     {
-        Contact::factory()->for($this->user)->create(['email' => 'dup@acme.com']);
+        Contact::factory()->for($this->user->group)->create(['email' => 'dup@acme.com']);
 
         $this->postJson('/api/contacts', ['email' => 'DUP@acme.com', 'status' => 'vip', 'phone' => 'call me'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['email', 'status', 'phone']);
     }
 
-    public function test_same_email_allowed_for_different_users(): void
+    public function test_same_email_allowed_in_different_groups(): void
     {
         Contact::factory()->create(['email' => 'shared@acme.com']);
 
@@ -64,7 +64,7 @@ class ContactTest extends TestCase
 
     public function test_lookup_by_email_returns_contact_with_tasks_or_null(): void
     {
-        $contact = Contact::factory()->for($this->user)->create(['email' => 'sender@acme.com']);
+        $contact = Contact::factory()->for($this->user->group)->create(['email' => 'sender@acme.com']);
         Task::factory()->for($contact)->create(['user_id' => $this->user->id]);
 
         $this->getJson('/api/contacts/lookup?email=Sender@Acme.com')
@@ -78,7 +78,7 @@ class ContactTest extends TestCase
             ->assertExactJson(['data' => null]);
     }
 
-    public function test_users_cannot_access_each_others_contacts(): void
+    public function test_groups_cannot_access_each_others_contacts(): void
     {
         $foreign = Contact::factory()->create();
 

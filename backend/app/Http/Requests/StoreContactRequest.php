@@ -29,7 +29,7 @@ class StoreContactRequest extends FormRequest
             'email' => [
                 'required', 'string', 'email', 'max:255',
                 Rule::unique('contacts', 'email')
-                    ->where('user_id', $this->user()->id)
+                    ->where('group_id', $this->user()->group_id)
                     ->ignore($this->route('contact')),
             ],
             'name' => ['nullable', 'string', 'max:255'],

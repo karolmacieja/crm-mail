@@ -1,16 +1,19 @@
 <?php
 
+use App\Enums\UserRole;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Validator;
 
 /*
-| Create a user (if needed) and grant/extend their license.
-|   php artisan crm:license user@example.com --days=365 --name="Jane" --admin
+| Create a user (if needed) and grant/extend their license seat.
+|   php artisan crm:license user@example.com --days=365 --name="Jane" --group="Restauracja Pod Lipą"
+|   php artisan crm:license owner@example.com --admin        (Master Admin: no group, no license needed)
 | The password is prompted for (never passed on the command line) when the user is new.
 */
-Artisan::command('crm:license {email} {--days=30} {--name=} {--admin} {--regenerate}', function (string $email) {
+Artisan::command('crm:license {email} {--days=30} {--name=} {--group=} {--admin} {--regenerate}', function (string $email) {
     $days = (int) $this->option('days');
 
     $validator = Validator::make(['email' => $email, 'days' => $days], [
@@ -48,20 +51,34 @@ Artisan::command('crm:license {email} {--days=30} {--name=} {--admin} {--regener
     }
 
     if ($this->option('admin')) {
-        $user->is_admin = true;
+        $user->role = UserRole::MasterAdmin;
+        $user->group_id = null;
         $user->save();
+        $user->revokeLicense();
+        $this->info("{$email} is now a Master Admin (no license required).");
+
+        return 0;
     }
 
-    $user->grantLicense($days, (bool) $this->option('regenerate'));
+    if ($user->group_id === null) {
+        $group = Group::create(['name' => $this->option('group') ?: $user->name]);
+        $user->group_id = $group->id;
+        $user->role = UserRole::Manager;
+        $user->save();
+        $this->info("Created group \"{$group->name}\".");
+    }
 
-    $this->table(['Email', 'License key', 'Expires at', 'Admin'], [[
+    $license = $user->grantLicense($days, (bool) $this->option('regenerate'));
+
+    $this->table(['Email', 'Group', 'License key', 'Seats', 'Expires at'], [[
         $user->email,
-        $user->license_key,
-        $user->license_expires_at->toDateTimeString(),
-        $user->is_admin ? 'yes' : 'no',
+        $user->group->name,
+        $license->key,
+        $license->seatsUsed().'/'.$license->seats,
+        $license->expires_at->toDateTimeString(),
     ]]);
 
     return 0;
-})->purpose('Create a CRM user and grant or extend their license');
+})->purpose('Create a CRM user and grant or extend their license seat');
 
 Schedule::command('sanctum:prune-expired --hours=24')->daily();

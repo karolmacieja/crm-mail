@@ -27,7 +27,8 @@ class ContactController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $contacts = $request->user()->contacts()
+        // GroupScope limits every query to the user's restaurant.
+        $contacts = Contact::query()
             ->search($validated['search'] ?? null)
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->withCount('openTasks')
@@ -50,7 +51,7 @@ class ContactController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
-        $contact = $request->user()->contacts()
+        $contact = Contact::query()
             ->where('email', mb_strtolower(trim($validated['email'])))
             ->withCount('openTasks')
             ->with(['tasks' => fn ($q) => $q->orderBy('is_completed')->orderByRaw('due_date IS NULL')->orderBy('due_date')])
@@ -96,11 +97,11 @@ class ContactController extends Controller
     }
 
     /**
-     * Scope every lookup to the current user so other tenants' records
-     * are indistinguishable from non-existent ones (404, not 403).
+     * GroupScope makes other restaurants' records indistinguishable
+     * from non-existent ones (404, not 403).
      */
     private function findOwned(Request $request, int $id): Contact
     {
-        return $request->user()->contacts()->findOrFail($id);
+        return Contact::findOrFail($id);
     }
 }

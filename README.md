@@ -64,8 +64,11 @@ php artisan key:generate
 touch database/database.sqlite    # Windows: type nul > database\database.sqlite
 php artisan migrate
 
-# utwórz swoje konto z licencją na rok (komenda zapyta o hasło, min. 8 znaków)
-php artisan crm:license twoj@email.pl --days=365 --name="Twoje Imię" --admin
+# utwórz restaurację (grupę) i swoje konto z licencją na rok (komenda zapyta o hasło, min. 8 znaków)
+php artisan crm:license twoj@email.pl --days=365 --name="Twoje Imię" --group="Moja Restauracja"
+
+# opcjonalnie: dane demonstracyjne z makiety GastroFlowx (hasło do wszystkich kont: password)
+# php artisan db:seed
 
 php artisan serve                 # zostaw ten terminal otwarty
 ```
@@ -137,6 +140,37 @@ Rozszerzenie wysyła wybrany język w nagłówku `Accept-Language`, a API (middl
 zwraca w nim komunikaty walidacji i błędów (`lang/pl`, `lang/en`). Tłumaczenia interfejsu są w
 `extension/src/locales/pl.js` i `en.js`.
 
+## Model danych (multi-tenancy)
+
+Każda restauracja to **grupa** (`groups`). Wszystkie dane operacyjne mają kolumnę `group_id` i trait
+`App\Models\Concerns\BelongsToGroup`, który:
+
+* dodaje Global Scope `GroupScope`, więc zalogowany użytkownik widzi wyłącznie dane swojej grupy
+  (cudze rekordy dają 404, użytkownik bez grupy nie widzi nic);
+* sam uzupełnia `group_id` przy tworzeniu i rzuca `MissingGroupContext`, gdy nie wiadomo, do jakiej grupy
+  zapisać rekord. `group_id` nie jest „fillable”, więc nie da się go podmienić z requestu.
+
+Kontekst grupy trzyma `App\Support\Tenancy\Tenancy`: `runAs($grupa, fn)` (np. w kolejkach),
+`withoutScope(fn)` (raporty Master Admina), a w zapytaniach scope `Model::forGroup($grupa)`.
+Master Admin (`role = master_admin`, bez grupy) widzi wszystkie grupy.
+
+| Tabela | Zawartość |
+|---|---|
+| `groups` | Restauracje (tenanci), strefa czasowa |
+| `users` | `group_id`, `role`: `master_admin` / `manager` / `staff` |
+| `licenses`, `license_user` | Licencja grupy z liczbą miejsc i przydziały miejsc użytkownikom |
+| `contacts` | Kontakty i klienci (`is_client`), `category_id`, firma, ostatnia aktywność |
+| `contact_categories` | Kategorie grupy (domyślnie B2B, VIP, Indywidualni) |
+| `contact_custom_fields` | Własne pola kontaktu, np. „Alergie” (typy: tekst, liczba, data, tak/nie) |
+| `tasks` | Zadania: typ (follow-up / oferta / wewnętrzne), priorytet, osoba przypisana, mail źródłowy |
+| `reservations` | Data, godzina, liczba gości, status, stolik, okazja, `source_email_id` |
+| `reminders` | Przypomnienia (z maila / rezerwacji / ogólne) |
+| `activities` | Oś czasu (polimorficzna): maile, notatki, zdarzenia systemowe |
+
+Statusy czasowe zadań i przypomnień (zaległe / dziś / 7 dni) nie są zapisywane w bazie. Liczą je scope'y
+`overdue()`, `dueToday($tz)` i `upcoming($tz)` w strefie czasowej restauracji, więc nigdy się nie
+dezaktualizują.
+
 ## Backend
 
 ```bash
@@ -147,10 +181,12 @@ touch database/database.sqlite        # albo ustaw DB_* dla MySQL
 php artisan migrate
 
 # utworzenie użytkownika i licencji (komenda zapyta o hasło)
-php artisan crm:license ty@firma.pl --days=365 --name="Ty" --admin
+php artisan crm:license ty@firma.pl --days=365 --name="Ty" --group="Moja Restauracja"
+php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin (bez grupy i licencji)
+php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 24 testy funkcjonalne
+php artisan test                      # 44 testy
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.

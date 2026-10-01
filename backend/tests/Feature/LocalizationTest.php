@@ -15,7 +15,7 @@ class LocalizationTest extends TestCase
     public function test_validation_messages_follow_accept_language(): void
     {
         $user = User::factory()->licensed()->create();
-        Contact::factory()->for($user)->create(['email' => 'dup@acme.com']);
+        Contact::factory()->for($user->group)->create(['email' => 'dup@acme.com']);
         Sanctum::actingAs($user);
 
         $this->withHeader('Accept-Language', 'pl-PL,pl;q=0.9')
