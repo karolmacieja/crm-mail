@@ -68,6 +68,24 @@ class ContactController extends Controller
             : new ContactResource($this->loadProfile($contact, $request));
     }
 
+    /**
+     * Batch lookup for the dashboard's inbox list: which senders are already
+     * in the CRM and in which category (B2B / VIP badges). Unknown emails are omitted.
+     */
+    public function lookupMany(Request $request): AnonymousResourceCollection
+    {
+        $validated = $request->validate([
+            'emails' => ['required', 'array', 'max:100'],
+            'emails.*' => ['string', 'email', 'max:255'],
+        ]);
+
+        $emails = collect($validated['emails'])->map(fn (string $e) => mb_strtolower(trim($e)))->unique()->values();
+
+        return ContactResource::collection(
+            Contact::query()->with('category')->whereIn('email', $emails)->get()
+        );
+    }
+
     public function store(StoreContactRequest $request): JsonResponse
     {
         $contact = DB::transaction(function () use ($request) {

@@ -112,9 +112,21 @@ npm run build:extension           # wynik trafia do frontend/dist
 
 1. Kliknij ikonę rozszerzenia, wybierz język (**PL** / **EN**) i zaloguj się danymi z kroku 2.
 2. Otwórz (lub odśwież) https://mail.google.com.
-3. Otwórz dowolnego maila. Po prawej stronie, w pasku bocznym Gmaila, pojawi się ikona CRM.
-   Kliknij ją, żeby zobaczyć kartę nadawcy, dodać go do CRM i zaplanować zadania.
-4. Pełny **Panel CRM** otworzysz z pozycji w lewym menu Gmaila albo przyciskiem „CRM” w prawym górnym rogu.
+3. Otwórz dowolnego maila. W prawym pasku bocznym Gmaila pojawi się ikona **GastroFlowx** z kartą
+   nadawcy: dane kontaktowe i własne pola, szybka notatka, rezerwacje, zadania, przypomnienia i oś czasu.
+   Nieznanego nadawcę dodasz do CRM jednym kliknięciem. Mail trafia automatycznie na oś czasu klienta.
+4. Pełny CRM (Dashboard, Klienci, Kontakty, Zadania, Przypomnienia) otworzysz pozycją **GastroFlowx**
+   w lewym menu Gmaila albo przyciskiem w prawym górnym rogu. Kliknięcie maila w sekcji „Ostatnie maile”
+   wysuwa prawy panel z kartą klienta, a kliknięcie klienta w zakładce „Klienci” otwiera pełny profil.
+
+**Dane demo:** `php artisan migrate:fresh --seed` (tylko lokalnie, kasuje bazę) tworzy dane z makiety.
+Hasło do wszystkich kont to `password`:
+
+| Konto | Gdzie się loguje |
+|---|---|
+| `kelner@roma.test`, `manager@roma.test` | rozszerzenie Gmail (Restauracja Roma) |
+| `manager@sushi.test` | rozszerzenie Gmail (inna restauracja, dla sprawdzenia izolacji danych) |
+| `master@gastroflowx.test` | panel webowy Master Admina |
 
 ### Rozwiązywanie problemów
 
@@ -197,7 +209,7 @@ php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje si�
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 68 testów
+php artisan test                      # 70 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
@@ -284,14 +296,37 @@ Jeden projekt Vue 3 budowany na dwa sposoby:
 frontend/src/
 ├── shared/      i18n (PL/EN), formatowanie, ApiError, guard routera, wspólne komponenty, Tailwind
 ├── extension/   service worker, content script (InboxSDK), popup, klient API przez service worker
-├── crm/         CRM w Gmailu: router, store'y Pinia, widoki
-│   └── legacy/  obecny panel boczny i dashboard (do zastąpienia komponentami z makiety w kroku 4)
+├── crm/         CRM w Gmailu: router, store'y Pinia, layout, widoki, karta klienta (ContextSidebar / FullClientProfile)
 └── admin/       panel Master Admina: router, store'y Pinia, widoki, klient API sesyjny
 ```
 
 **Guard routera** (`shared/router/guards.js`) czyta meta tras w obu aplikacjach. Reaguje też na zmiany sesji
 poza nawigacją: wylogowanie w popupie, 401 albo 402 z API od razu przenosi na logowanie lub ekran licencji,
 a po zalogowaniu wraca do żądanej strony (`?redirect=`).
+
+**Widoki (makieta GastroFlowx):**
+
+| CRM w Gmailu | Panel Master Admina |
+|---|---|
+| `DashboardView`: KPI, przypomnienia i zadania (Zaległe / Dziś / 7 dni), ostatnie maile ze skrzynki | `DashboardView`: restauracje, użytkownicy, zajęte miejsca, licencje wygasające w 30 dni |
+| `ClientsView`: klienci pogrupowani po kategoriach (B2B, VIP…), wyszukiwarka i filtr | `GroupsView` / `GroupDetailView`: restauracje, ich pracownicy i licencje, usuwanie z potwierdzeniem |
+| `FullClientProfile`: pełna karta klienta zamiast listy | `UsersView`: konta, role, grupa, przydział miejsca, wylogowanie z rozszerzeń |
+| `ContactsView`: książka adresowa, zamiana kontaktu w klienta | `LicensesView`: miejsca, przedłużanie (+30 dni / +1 rok), przydziały, zawieszanie |
+| `TasksView`: tablica Pilne / Follow-up / Oferty / Wewnętrzne | |
+| `RemindersView`: z maili / rezerwacje / pozostałe | |
+| `ContextSidebar`: prawy panel (450 px) wysuwany po kliknięciu maila | |
+| `ThreadPanelApp`: ta sama karta klienta w pasku bocznym otwartego maila w Gmailu | |
+
+Sekcje karty klienta (`crm/components/client/`): `ContactDetails` (z własnymi polami), `QuickNote`,
+`ReservationsPanel`, `ClientWork` (zadania i przypomnienia) i `Timeline`. Składają je `ContextSidebar`,
+`FullClientProfile` i `ThreadPanelApp`, a dane pochodzą z jednego `useClientStore`. Ikony to Font Awesome
+w wersji SVG, wbudowane w paczkę, bo w Manifest V3 nie wolno ładować skryptów z CDN.
+
+**Ostatnie maile:** Gmail nie udostępnia rozszerzeniom listy skrzynki bez OAuth, więc content script zbiera
+wiersze, które Gmail wyświetla w skrzynce odbiorczej (InboxSDK `ThreadRowView`). Plakietki B2B/VIP pochodzą
+z jednego zapytania `POST /contacts/lookup-many`. Wiersz zna tylko ID wątku, więc oś czasu zapisuje go
+tymczasowo jako `thread:<id>`. Po otwarciu maila w Gmailu wpis jest podmieniany na prawdziwą wiadomość i nie
+powstaje duplikat.
 
 **Store'y Pinia:**
 

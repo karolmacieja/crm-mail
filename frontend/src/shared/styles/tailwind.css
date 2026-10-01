@@ -1,3 +1,6 @@
+/* Font Awesome SVG icon styles; bundled so they also apply inside Gmail's shadow roots. */
+@import '@fortawesome/fontawesome-svg-core/styles.css';
+
 /*
  * Injected UIs live in a shadow root: reset everything inherited from Gmail
  * so its fonts/colors/line-heights can't leak into our components.

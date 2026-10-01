@@ -1,16 +1,18 @@
 import * as InboxSDK from '@inboxsdk/core'
 import { createPinia } from 'pinia'
 import { reactive } from 'vue'
+import { createCrmApp } from '@/crm/createCrmApp.js'
+import { useInboxStore } from '@/crm/stores/inbox.js'
+import ThreadPanelApp from '@/crm/ThreadPanelApp.vue'
 import { DASHBOARD_ROUTE_ID, INBOXSDK_APP_ID } from '@/shared/lib/config.js'
 import { initLocale, t } from '@/shared/lib/i18n.js'
-import DashboardApp from '@/crm/legacy/DashboardApp.vue'
-import SidebarApp from '@/crm/legacy/SidebarApp.vue'
-import { mountIsolated } from './mount.js'
+import { mountAppIsolated, mountIsolated } from './mount.js'
 
-const LOG_PREFIX = '[Gmail CRM]'
+const LOG_PREFIX = '[GastroFlowx]'
 const iconUrl = chrome.runtime.getURL('icons/icon-48.png')
 
-// One Pinia instance for every Vue app in this tab -> sidebar and dashboard share state.
+// One Pinia instance for every Vue app in this tab: the full-page CRM and the
+// thread panel share the same client/tasks/dashboard state.
 const pinia = createPinia()
 
 const normalize = (email) => String(email ?? '').trim().toLowerCase()
@@ -24,64 +26,67 @@ function safely(fn, fallback = null) {
 }
 
 /**
- * Work out who the conversation is *with*:
- *  1. senders of loaded messages (newest first) that aren't the current user;
- *  2. if the user sent every message, the recipients of the latest one.
- * Returns a de-duplicated list, most relevant first.
+ * Who the conversation is with: senders of loaded messages (newest first)
+ * that aren't the current user; for outgoing-only threads, the recipients.
+ * Each participant carries the newest Gmail message id from them, used to
+ * log that exact email on the client's timeline.
  */
 async function extractParticipants(threadView, myEmail) {
   const messages = threadView.getMessageViewsAll().filter((mv) => safely(() => mv.isLoaded(), false))
   const seen = new Set([myEmail])
   const participants = []
 
-  const add = (contact) => {
-    const email = normalize(contact?.emailAddress)
-    if (!email || seen.has(email)) return
+  for (const messageView of [...messages].reverse()) {
+    const sender = safely(() => messageView.getSender())
+    const email = normalize(sender?.emailAddress)
+    if (!email || seen.has(email)) continue
     seen.add(email)
-    participants.push({ email, name: contact.name && normalize(contact.name) !== email ? contact.name : '' })
+    participants.push({
+      email,
+      name: sender.name && normalize(sender.name) !== email ? sender.name : '',
+      messageId: await messageView.getMessageIDAsync().catch(() => null),
+      snippet: safely(() => messageView.getBodyElement().innerText.trim().replace(/\s+/g, ' ').slice(0, 300), null),
+    })
   }
 
-  for (const messageView of [...messages].reverse()) {
-    add(safely(() => messageView.getSender()))
-  }
-
-  // Outgoing-only threads: fall back to recipients (To/CC) of the newest messages.
-  for (const messageView of [...messages].reverse()) {
-    if (participants.length) break
-    const recipients = await messageView.getRecipientsFull().catch(() => safely(() => messageView.getRecipients(), []))
-    recipients.forEach(add)
+  if (!participants.length && messages.length) {
+    const latest = messages.at(-1)
+    const recipients = await latest.getRecipientsFull().catch(() => safely(() => latest.getRecipients(), []))
+    for (const contact of recipients) {
+      const email = normalize(contact?.emailAddress)
+      if (!email || seen.has(email)) continue
+      seen.add(email)
+      participants.push({ email, name: contact.name ?? '', messageId: await latest.getMessageIDAsync().catch(() => null), direction: 'out' })
+    }
   }
 
   return participants
 }
 
-function registerSidebar(sdk, provide) {
+function registerThreadPanel(sdk, provide) {
   const myEmail = normalize(sdk.User.getEmailAddress())
 
   sdk.Conversations.registerThreadViewHandler((threadView) => {
-    // Wrapper element owned by InboxSDK; our UI lives in its shadow root.
     const host = document.createElement('div')
-    const state = reactive({ participants: [], resolving: true })
+    host.style.height = '100%'
+    const state = reactive({ participants: [], subject: safely(() => threadView.getSubject(), ''), threadId: null, resolving: true })
 
     const panel = threadView.addSidebarContentPanel({
-      id: 'gmail-crm-contact',
-      title: 'CRM',
+      id: 'gastroflowx-client',
+      title: 'GastroFlowx',
       iconUrl,
-      appName: 'Gmail CRM',
+      appName: 'GastroFlowx',
       appIconUrl: iconUrl,
       el: host,
     })
 
-    const mounted = mountIsolated(host, SidebarApp, { props: state, pinia, provide })
-
+    const mounted = mountIsolated(host, ThreadPanelApp, { props: state, pinia, provide })
     const cleanup = () => mounted.unmount()
     threadView.on('destroy', cleanup)
     panel.on('destroy', cleanup)
 
-    extractParticipants(threadView, myEmail)
-      .then((participants) => {
-        state.participants = participants
-      })
+    Promise.all([extractParticipants(threadView, myEmail), threadView.getThreadIDAsync().catch(() => null)])
+      .then(([participants, threadId]) => Object.assign(state, { participants, threadId }))
       .catch((error) => console.error(LOG_PREFIX, 'Could not read thread participants', error))
       .finally(() => {
         state.resolving = false
@@ -89,55 +94,98 @@ function registerSidebar(sdk, provide) {
   })
 }
 
-function registerDashboard(sdk, provide) {
+/** Feed "Ostatnie maile" with the rows Gmail renders in the inbox. */
+function registerInboxCapture(sdk) {
+  const myEmail = normalize(sdk.User.getEmailAddress())
+  const inbox = useInboxStore(pinia)
+  let batch = []
+  let timer = null
+
+  sdk.Lists.registerThreadRowViewHandler(async (row) => {
+    if (!/^#inbox/.test(window.location.hash || '#inbox')) return
+    const sender = safely(() => row.getContacts(), []).find((c) => normalize(c.emailAddress) !== myEmail)
+    const threadId = await row.getThreadIDAsync().catch(() => null)
+    if (!sender || !threadId) return
+
+    batch.push({
+      threadId,
+      email: normalize(sender.emailAddress),
+      name: sender.name ?? '',
+      subject: safely(() => row.getSubject(), ''),
+      date: safely(() => row.getDateString(), ''),
+      // Best effort: Gmail marks unread rows with the "zE" class.
+      unread: safely(() => row.getElement().classList.contains('zE'), false),
+    })
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      inbox.addThreads(batch)
+      batch = []
+    }, 200)
+  })
+}
+
+function registerCrmRoute(sdk, provide) {
+  let nextPath = null
+  let lastPath = '/dashboard'
+
   sdk.Router.handleCustomRoute(DASHBOARD_ROUTE_ID, (routeView) => {
     routeView.setFullWidth(true)
 
     const host = document.createElement('div')
-    host.style.cssText = 'height:100%;overflow:auto;'
+    host.style.cssText = 'height:100%;'
     routeView.getElement().appendChild(host)
 
-    const mounted = mountIsolated(host, DashboardApp, { pinia, provide })
-    routeView.on('destroy', () => mounted.unmount())
+    const app = createCrmApp({ pinia, gmail: provide.gmail, initialPath: nextPath ?? lastPath })
+    nextPath = null
+    const mounted = mountAppIsolated(host, app)
+    const router = app.config.globalProperties.$router
+
+    routeView.on('destroy', () => {
+      // Coming back to the CRM restores the page the user was on.
+      lastPath = router.currentRoute.value.fullPath
+      mounted.unmount()
+    })
   })
 
-  // Left navigation entry … (Gmail-rendered labels use the language active at load time)
-  sdk.NavMenu.addNavItem({
-    name: t('dashboard.title'),
-    routeID: DASHBOARD_ROUTE_ID,
-    iconUrl,
-    orderHint: 0,
-  })
+  sdk.NavMenu.addNavItem({ name: 'GastroFlowx', routeID: DASHBOARD_ROUTE_ID, iconUrl, orderHint: 0 })
 
-  // … and a global toolbar button (top right) that opens the same route.
   sdk.Toolbars.addToolbarButtonForApp({
-    title: 'CRM',
+    title: 'GastroFlowx',
     iconUrl,
     onClick: ({ dropdown }) => {
       dropdown?.close()
       sdk.Router.goto(DASHBOARD_ROUTE_ID)
     },
   })
+
+  return {
+    /** Open the full-page CRM at a path, e.g. "/clients/5". */
+    open(path) {
+      nextPath = path
+      return sdk.Router.goto(DASHBOARD_ROUTE_ID)
+    },
+  }
 }
 
 async function main() {
   await initLocale()
 
-  const sdk = await InboxSDK.load(2, INBOXSDK_APP_ID, {
-    appName: 'Gmail CRM',
-    appIconUrl: iconUrl,
-  })
+  const sdk = await InboxSDK.load(2, INBOXSDK_APP_ID, { appName: 'GastroFlowx', appIconUrl: iconUrl })
 
-  // Gmail-specific helpers exposed to components via inject('gmail').
+  // Gmail helpers for components: inject('gmail').
   const gmail = {
-    openDashboard: () => sdk.Router.goto(DASHBOARD_ROUTE_ID),
-    searchEmail: (email) =>
-      sdk.Router.goto(sdk.Router.NativeRouteIDs.SEARCH, { query: `from:${email} OR to:${email}`, page: 1 }),
+    goInbox: () => sdk.Router.goto(sdk.Router.NativeRouteIDs.INBOX, { page: 1 }),
+    openThread: (threadId) => sdk.Router.goto(sdk.Router.NativeRouteIDs.THREAD, { threadID: threadId }),
+    searchEmail: (email) => sdk.Router.goto(sdk.Router.NativeRouteIDs.SEARCH, { query: `from:${email} OR to:${email}`, page: 1 }),
+    openCrm: (path) => crmRoute.open(path),
   }
   const provide = { gmail }
 
-  registerSidebar(sdk, provide)
-  registerDashboard(sdk, provide)
+  const crmRoute = registerCrmRoute(sdk, provide)
+  registerThreadPanel(sdk, provide)
+  registerInboxCapture(sdk)
+
+  console.info(LOG_PREFIX, t('crm.layout.ready'))
 }
 
 main().catch((error) => {

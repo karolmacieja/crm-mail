@@ -4,21 +4,16 @@ import { createApp, h } from 'vue'
 import styles from '@/shared/styles/tailwind.css?inline'
 
 /**
- * Mount a Vue component inside `host` using a Shadow DOM boundary.
+ * Prepare `host` (a plain <div> handed to InboxSDK) for a Vue app:
  *
- *   host (plain <div> handed to InboxSDK / Gmail)
+ *   host
  *   └─ #shadow-root
- *      ├─ <style> (our Tailwind build, scoped to this shadow tree)
- *      └─ <div class="gcrm-root"> ← Vue app
+ *      ├─ <style> (our Tailwind + Font Awesome CSS, scoped to this tree)
+ *      └─ <div class="gcrm-root-container"> ← Vue app
  *
  * Gmail's CSS can't reach in and ours can't leak out.
- *
- * @param {HTMLElement} host
- * @param {import('vue').Component} component
- * @param {{ props?: object, pinia: import('pinia').Pinia, provide?: Record<string, unknown> }} options
- *   `props` may be a reactive() object: the component re-renders when it changes.
  */
-export function mountIsolated(host, component, { props = {}, pinia, provide = {} }) {
+function prepareShadowRoot(host) {
   host.classList.add('gcrm-host')
   const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
 
@@ -26,21 +21,20 @@ export function mountIsolated(host, component, { props = {}, pinia, provide = {}
   style.textContent = styles
 
   const container = document.createElement('div')
-  container.className = 'gcrm-root-container'
+  container.className = 'gcrm-root-container gcrm-root'
+  container.style.height = '100%'
   shadow.replaceChildren(style, container)
 
-  const app = createApp({
-    name: 'GmailCrmRoot',
-    render: () => h(component, { ...props }),
-  })
+  return { shadow, container }
+}
 
-  app.use(pinia)
-  for (const [key, value] of Object.entries(provide)) app.provide(key, value)
-
-  app.config.errorHandler = (error, _instance, info) => {
-    console.error(`[Gmail CRM] ${info}:`, error)
-  }
-
+/**
+ * Mount an already configured Vue app (router, pinia, provide) into a shadow root.
+ * @returns {{ app: import('vue').App, unmount(): void }}
+ */
+export function mountAppIsolated(host, app) {
+  const { shadow, container } = prepareShadowRoot(host)
+  app.config.errorHandler ??= (error, _instance, info) => console.error(`[GastroFlowx] ${info}:`, error)
   app.mount(container)
 
   let mounted = true
@@ -56,4 +50,17 @@ export function mountIsolated(host, component, { props = {}, pinia, provide = {}
       }
     },
   }
+}
+
+/**
+ * Mount a single component (props may be a reactive() object: the component
+ * re-renders when it changes).
+ *
+ * @param {{ props?: object, pinia: import('pinia').Pinia, provide?: Record<string, unknown> }} options
+ */
+export function mountIsolated(host, component, { props = {}, pinia, provide = {} }) {
+  const app = createApp({ name: 'GastroFlowxRoot', render: () => h(component, { ...props }) })
+  app.use(pinia)
+  for (const [key, value] of Object.entries(provide)) app.provide(key, value)
+  return mountAppIsolated(host, app)
 }

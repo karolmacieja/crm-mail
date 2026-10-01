@@ -126,6 +126,38 @@ class CrmApiTest extends TestCase
         $this->postJson("/api/contacts/{$this->foreignContact->id}/notes", ['body' => 'x'])->assertNotFound();
     }
 
+    public function test_thread_placeholder_and_real_message_make_one_timeline_entry(): void
+    {
+        $base = "/api/contacts/{$this->contact->id}/emails";
+
+        // Dashboard (inbox row): only the thread id is known.
+        $this->postJson($base, ['message_id' => 'thread:t-1', 'thread_id' => 't-1', 'subject' => 'Wigilia'])->assertCreated();
+        $this->postJson($base, ['message_id' => 'thread:t-1', 'thread_id' => 't-1', 'subject' => 'Wigilia'])->assertOk();
+
+        // Gmail thread view: the real message id replaces the placeholder.
+        $this->postJson($base, ['message_id' => '18f2', 'thread_id' => 't-1', 'subject' => 'Wigilia', 'snippet' => 'Proszę o menu'])
+            ->assertOk()
+            ->assertJsonPath('data.meta.message_id', '18f2')
+            ->assertJsonPath('data.body', 'Proszę o menu');
+
+        // Later dashboard clicks on the same thread add nothing.
+        $this->postJson($base, ['message_id' => 'thread:t-1', 'thread_id' => 't-1'])->assertOk();
+        // A newer message in the same thread is a new entry.
+        $this->postJson($base, ['message_id' => '18f3', 'thread_id' => 't-1', 'subject' => 'Re: Wigilia'])->assertCreated();
+
+        $this->getJson("/api/contacts/{$this->contact->id}/activities?type=email")->assertJsonCount(2, 'data');
+    }
+
+    public function test_batch_lookup_returns_only_known_senders_of_the_group(): void
+    {
+        $this->postJson('/api/contacts/lookup-many', ['emails' => ['JAN@xyz.pl', 'nieznany@x.pl', $this->foreignContact->email]])
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.email', 'jan@xyz.pl');
+
+        $this->postJson('/api/contacts/lookup-many', ['emails' => ['nie-email']])->assertJsonValidationErrors('emails.0');
+    }
+
     public function test_contacts_filters_categories_and_team(): void
     {
         $vip = $this->user->group->contactCategories()->where('slug', 'vip')->first();

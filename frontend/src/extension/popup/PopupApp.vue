@@ -38,12 +38,18 @@
 <script setup>
 import { formatDateTime } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
-import { useCrmSession } from '@/crm/legacy/useCrmSession.js'
+import { onMounted } from 'vue'
+import { initLocale } from '@/shared/lib/i18n.js'
+import { useAuthStore } from '@/crm/stores/auth.js'
 import Avatar from '@/shared/components/Avatar.vue'
 import LanguageSwitch from '@/shared/components/LanguageSwitch.vue'
 import LoginForm from '@/crm/components/LoginForm.vue'
 import Spinner from '@/shared/components/Spinner.vue'
 
-// auth.init() (via useCrmSession) also refreshes account + license status from the server.
-const { auth } = useCrmSession()
+// auth.init() also refreshes account + license status from the server.
+const auth = useAuthStore()
+onMounted(() => {
+  initLocale()
+  auth.init()
+})
 </script>

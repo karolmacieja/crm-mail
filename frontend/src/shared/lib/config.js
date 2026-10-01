@@ -10,7 +10,7 @@ export const AUTH_STORAGE_KEY = 'gcrm.auth'
 export const LOCALE_STORAGE_KEY = 'gcrm.locale'
 
 /** InboxSDK custom route id for the full-page dashboard. */
-export const DASHBOARD_ROUTE_ID = 'crm-dashboard'
+export const DASHBOARD_ROUTE_ID = 'gastroflowx'
 
 export const REQUEST_TIMEOUT_MS = 20_000
 

@@ -48,6 +48,7 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
         Route::get('/categories', [ContactCategoryController::class, 'index'])->name('categories.index');
 
         Route::get('/contacts/lookup', [ContactController::class, 'lookup'])->name('contacts.lookup');
+        Route::post('/contacts/lookup-many', [ContactController::class, 'lookupMany'])->name('contacts.lookup-many');
         Route::apiResource('contacts', ContactController::class)->whereNumber('contact');
 
         Route::prefix('contacts/{contact}')->whereNumber('contact')->name('contacts.')->group(function () {

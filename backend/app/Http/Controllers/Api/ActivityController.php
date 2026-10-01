@@ -18,6 +18,8 @@ use Illuminate\Validation\Rule;
  */
 class ActivityController extends Controller
 {
+    private const THREAD_PLACEHOLDER = 'thread:';
+
     public function index(Request $request, Contact $contact): AnonymousResourceCollection
     {
         $validated = $request->validate([
@@ -52,13 +54,40 @@ class ActivityController extends Controller
      */
     public function storeEmail(StoreEmailActivityRequest $request, Contact $contact): JsonResponse
     {
-        $existing = $contact->timeline()
-            ->where('type', ActivityType::Email)
-            ->where('meta->message_id', $request->validated('message_id'))
-            ->first();
+        $messageId = $request->validated('message_id');
+        $threadId = $request->validated('thread_id');
+        $emails = fn () => $contact->timeline()->where('type', ActivityType::Email);
 
-        if ($existing !== null) {
+        // 1. Same Gmail message already logged.
+        if ($existing = $emails()->where('meta->message_id', $messageId)->first()) {
             return (new ActivityResource($existing))->response()->setStatusCode(200);
+        }
+
+        // Gmail's inbox list only exposes thread ids, so the dashboard logs
+        // "thread:<id>" placeholders; the thread view knows the real message id.
+        $isPlaceholder = str_starts_with($messageId, self::THREAD_PLACEHOLDER);
+
+        if ($threadId !== null) {
+            // 2. A placeholder for a thread that is already on the timeline adds nothing.
+            if ($isPlaceholder && ($existing = $emails()->where('meta->thread_id', $threadId)->first())) {
+                return (new ActivityResource($existing))->response()->setStatusCode(200);
+            }
+
+            // 3. The real message replaces the thread placeholder instead of duplicating it.
+            $placeholder = $isPlaceholder ? null : $emails()->where('meta->message_id', self::THREAD_PLACEHOLDER.$threadId)->first();
+            if ($placeholder !== null) {
+                $placeholder->update([
+                    'title' => $request->validated('subject') ?? $placeholder->title,
+                    'body' => $request->validated('snippet') ?? $placeholder->body,
+                    'meta' => array_merge($placeholder->meta ?? [], array_filter([
+                        'message_id' => $messageId,
+                        'from' => $request->validated('from'),
+                        'direction' => $request->validated('direction'),
+                    ])),
+                ]);
+
+                return (new ActivityResource($placeholder))->response()->setStatusCode(200);
+            }
         }
 
         $activity = Activity::recordEmail($contact, $request->validated(), $request->user());

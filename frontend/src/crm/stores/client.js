@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { api, toApiError } from '@/crm/api.js'
+import { useInboxStore } from './inbox.js'
 
 /**
  * The client / email currently in focus.
@@ -39,11 +40,14 @@ export const useClientStore = defineStore('client', () => {
 
   // ------------------------------------------------------------------ focus
 
-  /** Dashboard / Gmail: an email was clicked. Opens the right sidebar. */
-  async function openEmail(message) {
+  /**
+   * Dashboard / Gmail: an email was clicked. Opens the right sidebar, except
+   * in Gmail's own thread panel (sidebar: false), which renders the card itself.
+   */
+  async function openEmail(message, { sidebar = true } = {}) {
     const id = ++focusId
     context.value = { source: 'email', ...message, email: String(message.email).trim().toLowerCase() }
-    isSidebarOpen.value = true
+    isSidebarOpen.value = sidebar
     contact.value = null
     status.value = 'loading'
     error.value = null
@@ -103,7 +107,7 @@ export const useClientStore = defineStore('client', () => {
 
   async function reload() {
     if (contact.value) return openContact(contact.value.id, { sidebar: isSidebarOpen.value })
-    if (context.value?.source === 'email') return openEmail(context.value)
+    if (context.value?.source === 'email') return openEmail(context.value, { sidebar: isSidebarOpen.value })
   }
 
   // ---------------------------------------------------------------- contact
@@ -119,6 +123,7 @@ export const useClientStore = defineStore('client', () => {
         ...payload,
       }),
     )
+    useInboxStore().rememberSender(data.data)
     if (id !== focusId) return data.data
 
     contact.value = data.data
@@ -131,11 +136,13 @@ export const useClientStore = defineStore('client', () => {
   async function updateContact(patch) {
     const { data } = await call(() => api.patch(`/contacts/${contact.value.id}`, patch))
     mergeContact(data.data)
+    useInboxStore().rememberSender(contact.value)
     return data.data
   }
 
   async function deleteContact() {
     await call(() => api.delete(`/contacts/${contact.value.id}`))
+    useInboxStore().rememberSender(null, { removed: true, email: contact.value.email })
     contact.value = null
     status.value = context.value?.source === 'email' ? 'not_found' : 'idle'
     resetTimeline()
@@ -222,33 +229,6 @@ export const useClientStore = defineStore('client', () => {
   }
 
   // ------------------------------------------------------ tasks & reminders
-
-  async function addTask(payload) {
-    const { data } = await call(() =>
-      api.post('/tasks', {
-        contact_id: contact.value.id,
-        source_email_id: context.value?.messageId ?? null,
-        source_email_subject: context.value?.subject ?? null,
-        ...payload,
-      }),
-    )
-    syncTask(data.data)
-    return data.data
-  }
-
-  async function addReminder(payload) {
-    const { data } = await call(() =>
-      api.post('/reminders', {
-        contact_id: contact.value.id,
-        type: context.value?.messageId ? 'email' : 'general',
-        source_email_id: context.value?.messageId ?? null,
-        source_email_subject: context.value?.subject ?? null,
-        ...payload,
-      }),
-    )
-    syncReminder(data.data)
-    return data.data
-  }
 
   /** Called by the tasks store after any change so the open profile stays current. */
   function syncTask(task, { removed = false } = {}) {
@@ -346,8 +326,6 @@ export const useClientStore = defineStore('client', () => {
     addNote,
     addReservation,
     updateReservation,
-    addTask,
-    addReminder,
     syncTask,
     syncReminder,
   }

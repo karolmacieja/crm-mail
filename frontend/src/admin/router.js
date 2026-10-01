@@ -1,9 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { installAuthGuard } from '@/shared/router/guards.js'
-import PlaceholderView from '@/shared/views/PlaceholderView.vue'
 import { useAdminAuthStore } from '@/admin/stores/auth.js'
 import AdminLayout from '@/admin/layouts/AdminLayout.vue'
+import DashboardView from '@/admin/views/DashboardView.vue'
+import GroupDetailView from '@/admin/views/GroupDetailView.vue'
+import GroupsView from '@/admin/views/GroupsView.vue'
+import LicensesView from '@/admin/views/LicensesView.vue'
 import LoginView from '@/admin/views/LoginView.vue'
+import UsersView from '@/admin/views/UsersView.vue'
 
 /**
  * Master Admin web panel (browser, e.g. https://app.domena.pl).
@@ -16,17 +20,17 @@ export const adminRoutes = [
     component: AdminLayout,
     meta: { requiresAuth: true, roles: ['master_admin'] },
     children: [
-      { path: '', name: 'admin.dashboard', component: PlaceholderView, meta: { title: 'nav.adminDashboard' } },
-      { path: 'groups', name: 'admin.groups', component: PlaceholderView, meta: { title: 'nav.groups' } },
+      { path: '', name: 'admin.dashboard', component: DashboardView, meta: { title: 'nav.adminDashboard' } },
+      { path: 'groups', name: 'admin.groups', component: GroupsView, meta: { title: 'nav.groups' } },
       {
         path: 'groups/:id(\\d+)',
         name: 'admin.groups.show',
-        component: PlaceholderView,
+        component: GroupDetailView,
         props: (route) => ({ id: Number(route.params.id) }),
         meta: { title: 'nav.groups' },
       },
-      { path: 'users', name: 'admin.users', component: PlaceholderView, meta: { title: 'nav.users' } },
-      { path: 'licenses', name: 'admin.licenses', component: PlaceholderView, meta: { title: 'nav.licenses' } },
+      { path: 'users', name: 'admin.users', component: UsersView, meta: { title: 'nav.users' } },
+      { path: 'licenses', name: 'admin.licenses', component: LicensesView, meta: { title: 'nav.licenses' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: { name: 'admin.dashboard' } },
