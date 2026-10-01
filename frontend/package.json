@@ -6,7 +6,7 @@
   "scripts": {
     "dev:extension": "vite --config vite.config.js",
     "build:extension": "vite build --config vite.config.js",
-    "zip:extension": "vite build --config vite.config.js && cd dist && zip -r ../gastroflowx-extension.zip .",
+    "zip:extension": "vite build --config vite.config.js && node scripts/zip-extension.mjs",
     "dev:admin": "vite --config vite.admin.config.js",
     "build:admin": "vite build --config vite.admin.config.js",
     "build": "npm run build:extension && npm run build:admin",

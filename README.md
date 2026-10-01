@@ -304,8 +304,8 @@ npm run zip:extension        # tworzy gastroflowx-extension.zip
 Dystrybucja – jedna z dwóch dróg:
 
 * **Chrome Web Store jako „Niepubliczne” (zalecane).** Wgrywasz ZIP, osoby instalują rozszerzenie z linku,
-  aktualizacje przychodzą same, a ID jest stałe. Konto dewelopera kosztuje jednorazowo 5 USD. Klucz
-  publiczny z panelu Store (Pakiet → Klucz publiczny) wpisz jako `VITE_EXTENSION_KEY`.
+  aktualizacje przychodzą same, a ID jest stałe. Konto dewelopera kosztuje jednorazowo 5 USD. Instrukcja
+  krok po kroku: [Publikacja w Chrome Web Store](#publikacja-w-chrome-web-store-niepubliczne).
 * **Ręcznie.** Każda osoba rozpakowuje ZIP i wczytuje go w `chrome://extensions` (tryb dewelopera →
   „Załaduj rozpakowane”). Żeby ID było takie samo na każdym komputerze, wygeneruj klucz raz:
 
@@ -323,6 +323,39 @@ php artisan config:cache
 ```
 
 Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID nie jest dopuszczane.
+
+### Publikacja w Chrome Web Store (niepubliczne)
+
+1. **Konto dewelopera:** wejdź na <https://chrome.google.com/webstore/devconsole>, zaloguj się kontem Google
+   (wymagana weryfikacja dwuetapowa), zaakceptuj umowę i zapłać jednorazowo 5 USD.
+2. **Paczka:** w `frontend/.env` ustaw `VITE_API_BASE_URL=https://api.domena.pl/api` i `VITE_INBOXSDK_APP_ID`,
+   potem `npm run zip:extension` → `frontend/gastroflowx-extension.zip`. Skrypt działa też na Windows i sam usuwa
+   z manifestu pole `key` (Web Store go nie przyjmuje).
+3. **Nowy element:** w panelu *Items → New item* wgraj ZIP. Od razu dostajesz **ID rozszerzenia** (32 litery).
+4. **Karta w sklepie (Store listing):** opis, kategoria (np. *Productivity*), ikona 128×128 (jest w paczce),
+   co najmniej jeden zrzut ekranu 1280×800 lub 640×400, mała grafika promocyjna 440×280.
+5. **Prywatność (Privacy):**
+   * *Single purpose:* „CRM dla restauracji w Gmailu: kontakty, zadania i przypomnienia przy wiadomościach”.
+   * Uzasadnienie uprawnień: `storage` (logowanie i ustawienia), `scripting` (InboxSDK w Gmailu),
+     hosty `mail.google.com` (panel w Gmailu) i `api.domena.pl` (Twój serwer); jeśli używasz Google:
+     `identity` + `googleapis.com` (historia maili i kalendarz).
+   * *Remote code:* „No” – cały kod jest w paczce.
+   * Dane: zaznacz *Personally identifiable information*, *Personal communications* i *Authentication
+     information*; potwierdź, że nie sprzedajesz danych.
+   * **Polityka prywatności (URL)** – wymagana, np. strona `https://domena.pl/polityka-prywatnosci`.
+6. **Dystrybucja (Distribution):** *Visibility* → **Unlisted** (niepubliczne – instalacja tylko z linku).
+   Alternatywa: *Private* – tylko dla wskazanych testerów lub Twojej domeny Google Workspace.
+7. **Submit for review.** Weryfikacja trwa zwykle od kilku godzin do kilku dni. Potem link do instalacji
+   jest w panelu (*Store listing → View in store*).
+8. **Serwer:** ID z kroku 3 wpisz w `backend/.env` → `CHROME_EXTENSION_IDS=…`, potem
+   `php artisan config:cache`.
+
+**Aktualizacja:** podnieś `version` w `frontend/package.json` (np. `1.0.1`), `npm run zip:extension`, w panelu
+*Package → Upload new package*, *Submit for review*. Chrome zaktualizuje rozszerzenie u wszystkich sam.
+
+**Stałe ID lokalnie (opcjonalnie):** żeby rozszerzenie wczytane z folderu `dist` (do testów) miało to samo ID co
+w sklepie, w panelu *Package → View public key* skopiuj klucz, usuń linie `-----BEGIN/END PUBLIC KEY-----`
+i znaki nowej linii, a wynik wpisz w `VITE_EXTENSION_KEY`. Klucz trafia tylko do buildów lokalnych.
 
 ### 9. Google (opcjonalnie)
 
@@ -473,7 +506,8 @@ Na osi czasu jest też przycisk „Wczytaj historię z Gmaila” z postępem i d
    testowych) ze scope'ami `gmail.readonly` i `calendar.events`.
 3. Utwórz identyfikator klienta OAuth typu **Rozszerzenie Chrome** i wpisz ID rozszerzenia
    (z `chrome://extensions`). Aby ID się nie zmieniało (np. na innym komputerze), ustaw
-   `VITE_EXTENSION_KEY` (klucz publiczny z panelu Chrome Web Store) – trafi do pola `key` manifestu.
+   `VITE_EXTENSION_KEY` (klucz publiczny z panelu Chrome Web Store) – trafi do pola `key` manifestu
+   buildów lokalnych (`npm run zip:extension` usuwa je z paczki dla sklepu).
 4. W `frontend/.env` dopisz `VITE_GOOGLE_OAUTH_CLIENT_ID=…apps.googleusercontent.com`, zbuduj ponownie
    rozszerzenie i przeładuj je.
 5. W Ustawienia → Kalendarz kliknij „Połącz z Google”.
