@@ -155,6 +155,8 @@ wszystkich ścieżek na `index.html` (SPA) – pełna instrukcja w sekcji [Wdro�
 ## Wdrożenie na własny serwer (produkcja)
 
 Instrukcja dla serwera VPS z **Ubuntu 24.04**, Nginx i PHP 8.3. Zamień `domena.pl` na swoją domenę.
+Masz hosting współdzielony z panelem DirectAdmin (np. Seohost.pl)? Przeczytaj też
+[wariant dla DirectAdmin](#wariant-hosting-współdzielony-z-directadmin-np-seohostpl).
 
 ### 0. Domeny
 
@@ -340,6 +342,62 @@ cd backend && composer install --no-dev --optimize-autoloader \
 cd ../frontend && npm ci && npm run build:admin
 # rozszerzenie: npm run zip:extension i nowa wersja w Web Store albo rozesłanie ZIP-a
 ```
+
+### Wariant: hosting współdzielony z DirectAdmin (np. Seohost.pl)
+
+Na hostingu współdzielonym nie masz `sudo`, `apt`, Nginx ani Certbota. Kroki 1, 5, 6 i 7 robisz w panelu
+DirectAdmin, a resztę w terminalu SSH (np. *Terminal* w DirectAdmin). Serwer to zwykle LiteSpeed lub Apache:
+oba czytają pliki `.htaccess`, a Laravel ma już własny (z przekazywaniem nagłówka `Authorization`).
+W przykładach `LOGIN` to login konta hostingowego.
+
+1. **PHP:** w DirectAdmin wybierz PHP **8.2 lub 8.3** (wybór wersji PHP) z rozszerzeniami `pdo_mysql`,
+   `mbstring`, `intl`, `bcmath`, `zip`, `curl`. W SSH sprawdź `php -v`. Jeśli konsola ma inną wersję niż strony,
+   używaj pełnej ścieżki, np. `/opt/alt/php83/usr/bin/php` (CloudLinux).
+2. **Subdomeny:** w zarządzaniu subdomenami utwórz `api` i `app`. Powstaną foldery
+   `~/domains/domena.pl/public_html/api` i `~/domains/domena.pl/public_html/app`.
+3. **Baza:** w zarządzaniu MySQL utwórz bazę i użytkownika. Obie nazwy dostaną prefiks loginu, np.
+   `LOGIN_gastro`, i właśnie takie wpisujesz do `.env`.
+4. **Kod – zawsze poza `public_html`** (inaczej plik `.env` byłby dostępny z internetu):
+
+   ```bash
+   cd ~/domains/domena.pl
+   git clone -b claude/gmail-crm-extension-laravel-gsketl https://github.com/karolmacieja/crm-mail.git gastroflowx
+   cd gastroflowx/backend
+   composer install --no-dev --optimize-autoloader
+   cp .env.example .env && php artisan key:generate
+   # uzupełnij .env jak w kroku 3 powyżej (DB_DATABASE / DB_USERNAME z prefiksem)
+   php artisan migrate --force
+   php artisan crm:license twoj@email.pl --admin
+   php artisan config:cache && php artisan route:cache
+   ```
+
+   Komendy `sudo` i `chown` pomijasz – pliki należą do Twojego konta.
+5. **Subdomena API → `backend/public`** (zamiast konfiguracji Nginx):
+
+   ```bash
+   cd ~/domains/domena.pl/public_html
+   rm -rf api
+   ln -s ../gastroflowx/backend/public api
+   ```
+
+   Test: `https://api.domena.pl/up` zwraca 200.
+6. **Panel admina:** zbuduj go na swoim komputerze (`VITE_API_BASE_URL=https://api.domena.pl/api` w
+   `frontend/.env`, potem `npm run build:admin`). Całą zawartość `frontend/dist-admin/` – razem z ukrytym
+   plikiem `.htaccess` – wgraj do `public_html/app` przez FTP lub menedżer plików. `.htaccess` kieruje
+   wszystkie podstrony panelu do `index.html`, więc odświeżanie strony działa.
+7. **SSL:** w DirectAdmin otwórz certyfikaty SSL, wystaw Let's Encrypt dla `api.domena.pl` i `app.domena.pl`,
+   a potem włącz wymuszanie HTTPS.
+8. **Cron:** w DirectAdmin → Zadania Cron dodaj zadanie co minutę (ścieżkę do PHP sprawdzisz komendą `which php`):
+
+   ```
+   * * * * * cd /home/LOGIN/domains/domena.pl/gastroflowx/backend && php artisan schedule:run >/dev/null 2>&1
+   ```
+
+9. **Rozszerzenie i Google:** bez zmian – kroki 8 i 9 powyżej.
+
+Aktualizacje: w SSH `git pull`, potem w `backend/` `composer install --no-dev --optimize-autoloader`,
+`php artisan migrate --force` i `php artisan config:cache && php artisan route:cache`. Panel admina zbuduj
+u siebie i wgraj ponownie.
 
 ## Język interfejsu
 

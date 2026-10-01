@@ -21,7 +21,8 @@ export default defineConfig(({ mode }) => {
   return {
     root: resolve(root, 'src/admin'),
     envDir: root,
-    publicDir: false,
+    // .htaccess for Apache/LiteSpeed hosting (copied into dist-admin).
+    publicDir: resolve(root, 'public-admin'),
     plugins: [vue()],
     resolve: { alias: { '@': resolve(root, 'src') } },
     css: { postcss: resolve(root, 'postcss.config.js') },
