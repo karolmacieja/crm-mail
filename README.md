@@ -395,6 +395,20 @@ W przykładach `LOGIN` to login konta hostingowego.
 
 9. **Rozszerzenie i Google:** bez zmian – kroki 8 i 9 powyżej.
 
+**Panel pokazuje „Sesja wygasła” przy logowaniu** (błąd 419 – ochrona CSRF): przeglądarka nie może odczytać
+ciasteczka `XSRF-TOKEN` ustawionego przez API. Sprawdź w `backend/.env`:
+
+```ini
+SESSION_DOMAIN=.domena.pl            # z kropką na początku; nie może zostać SESSION_DOMAIN=null
+SESSION_SECURE_COOKIE=true
+SANCTUM_STATEFUL_DOMAINS=app.domena.pl
+WEB_PANEL_URL=https://app.domena.pl
+```
+
+a potem **zawsze** `php artisan config:clear && php artisan config:cache` (Laravel czyta zapamiętaną konfigurację,
+nie plik `.env`). Wyczyść ciasteczka obu subdomen w przeglądarce i zaloguj się ponownie. Podgląd aktualnych
+wartości: `php artisan config:show session` i `php artisan config:show sanctum`.
+
 Aktualizacje: w SSH `git pull`, potem w `backend/` `composer install --no-dev --optimize-autoloader`,
 `php artisan migrate --force` i `php artisan config:cache && php artisan route:cache`. Panel admina zbuduj
 u siebie i wgraj ponownie.
