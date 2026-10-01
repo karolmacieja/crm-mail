@@ -28,10 +28,13 @@ return new class extends Migration
         });
         DB::table('tasks')->whereNull('group_id')->delete();
 
+        // Deleting a staff member must not delete the group's data. The foreign key
+        // goes first: MySQL won't drop the index that backs it.
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+        });
         Schema::table('tasks', function (Blueprint $table) {
             $table->dropIndex(['user_id', 'is_completed', 'due_date']);
-            // Deleting a staff member must not delete the group's data.
-            $table->dropForeign(['user_id']);
         });
 
         Schema::table('tasks', function (Blueprint $table) {
@@ -47,12 +50,15 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Foreign keys first: MySQL won't drop the indexes that back them.
+        Schema::table('tasks', function (Blueprint $table) {
+            $table->dropForeign(['assigned_to']);
+            $table->dropForeign(['group_id']);
+        });
         Schema::table('tasks', function (Blueprint $table) {
             $table->dropIndex(['group_id', 'is_completed', 'due_date']);
             $table->dropIndex(['group_id', 'type']);
-            $table->dropConstrainedForeignId('assigned_to');
-            $table->dropConstrainedForeignId('group_id');
-            $table->dropColumn(['description', 'type', 'priority', 'source_email_id', 'source_email_subject']);
+            $table->dropColumn(['assigned_to', 'group_id', 'description', 'type', 'priority', 'source_email_id', 'source_email_subject']);
             $table->index(['user_id', 'is_completed', 'due_date']);
         });
     }

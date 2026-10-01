@@ -96,7 +96,7 @@ class CalendarAndHistoryTest extends TestCase
 
     public function test_long_lines_are_folded(): void
     {
-        $long = str_repeat('Bardzo długi tytuł zadania ', 10);
+        $long = str_repeat('Bardzo długi tytuł zadania ', 8); // < 255 znaków (limit kolumny w MySQL), ale >> 75 oktetów
         Task::factory()->create(['contact_id' => $this->contact->id, 'group_id' => $this->user->group_id, 'user_id' => $this->user->id, 'title' => $long, 'due_date' => now()->addDay()]);
         $ics = $this->get(parse_url($this->postJson('/api/me/calendar-feed')->json('data.url'), PHP_URL_PATH))->getContent();
 

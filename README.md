@@ -191,8 +191,8 @@ CREATE USER 'gastroflowx'@'localhost' IDENTIFIED BY 'MOCNE_HASLO';
 GRANT ALL ON gastroflowx.* TO 'gastroflowx'@'localhost'; FLUSH PRIVILEGES;"
 ```
 
-> Testy automatyczne działają na SQLite. Migracje są standardowe, ale pierwszą migrację na MariaDB/MySQL
-> sprawdź na serwerze. W małej skali wystarczy też SQLite (`DB_CONNECTION=sqlite`, bez tworzenia bazy w MariaDB).
+> Migracje i testy są sprawdzone na SQLite i MariaDB 10.11 (MySQL 8 działa tak samo). W małej skali wystarczy
+> też SQLite (`DB_CONNECTION=sqlite`, bez tworzenia bazy w MariaDB).
 
 ### 3. Plik `backend/.env`
 

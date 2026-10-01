@@ -29,11 +29,14 @@ return new class extends Migration
         });
         DB::table('contacts')->whereNull('group_id')->delete(); // orphans of master admins (none expected)
 
+        // Deleting a staff member must not delete the group's data. The foreign key
+        // goes first: MySQL won't drop the indexes that back it.
+        Schema::table('contacts', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+        });
         Schema::table('contacts', function (Blueprint $table) {
             $table->dropUnique(['user_id', 'email']);
             $table->dropIndex(['user_id', 'status']);
-            // Deleting a staff member must not delete the group's data.
-            $table->dropForeign(['user_id']);
         });
 
         Schema::table('contacts', function (Blueprint $table) {
@@ -50,13 +53,16 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Foreign keys first: MySQL won't drop the indexes that back them.
+        Schema::table('contacts', function (Blueprint $table) {
+            $table->dropForeign(['category_id']);
+            $table->dropForeign(['group_id']);
+        });
         Schema::table('contacts', function (Blueprint $table) {
             $table->dropUnique(['group_id', 'email']);
             $table->dropIndex(['group_id', 'is_client', 'category_id']);
             $table->dropIndex(['group_id', 'last_activity_at']);
-            $table->dropConstrainedForeignId('category_id');
-            $table->dropConstrainedForeignId('group_id');
-            $table->dropColumn(['company', 'is_client', 'last_activity_at']);
+            $table->dropColumn(['category_id', 'group_id', 'company', 'is_client', 'last_activity_at']);
             $table->unique(['user_id', 'email']);
             $table->index(['user_id', 'status']);
         });

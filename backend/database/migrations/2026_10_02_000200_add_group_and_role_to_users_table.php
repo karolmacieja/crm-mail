@@ -24,10 +24,13 @@ return new class extends Migration
     {
         DB::table('users')->where('role', 'master_admin')->update(['is_admin' => true]);
 
+        // Foreign key first: MySQL won't drop the index that backs it.
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['group_id']);
+        });
         Schema::table('users', function (Blueprint $table) {
             $table->dropIndex(['group_id', 'role']);
-            $table->dropConstrainedForeignId('group_id');
-            $table->dropColumn('role');
+            $table->dropColumn(['group_id', 'role']);
         });
     }
 };
