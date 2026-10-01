@@ -25,6 +25,7 @@
 
       <template v-else-if="client.contact">
         <ContactDetails class="border-b border-gray-100" :class="pad" />
+        <NotesPanel class="border-b border-gray-100" :class="pad" />
         <QuickNote class="border-b border-gray-100 bg-blue-50/20" :class="pad" />
         <ReservationsPanel class="border-b border-gray-100 bg-orange-50/30" :class="pad" />
         <ClientWork class="border-b border-gray-100" :class="pad" />
@@ -50,6 +51,7 @@ import ClientHeader from './ClientHeader.vue'
 import ClientWork from './ClientWork.vue'
 import ContactDetails from './ContactDetails.vue'
 import NewContactForm from './NewContactForm.vue'
+import NotesPanel from './NotesPanel.vue'
 import QuickNote from './QuickNote.vue'
 import ReservationsPanel from './ReservationsPanel.vue'
 import Timeline from './Timeline.vue'

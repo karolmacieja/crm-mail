@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { api, toApiError } from '@/crm/api.js'
+import { useGoogleStore } from './google.js'
 import { useInboxStore } from './inbox.js'
 
 /**
@@ -63,6 +64,7 @@ export const useClientStore = defineStore('client', () => {
       if (data.data) {
         await logContextEmail(id)
         await loadTimeline({ reset: true })
+        importHistoryInBackground(id)
       }
     } catch (e) {
       if (id === focusId) setError(e)
@@ -85,10 +87,28 @@ export const useClientStore = defineStore('client', () => {
       contact.value = data.data
       status.value = 'ready'
       await loadTimeline({ reset: true })
+      importHistoryInBackground(id)
     } catch (e) {
       if (id === focusId) setError(e)
     }
   }
+
+  /**
+   * Past Gmail correspondence: full import the first time a contact is
+   * opened or created, afterwards only new emails (see useGoogleStore).
+   */
+  async function importHistoryInBackground(id, { manual = false } = {}) {
+    const google = useGoogleStore()
+    const target = contact.value
+    if (!target || !google.enabled) return
+    const result = manual ? await google.importHistory(target) : await google.maybeAutoImport(target)
+    if (!result || id !== focusId || contact.value?.id !== target.id) return
+    contact.value.email_history_synced_at = result.synced_at
+    if (result.imported || result.updated) await loadTimeline({ reset: true })
+  }
+
+  /** "Wczytaj historię z Gmaila" button on the timeline. */
+  const importHistory = () => importHistoryInBackground(focusId, { manual: true })
 
   function closeSidebar() {
     isSidebarOpen.value = false
@@ -130,6 +150,7 @@ export const useClientStore = defineStore('client', () => {
     status.value = 'ready'
     await logContextEmail(id)
     await loadTimeline({ reset: true })
+    importHistoryInBackground(id)
     return data.data
   }
 
@@ -278,7 +299,32 @@ export const useClientStore = defineStore('client', () => {
       : others
   }
 
+  /** Edit / delete own notes; keeps the notes list under "Dane kontaktowe" and the timeline in sync. */
+  async function updateNote(noteId, body) {
+    const { data } = await call(() => api.patch(`/contacts/${contact.value.id}/activities/${noteId}`, { body }))
+    const replace = (list) => list.map((a) => (a.id === noteId ? data.data : a))
+    contact.value.recent_notes = replace(contact.value.recent_notes ?? [])
+    timeline.items = replace(timeline.items)
+    return data.data
+  }
+
+  async function deleteNote(noteId) {
+    await call(() => api.delete(`/contacts/${contact.value.id}/activities/${noteId}`))
+    timeline.items = timeline.items.filter((a) => a.id !== noteId)
+    const wasRecent = (contact.value.recent_notes ?? []).some((a) => a.id === noteId)
+    contact.value.notes_count = Math.max(0, (contact.value.notes_count ?? 1) - 1)
+    if (wasRecent) {
+      // Refill the short list from the server (an older note moves up).
+      const { data } = await api.get(`/contacts/${contact.value.id}/activities`, { params: { type: 'note', per_page: 3 } })
+      contact.value.recent_notes = data.data
+    }
+  }
+
   function prependActivity(activity) {
+    if (activity.type === 'note') {
+      contact.value.recent_notes = [activity, ...(contact.value.recent_notes ?? [])].slice(0, 3)
+      contact.value.notes_count = (contact.value.notes_count ?? 0) + 1
+    }
     timeline.items = [activity, ...timeline.items]
     contact.value.last_activity_at = activity.occurred_at
     contact.value.last_activity = { type: activity.type, event: activity.event, occurred_at: activity.occurred_at }
@@ -324,6 +370,9 @@ export const useClientStore = defineStore('client', () => {
     removeCustomField,
     loadTimeline,
     addNote,
+    updateNote,
+    deleteNote,
+    importHistory,
     addReservation,
     updateReservation,
     syncTask,

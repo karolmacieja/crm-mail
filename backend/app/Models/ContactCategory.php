@@ -37,7 +37,15 @@ class ContactCategory extends Model
     protected static function booted(): void
     {
         static::creating(function (ContactCategory $category) {
-            $category->slug ??= Str::slug($category->name);
+            if ($category->slug === null) {
+                $base = Str::slug($category->name) ?: 'kategoria';
+                $slug = $base;
+                for ($i = 2; static::query()->forGroup($category->group_id)->where('slug', $slug)->exists(); $i++) {
+                    $slug = "{$base}-{$i}";
+                }
+                $category->slug = $slug;
+            }
+            $category->sort_order ??= (int) static::query()->forGroup($category->group_id)->max('sort_order') + 1;
         });
     }
 

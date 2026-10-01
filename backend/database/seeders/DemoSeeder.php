@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\TaskPriority;
-use App\Enums\TaskType;
 use App\Enums\UserRole;
 use App\Models\Activity;
 use App\Models\Group;
@@ -110,7 +109,7 @@ class DemoSeeder extends Seeder
         ]);
         $manager->tasks()->create([
             'contact_id' => $jan->id, 'title' => 'Potwierdzić menu na Wigilię B2B',
-            'type' => TaskType::Offer, 'priority' => TaskPriority::High, 'due_date' => now()->addHours(3),
+            'type' => 'offer', 'priority' => TaskPriority::High, 'due_date' => now()->addHours(3),
             'source_email_id' => 'demo-msg-jan-1', 'source_email_subject' => 'Zapytanie o wigilię firmową na 20 osób',
         ]);
 
@@ -141,24 +140,24 @@ class DemoSeeder extends Seeder
             'remind_at' => now()->addDays(2),
         ]);
         $waiter->tasks()->create([
-            'contact_id' => $anna->id, 'title' => 'Wysłać menu wegańskie w PDF', 'type' => TaskType::FollowUp,
+            'contact_id' => $anna->id, 'title' => 'Wysłać menu wegańskie w PDF', 'type' => 'follow_up',
             'due_date' => now()->addHours(2), 'source_email_id' => 'demo-msg-anna-1',
         ]);
         $waiter->tasks()->create([
-            'contact_id' => $anna->id, 'title' => 'Zadzwonić ws. układu stołów', 'type' => TaskType::FollowUp,
+            'contact_id' => $anna->id, 'title' => 'Zadzwonić ws. układu stołów', 'type' => 'follow_up',
             'due_date' => $today->copy()->addDay()->setTime(12, 0)->utc(),
         ]);
 
         // --- Marek Zając: plain contact (address book only) ------------------------
         $marek = $manager->contacts()->create(['email' => 'marek.zajac@example.com', 'name' => 'Marek Zając', 'status' => 'lead']);
         $manager->tasks()->create([
-            'contact_id' => $marek->id, 'title' => 'Wysłać odpowiedź z cennikiem', 'type' => TaskType::Offer,
+            'contact_id' => $marek->id, 'title' => 'Wysłać odpowiedź z cennikiem', 'type' => 'offer',
             'due_date' => $today->copy()->addDays(2)->setTime(10, 0)->utc(), 'source_email_subject' => 'Cennik sali',
         ]);
 
         // --- Internal task (no contact) ---------------------------------------------
         $manager->tasks()->create([
-            'title' => 'Rozesłać grafik kelnerów', 'type' => TaskType::Internal,
+            'title' => 'Rozesłać grafik kelnerów', 'type' => 'internal',
             'due_date' => $today->copy()->addDays(5)->setTime(9, 0)->utc(), 'assigned_to' => $waiter->id,
         ]);
     }

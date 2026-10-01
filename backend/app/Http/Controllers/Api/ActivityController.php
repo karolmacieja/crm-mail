@@ -11,6 +11,8 @@ use App\Models\Contact;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -95,18 +97,99 @@ class ActivityController extends Controller
         return (new ActivityResource($activity))->response()->setStatusCode(201);
     }
 
+    /**
+     * Import past Gmail correspondence of a contact (read by the extension
+     * through the Gmail API). Duplicates are skipped; inbox placeholders
+     * ("thread:<id>") are upgraded to the real message.
+     */
+    public function importEmails(Request $request, Contact $contact): JsonResponse
+    {
+        $data = $request->validate([
+            'emails' => ['present', 'array', 'max:500'],
+            'emails.*.message_id' => ['required', 'string', 'max:255'],
+            'emails.*.thread_id' => ['nullable', 'string', 'max:255'],
+            'emails.*.subject' => ['nullable', 'string', 'max:255'],
+            'emails.*.snippet' => ['nullable', 'string', 'max:2000'],
+            'emails.*.from' => ['nullable', 'string', 'max:255'],
+            'emails.*.direction' => ['sometimes', 'in:in,out'],
+            'emails.*.sent_at' => ['nullable', 'date'],
+            'complete' => ['sometimes', 'boolean'],
+        ]);
+
+        $existing = $contact->timeline()->where('type', ActivityType::Email)->get(['id', 'meta']);
+        $known = $existing->map(fn (Activity $a) => $a->meta['message_id'] ?? null)->filter()->flip();
+        $placeholders = $existing->filter(fn (Activity $a) => str_starts_with($a->meta['message_id'] ?? '', self::THREAD_PLACEHOLDER))
+            ->keyBy(fn (Activity $a) => substr($a->meta['message_id'], strlen(self::THREAD_PLACEHOLDER)));
+
+        $imported = $upgraded = $skipped = 0;
+
+        DB::transaction(function () use ($data, $contact, $request, $known, $placeholders, &$imported, &$upgraded, &$skipped) {
+            foreach ($data['emails'] as $email) {
+                if ($known->has($email['message_id'])) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $placeholder = isset($email['thread_id']) ? $placeholders->pull($email['thread_id']) : null;
+                if ($placeholder !== null) {
+                    $placeholder->update([
+                        'title' => $email['subject'] ?? $placeholder->title,
+                        'body' => $email['snippet'] ?? $placeholder->body,
+                        'occurred_at' => isset($email['sent_at']) ? Carbon::parse($email['sent_at']) : $placeholder->occurred_at,
+                        'meta' => array_merge($placeholder->meta ?? [], array_filter([
+                            'message_id' => $email['message_id'],
+                            'from' => $email['from'] ?? null,
+                            'direction' => $email['direction'] ?? null,
+                        ])),
+                    ]);
+                    $upgraded++;
+                } else {
+                    Activity::recordEmail($contact, $email, $request->user());
+                    $imported++;
+                }
+                $known->put($email['message_id'], true);
+            }
+
+            // The extension sends the history in chunks; the last one marks it complete.
+            if ($data['complete'] ?? true) {
+                $contact->forceFill(['email_history_synced_at' => now()])->save();
+            }
+        });
+
+        return response()->json(['data' => [
+            'imported' => $imported,
+            'updated' => $upgraded,
+            'skipped' => $skipped,
+            'email_history_synced_at' => $contact->fresh()->email_history_synced_at?->toIso8601String(),
+        ]]);
+    }
+
+    /** Edit your own note (shown under "Dane kontaktowe" and on the timeline). */
+    public function update(Request $request, Contact $contact, Activity $activity): ActivityResource
+    {
+        $this->authorizeOwnNote($request, $contact, $activity);
+        $activity->update($request->validate(['body' => ['required', 'string', 'max:10000']]));
+
+        return new ActivityResource($activity->load('author:id,name'));
+    }
+
     public function destroy(Request $request, Contact $contact, Activity $activity): JsonResponse
     {
-        // Only your own notes can be deleted; emails and system events are history.
+        $this->authorizeOwnNote($request, $contact, $activity);
+        $activity->delete();
+
+        return response()->json(null, 204);
+    }
+
+    /** Only your own notes can be changed; emails and system events are history. */
+    private function authorizeOwnNote(Request $request, Contact $contact, Activity $activity): void
+    {
         abort_unless(
             $activity->contact_id === $contact->id
                 && $activity->type === ActivityType::Note
                 && $activity->user_id === $request->user()->id,
             403,
         );
-
-        $activity->delete();
-
-        return response()->json(null, 204);
     }
 }

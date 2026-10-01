@@ -18,10 +18,11 @@ class TaskResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id, // created by
             'contact_id' => $this->contact_id,
             'title' => $this->title,
             'description' => $this->description,
-            'type' => $this->type->value,
+            'type' => $this->type,
             'priority' => $this->priority->value,
             'due_date' => $this->due_date?->toIso8601String(),
             'is_completed' => $this->is_completed,
@@ -39,6 +40,8 @@ class TaskResource extends JsonResource
                 'id' => $this->assignee->id,
                 'name' => $this->assignee->name,
             ] : null),
+            // Event in the signed-in person's own Google Calendar (eager-loaded for them only).
+            'calendar_event_id' => $this->whenLoaded('calendarEvents', fn () => $this->calendarEvents->first()?->external_id),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

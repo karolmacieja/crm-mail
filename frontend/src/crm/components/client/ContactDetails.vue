@@ -23,13 +23,13 @@
           <span class="gcrm-label">{{ t('crm.client.category') }}</span>
           <select v-model="form.category_id" class="gcrm-input">
             <option :value="null">—</option>
-            <option v-for="c in contacts.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+            <option v-for="c in settings.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
         <label>
           <span class="gcrm-label">{{ t('contact.status') }}</span>
           <select v-model="form.status" class="gcrm-input">
-            <option v-for="s in CONTACT_STATUSES" :key="s.value" :value="s.value">{{ t(`status.${s.value}`) }}</option>
+            <option v-for="s in settings.statuses" :key="s.key" :value="s.key">{{ s.name }}</option>
           </select>
         </label>
       </div>
@@ -76,6 +76,17 @@
 
     <!-- New custom field -->
     <form v-if="addingField" class="mt-3 space-y-2 rounded-lg border border-dashed border-gray-300 p-3" @submit.prevent="addField">
+      <div v-if="suggestions.length" class="flex flex-wrap gap-1.5">
+        <button
+          v-for="template in suggestions"
+          :key="template.id"
+          type="button"
+          class="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-600 hover:border-primary hover:text-primary"
+          @click="useTemplate(template)"
+        >
+          + {{ template.label }}
+        </button>
+      </div>
       <div class="grid grid-cols-2 gap-2">
         <input v-model.trim="newField.label" class="gcrm-input" :placeholder="t('crm.client.fieldLabel')" required />
         <select v-model="newField.type" class="gcrm-input">
@@ -99,11 +110,10 @@
 <script setup>
 import { computed, defineComponent, h, reactive, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
-import { CONTACT_STATUSES } from '@/shared/lib/config.js'
 import { formatReservation } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import { useClientStore } from '@/crm/stores/client.js'
-import { useContactsStore } from '@/crm/stores/contacts.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const Row = defineComponent({
   props: { icon: String, far: Boolean, label: String },
@@ -120,7 +130,7 @@ const Row = defineComponent({
 })
 
 const client = useClientStore()
-const contacts = useContactsStore()
+const settings = useSettingsStore()
 const contact = computed(() => client.contact)
 
 const editing = ref(false)
@@ -130,7 +140,7 @@ const errors = ref({})
 const form = reactive({})
 
 function startEdit() {
-  contacts.loadCategories()
+  settings.load()
   const c = contact.value
   Object.assign(form, { name: c.name ?? '', email: c.email, phone: c.phone ?? '', company: c.company ?? '', category_id: c.category_id, status: c.status, is_client: c.is_client })
   errors.value = {}
@@ -159,6 +169,17 @@ const newField = reactive({ label: '', type: 'text', value: '' })
 const fieldError = ref('')
 const editingField = ref(null)
 const fieldValue = ref('')
+
+// Templates from Settings → Custom fields that this contact doesn't have yet.
+const suggestions = computed(() => {
+  const existing = new Set((contact.value?.custom_fields ?? []).map((f) => f.label.toLowerCase()))
+  return settings.fieldTemplates.filter((tpl) => !existing.has(tpl.label.toLowerCase()))
+})
+
+function useTemplate(template) {
+  newField.label = template.label
+  newField.type = template.type
+}
 
 const inputType = (type) => ({ number: 'number', date: 'date' })[type] ?? 'text'
 

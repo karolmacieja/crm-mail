@@ -7,12 +7,16 @@ use App\Http\Controllers\Api\Admin\StatsController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Auth\SessionAuthController;
 use App\Http\Controllers\Api\Auth\TokenAuthController;
+use App\Http\Controllers\Api\CalendarEventController;
+use App\Http\Controllers\Api\CalendarFeedController;
 use App\Http\Controllers\Api\ContactCategoryController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ContactCustomFieldController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PreferencesController;
 use App\Http\Controllers\Api\ReminderController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\Settings\DictionaryController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\TeamController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +46,14 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
     Route::get('/auth/me', [TokenAuthController::class, 'me'])->name('auth.me');
     Route::post('/auth/logout', [TokenAuthController::class, 'logout'])->name('auth.logout');
 
+    // Personal settings: also without a valid license (e.g. to switch the calendar feed off).
+    Route::middleware(['tenant', 'throttle:api'])->prefix('me')->group(function () {
+        Route::get('/preferences', [PreferencesController::class, 'show'])->name('preferences.show');
+        Route::patch('/preferences', [PreferencesController::class, 'update'])->name('preferences.update');
+        Route::post('/calendar-feed', [CalendarFeedController::class, 'rotate'])->name('calendar-feed.rotate');
+        Route::delete('/calendar-feed', [CalendarFeedController::class, 'disable'])->name('calendar-feed.disable');
+    });
+
     Route::middleware(['tenant', 'license', 'throttle:api'])->group(function () {
         Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
@@ -59,14 +71,37 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
             Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
             Route::post('/notes', [ActivityController::class, 'storeNote'])->name('notes.store');
             Route::post('/emails', [ActivityController::class, 'storeEmail'])->name('emails.store');
+            Route::post('/emails/import', [ActivityController::class, 'importEmails'])->name('emails.import');
+            Route::patch('/activities/{activity}', [ActivityController::class, 'update'])->whereNumber('activity')->name('activities.update');
             Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->whereNumber('activity')->name('activities.destroy');
         });
 
         Route::apiResource('tasks', TaskController::class)->whereNumber('task');
         Route::apiResource('reminders', ReminderController::class)->whereNumber('reminder');
         Route::apiResource('reservations', ReservationController::class)->whereNumber('reservation');
+
+        // Settings panel: the restaurant's dictionaries + personal preferences.
+        Route::get('/settings', [DictionaryController::class, 'index'])->name('settings.index');
+        Route::prefix('settings/{dictionary}')->where(['dictionary' => 'categories|statuses|task-categories|field-templates'])
+            ->name('settings.')->group(function () {
+                Route::post('/', [DictionaryController::class, 'store'])->name('store');
+                Route::post('/reorder', [DictionaryController::class, 'reorder'])->name('reorder');
+                Route::patch('/{id}', [DictionaryController::class, 'update'])->whereNumber('id')->name('update');
+                Route::delete('/{id}', [DictionaryController::class, 'destroy'])->whereNumber('id')->name('destroy');
+            });
+
+        Route::put('/calendar-events/{type}/{id}', [CalendarEventController::class, 'upsert'])
+            ->where(['type' => 'task|reminder'])->whereNumber('id')->name('calendar-events.upsert');
+        Route::delete('/calendar-events/{type}/{id}', [CalendarEventController::class, 'destroy'])
+            ->where(['type' => 'task|reminder'])->whereNumber('id')->name('calendar-events.destroy');
     });
 });
+
+// Private iCalendar feed (subscribed from Google Calendar / Outlook / Apple Calendar).
+Route::get('/calendar/{token}.ics', [CalendarFeedController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{48}')
+    ->middleware('throttle:60,1')
+    ->name('calendar.feed');
 
 // ---------------------------------------------------------------- B) Web panel
 Route::post('/web/login', [SessionAuthController::class, 'login'])

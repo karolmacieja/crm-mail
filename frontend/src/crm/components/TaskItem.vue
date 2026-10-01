@@ -34,6 +34,7 @@
         </span>
       </p>
     </div>
+    <CalendarLink v-if="task.due_date && !task.is_completed" kind="task" :item="task" class="ml-2" />
     <button type="button" class="ml-2 hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click.prevent="remove">
       <Icon icon="trash" class="text-xs" />
     </button>
@@ -45,6 +46,7 @@ import { computed, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
+import CalendarLink from '@/crm/components/CalendarLink.vue'
 import { useTasksStore } from '@/crm/stores/tasks.js'
 
 const props = defineProps({

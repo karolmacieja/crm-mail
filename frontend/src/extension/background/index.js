@@ -2,6 +2,7 @@
 import '@inboxsdk/core/background.js'
 import { API_BASE_URL, API_MESSAGE_TYPE } from '@/shared/lib/config.js'
 import { clearAuth, getAuth } from '@/extension/storage.js'
+import { registerGoogleHandler } from './google.js'
 
 const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 const FORWARDED_HEADERS = new Set(['accept', 'accept-language', 'content-type', 'x-requested-with'])
@@ -86,3 +87,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return true // keep the message channel open for the async response
 })
+
+registerGoogleHandler()

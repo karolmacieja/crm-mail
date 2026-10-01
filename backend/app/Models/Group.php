@@ -26,6 +26,24 @@ class Group extends Model
         ['name' => 'Indywidualni', 'slug' => 'indywidualni', 'color' => 'green', 'icon' => 'fa-user', 'sort_order' => 3],
     ];
 
+    public const DEFAULT_STATUSES = [
+        ['key' => 'lead', 'name' => 'Lead', 'color' => 'sky', 'sort_order' => 1, 'is_default' => true],
+        ['key' => 'prospect', 'name' => 'Potencjalny klient', 'color' => 'amber', 'sort_order' => 2],
+        ['key' => 'customer', 'name' => 'Klient', 'color' => 'emerald', 'sort_order' => 3],
+        ['key' => 'inactive', 'name' => 'Nieaktywny', 'color' => 'gray', 'sort_order' => 4],
+    ];
+
+    public const DEFAULT_TASK_CATEGORIES = [
+        ['key' => 'follow_up', 'name' => 'Kontakt i Follow-up', 'color' => 'blue', 'icon' => 'phone-volume', 'sort_order' => 1],
+        ['key' => 'offer', 'name' => 'Oferty', 'color' => 'orange', 'icon' => 'file-invoice', 'sort_order' => 2],
+        ['key' => 'internal', 'name' => 'Wewnętrzne (Restauracja)', 'color' => 'gray', 'icon' => 'utensils', 'sort_order' => 3],
+    ];
+
+    public const DEFAULT_FIELD_TEMPLATES = [
+        ['label' => 'Alergie', 'type' => 'text', 'sort_order' => 1],
+        ['label' => 'NIP', 'type' => 'text', 'sort_order' => 2],
+    ];
+
     protected $fillable = [
         'name',
         'slug',
@@ -53,9 +71,19 @@ class Group extends Model
             $group->slug ??= static::uniqueSlug($group->name);
         });
 
+        // Every new restaurant starts with the same editable dictionaries.
         static::created(function (Group $group) {
             foreach (self::DEFAULT_CATEGORIES as $category) {
                 $group->contactCategories()->create($category);
+            }
+            foreach (self::DEFAULT_STATUSES as $status) {
+                $group->contactStatuses()->create($status);
+            }
+            foreach (self::DEFAULT_TASK_CATEGORIES as $category) {
+                $group->taskCategories()->create($category);
+            }
+            foreach (self::DEFAULT_FIELD_TEMPLATES as $template) {
+                $group->customFieldTemplates()->create($template);
             }
         });
     }
@@ -92,6 +120,21 @@ class Group extends Model
     public function contactCategories(): HasMany
     {
         return $this->hasMany(ContactCategory::class)->orderBy('sort_order');
+    }
+
+    public function contactStatuses(): HasMany
+    {
+        return $this->hasMany(ContactStatus::class)->orderBy('sort_order');
+    }
+
+    public function taskCategories(): HasMany
+    {
+        return $this->hasMany(TaskCategory::class)->orderBy('sort_order');
+    }
+
+    public function customFieldTemplates(): HasMany
+    {
+        return $this->hasMany(CustomFieldTemplate::class)->orderBy('sort_order');
     }
 
     public function tasks(): HasMany

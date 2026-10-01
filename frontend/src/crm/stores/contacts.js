@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import { api, toApiError } from '@/crm/api.js'
+import { computed } from 'vue'
+import { api } from '@/crm/api.js'
 import { createPaginatedList } from '@/shared/stores/paginatedList.js'
+import { useSettingsStore } from './settings.js'
 
 /**
  * Lists for the "Klienci" (profiles, grouped by category) and
@@ -20,16 +21,13 @@ export const useContactsStore = defineStore('contacts', () => {
   )
   clients.state.meta.per_page = 100
 
-  const categories = ref([])
-  const categoriesError = ref(null)
+  // Categories are edited in Settings; one source of truth for the whole CRM.
+  const settings = useSettingsStore()
+  const categories = computed(() => settings.categories)
+  const categoriesError = computed(() => settings.error)
 
-  async function loadCategories({ force = false } = {}) {
-    if (categories.value.length && !force) return categories.value
-    try {
-      categories.value = (await api.get('/categories')).data.data
-    } catch (e) {
-      categoriesError.value = toApiError(e)
-    }
+  async function loadCategories() {
+    await settings.load()
     return categories.value
   }
 
@@ -60,7 +58,6 @@ export const useContactsStore = defineStore('contacts', () => {
   function clear() {
     clients.reset()
     addressBook.reset()
-    categories.value = []
   }
 
   return {

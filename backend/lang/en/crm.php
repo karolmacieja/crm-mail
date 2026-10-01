@@ -18,4 +18,16 @@ return [
     'master_admin_no_group' => 'A Master Admin cannot belong to a group.',
     'user_needs_group' => 'Choose a restaurant (group) for this user.',
     'custom_field_exists' => 'This contact already has a field ":label".',
+    'settings' => [
+        'last_item' => 'At least one entry must remain.',
+        'in_use' => 'Used by :count records. Choose where to move them before deleting.',
+    ],
+    'calendar' => [
+        'description' => 'Tasks, reminders and reservations of :name (GastroFlowx).',
+        'task' => 'Task',
+        'reminder' => 'Reminder',
+        'reservation' => 'Reservation',
+        'reservation_summary' => 'Reservation: :name, :count guests',
+        'from_email' => 'From email: :subject',
+    ],
 ];

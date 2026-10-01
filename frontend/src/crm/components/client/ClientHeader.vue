@@ -18,7 +18,7 @@
 import { computed } from 'vue'
 import Avatar from '@/shared/components/Avatar.vue'
 import CategoryBadge from '@/shared/components/CategoryBadge.vue'
-import StatusBadge from '@/shared/components/StatusBadge.vue'
+import StatusBadge from '@/crm/components/StatusBadge.vue'
 import { t } from '@/shared/lib/i18n.js'
 import { useClientStore } from '@/crm/stores/client.js'
 

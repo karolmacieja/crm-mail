@@ -31,6 +31,7 @@ import LicenseNotice from '@/crm/components/LicenseNotice.vue'
 import LoginForm from '@/crm/components/LoginForm.vue'
 import { useAuthStore } from '@/crm/stores/auth.js'
 import { useClientStore } from '@/crm/stores/client.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const props = defineProps({
   /** Counterparties of the thread, most relevant first: [{ email, name, messageId, snippet }] */
@@ -58,6 +59,9 @@ onMounted(() => {
   initLocale()
   auth.init()
 })
+
+// Dictionaries (statuses, categories) and preferences once signed in.
+watch(ready, (isReady) => isReady && useSettingsStore().load(), { immediate: true })
 
 watch(
   [ready, activeEmail],

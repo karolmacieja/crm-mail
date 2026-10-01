@@ -15,7 +15,7 @@
         <span class="gcrm-label">{{ t('crm.client.category') }}</span>
         <select v-model="form.category_id" class="gcrm-input">
           <option :value="null">—</option>
-          <option v-for="c in contacts.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <option v-for="c in settings.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
       </label>
       <label class="flex items-center gap-2 text-sm text-gray-700"><input v-model="form.is_client" type="checkbox" class="accent-primary" /> {{ t('crm.client.isClient') }}</label>
@@ -31,14 +31,16 @@ import { Icon } from '@/shared/icons.js'
 import { t } from '@/shared/lib/i18n.js'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useContactsStore } from '@/crm/stores/contacts.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const client = useClientStore()
 const contacts = useContactsStore()
+const settings = useSettingsStore()
 const form = reactive({ name: client.context?.name ?? '', company: '', phone: '', category_id: null, is_client: true })
 const saving = ref(false)
 const errors = ref([])
 
-onMounted(() => contacts.loadCategories())
+onMounted(() => settings.load())
 
 async function create() {
   saving.value = true

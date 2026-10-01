@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\TaskPriority;
-use App\Enums\TaskType;
 use Illuminate\Validation\Rule;
 
 class StoreTaskRequest extends TenantRequest
@@ -19,7 +18,8 @@ class StoreTaskRequest extends TenantRequest
             'assigned_to' => ['nullable', 'integer', $this->existsInGroup('users')],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'type' => [Rule::enum(TaskType::class)],
+            // Task category key from the restaurant's settings.
+            'type' => ['string', $this->existsInGroup('task_categories', 'key')],
             'priority' => [Rule::enum(TaskPriority::class)],
             'due_date' => ['nullable', 'date'],
             'is_completed' => ['boolean'],

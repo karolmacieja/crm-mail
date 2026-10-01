@@ -4,6 +4,18 @@
       <h3 class="text-sm font-bold uppercase tracking-wide text-gray-800">
         <Icon icon="clock-rotate-left" class="mr-2" />{{ t('crm.timeline.title') }}
       </h3>
+      <div class="flex items-center gap-2">
+      <button
+        v-if="google.enabled"
+        type="button"
+        class="rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:text-primary disabled:opacity-60"
+        :title="historyTitle"
+        :disabled="historyState?.status === 'running'"
+        @click="client.importHistory()"
+      >
+        <Icon :icon="historyState?.status === 'running' ? 'rotate' : 'cloud-arrow-down'" :class="{ 'animate-spin': historyState?.status === 'running' }" class="mr-1" />
+        {{ historyState?.status === 'running' ? historyProgress : t('crm.history.import') }}
+      </button>
       <label class="flex items-center rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:text-primary">
         <Icon icon="filter" class="mr-1" />
         <select class="bg-transparent focus:outline-none" :value="timeline.type" :aria-label="t('crm.timeline.filter')" @change="client.loadTimeline({ type: $event.target.value })">
@@ -13,7 +25,12 @@
           <option value="system">{{ t('crm.timeline.system') }}</option>
         </select>
       </label>
+      </div>
     </div>
+    <p v-if="historyState?.status === 'done' && historyState.result" class="-mt-4 mb-4 text-xs text-gray-500">
+      {{ t('crm.history.done', { count: historyState.result.imported + historyState.result.updated }) }}
+    </p>
+    <p v-else-if="historyState?.status === 'error'" class="-mt-4 mb-4 text-xs text-red-600">{{ t('crm.history.error') }}: {{ historyState.error }}</p>
 
     <div v-if="timeline.items.length" class="relative ml-3 space-y-6 border-l-2 border-gray-200">
       <div v-for="item in timeline.items" :key="item.id" class="group relative pl-6">
@@ -58,13 +75,14 @@
 </template>
 
 <script setup>
-import { api } from '@/crm/api.js'
+import { computed } from 'vue'
 import Spinner from '@/shared/components/Spinner.vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar, formatReservation } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import { useAuthStore } from '@/crm/stores/auth.js'
 import { useClientStore } from '@/crm/stores/client.js'
+import { useGoogleStore } from '@/crm/stores/google.js'
 
 const client = useClientStore()
 const auth = useAuthStore()
@@ -99,8 +117,18 @@ function systemText(item) {
 }
 
 async function removeNote(item) {
-  if (!window.confirm(t('crm.timeline.confirmDeleteNote'))) return
-  await api.delete(`/contacts/${client.contact.id}/activities/${item.id}`)
-  timeline.items = timeline.items.filter((a) => a.id !== item.id)
+  if (window.confirm(t('crm.timeline.confirmDeleteNote'))) await client.deleteNote(item.id)
 }
+
+const google = useGoogleStore()
+const historyState = computed(() => google.history[client.contact?.id] ?? null)
+const historyProgress = computed(() => {
+  const p = historyState.value?.progress
+  return p?.phase === 'fetch' ? t('crm.history.fetching', { done: p.done, total: p.total }) : t('crm.history.saving')
+})
+const historyTitle = computed(() =>
+  client.contact?.email_history_synced_at
+    ? t('crm.history.lastSync', { when: formatCalendar(client.contact.email_history_synced_at) })
+    : t('crm.history.never'),
+)
 </script>

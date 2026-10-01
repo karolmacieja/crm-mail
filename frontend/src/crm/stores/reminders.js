@@ -4,6 +4,7 @@ import { api, toApiError } from '@/crm/api.js'
 import { createPaginatedList } from '@/shared/stores/paginatedList.js'
 import { useClientStore } from './client.js'
 import { useDashboardStore } from './dashboard.js'
+import { useGoogleStore } from './google.js'
 
 /**
  * "Kalendarz Przypomnień", grouped as in the mockup:
@@ -19,10 +20,13 @@ export const useRemindersStore = defineStore('reminders', () => {
     return groups
   })
 
-  function afterChange(reminder, options) {
-    useClientStore().syncReminder(reminder, options)
+  function afterChange(item, options) {
+    useClientStore().syncReminder(item, options)
     useDashboardStore().invalidate()
+    // Own items also land in the person's Google Calendar (when enabled in Settings).
+    useGoogleStore().syncCalendar('reminder', item, options)
   }
+
 
   async function create(payload) {
     try {

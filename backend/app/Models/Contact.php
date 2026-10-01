@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\ContactStatus;
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
 use Database\Factories\ContactFactory;
@@ -38,17 +37,35 @@ class Contact extends Model
     ];
 
     protected $attributes = [
-        'status' => 'lead',
         'is_client' => false,
     ];
 
     protected function casts(): array
     {
         return [
-            'status' => ContactStatus::class,
             'is_client' => 'boolean',
             'last_activity_at' => 'datetime',
+            'email_history_synced_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // BelongsToGroup has filled group_id already; new contacts get the restaurant's default status.
+        static::creating(function (Contact $contact) {
+            $contact->status ??= ContactStatus::defaultKeyFor($contact->group_id);
+        });
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Activity::class)->where('type', 'note');
+    }
+
+    /** The restaurant's latest manual notes (shown under "Dane kontaktowe"). */
+    public function recentNotes(): HasMany
+    {
+        return $this->hasMany(Activity::class)->where('type', 'note')->latest('occurred_at')->latest('id');
     }
 
     /**

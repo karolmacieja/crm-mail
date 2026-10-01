@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\TaskPriority;
-use App\Enums\TaskType;
 use App\Http\Controllers\Api\Concerns\FiltersByDueWindow;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTaskRequest;
@@ -30,7 +29,7 @@ class TaskController extends Controller
             // `status` is the pre-GastroFlowx name of `window`, still used by the extension.
             'window' => ['nullable', Rule::in(self::WINDOWS)],
             'status' => ['nullable', Rule::in(self::WINDOWS)],
-            'type' => ['nullable', Rule::enum(TaskType::class)],
+            'type' => ['nullable', 'string', 'max:40'],
             'priority' => ['nullable', Rule::enum(TaskPriority::class)],
             'urgent' => ['nullable', 'boolean'],
             'search' => ['nullable', 'string', 'max:255'],
@@ -42,7 +41,7 @@ class TaskController extends Controller
         $timezone = $this->timezone($request);
         $assignee = ($validated['assigned_to'] ?? null) === 'me' ? $request->user()->id : ($validated['assigned_to'] ?? null);
 
-        $query = Task::query()->with(['contact:id,email,name', 'assignee:id,name']);
+        $query = Task::query()->with($this->relations($request));
         $this->applyWindow($query, $validated['window'] ?? $validated['status'] ?? 'open', $timezone);
 
         $tasks = $query
@@ -66,21 +65,31 @@ class TaskController extends Controller
     {
         $task = $request->user()->tasks()->create($request->validated());
 
-        return (new TaskResource($task->load(['contact:id,email,name', 'assignee:id,name'])))
+        return (new TaskResource($task->load($this->relations($request))))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function show(Task $task): TaskResource
+    public function show(Request $request, Task $task): TaskResource
     {
-        return new TaskResource($task->load(['contact:id,email,name', 'assignee:id,name']));
+        return new TaskResource($task->load($this->relations($request)));
     }
 
     public function update(UpdateTaskRequest $request, Task $task): TaskResource
     {
         $task->update($request->validated());
 
-        return new TaskResource($task->load(['contact:id,email,name', 'assignee:id,name']));
+        return new TaskResource($task->load($this->relations($request)));
+    }
+
+    /** @return array<int|string, mixed> */
+    private function relations(Request $request): array
+    {
+        return [
+            'contact:id,email,name',
+            'assignee:id,name',
+            'calendarEvents' => fn ($q) => $q->where('user_id', $request->user()->id),
+        ];
     }
 
     public function destroy(Task $task): JsonResponse

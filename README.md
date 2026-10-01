@@ -163,6 +163,65 @@ Rozszerzenie wysyła wybrany język w nagłówku `Accept-Language`, a API (middl
 zwraca w nim komunikaty walidacji i błędów (`lang/pl`, `lang/en`). Tłumaczenia interfejsu są w
 `frontend/src/shared/locales/pl.js` i `en.js`.
 
+## Ustawienia, notatki, kalendarz i historia maili
+
+### Panel ustawień (zakładka **Ustawienia** w Panelu CRM)
+
+| Zakładka | Co można zrobić | Zakres |
+|---|---|---|
+| Kategorie klientów | Dodawanie, zmiana nazwy, koloru i ikony, kolejność (strzałki), usuwanie (klienci tracą kategorię) | Cała restauracja |
+| Statusy | Jak wyżej + status **domyślny** dla nowych kontaktów. Usunięcie używanego statusu wymaga wskazania, dokąd przenieść kontakty; ostatniego nie da się usunąć | Cała restauracja |
+| Kategorie zadań | Kolumny tablicy **Zadania** i typy w formularzu zadania; usuwanie z przeniesieniem zadań | Cała restauracja |
+| Pola dodatkowe | Szablony pól (np. Alergie, NIP) podpowiadane jednym kliknięciem w karcie klienta | Cała restauracja |
+| Preferencje | Domyślna godzina przypomnienia, domyślny termin zadania, język | Tylko moje konto |
+| Kalendarz | Prywatny link ICS, powiadomienie przed terminem, rezerwacje w kalendarzu, połączenie z Google | Tylko moje konto |
+
+Słowniki może edytować każdy członek restauracji (kelner i kierownik). Nowa restauracja dostaje zestaw
+domyślnych statusów, kategorii zadań i pól.
+
+### Notatki pod „Dane kontaktowe”
+
+Notatka zapisana przez „Zapisz do osi czasu” trafia na oś czasu **i** do sekcji **Notatki** tuż pod danymi
+kontaktowymi (3 ostatnie, licznik, „Pokaż wszystkie” filtruje oś czasu do notatek). Własne notatki można
+edytować i usuwać.
+
+### Kalendarz
+
+* **Link ICS (działa bez konfiguracji):** Ustawienia → Kalendarz → „Utwórz link kalendarza”. Link zawiera
+  moje otwarte zadania (przypisane do mnie albo moje nieprzypisane), moje przypomnienia i opcjonalnie
+  rezerwacje restauracji, z powiadomieniem przed terminem. Dodaj go w Google Calendar („Z adresu URL”),
+  Outlooku lub kalendarzu Apple. Link jest prywatny (losowy token, w bazie tylko hash); „Wygeneruj nowy link”
+  unieważnia stary. Google odświeża subskrypcje z opóźnieniem do kilku godzin.
+* **Synchronizacja z Kalendarzem Google (natychmiastowa):** po połączeniu konta Google zadania
+  i przypomnienia są tworzone, aktualizowane i usuwane w głównym kalendarzu osoby, której dotyczą.
+* Bez połączenia przy każdym zadaniu/przypomnieniu jest ikona „Dodaj do Kalendarza Google” (gotowy szablon
+  wydarzenia).
+
+### Pełna historia korespondencji
+
+Po dodaniu kontaktu lub otwarciu klienta rozszerzenie pobiera przez Gmail API **wszystkie** wcześniejsze
+wiadomości od i do tego adresu (do 500 najnowszych za jednym razem) i zapisuje je na osi czasu. Kolejne
+importy są przyrostowe, a wiadomości już zapisane (także te dodane po kliknięciu w Gmailu) nie dublują się.
+Na osi czasu jest też przycisk „Wczytaj historię z Gmaila” z postępem i datą ostatniej synchronizacji.
+
+### Konfiguracja Google (wymagana dla historii maili i synchronizacji kalendarza)
+
+1. W [Google Cloud Console](https://console.cloud.google.com/) utwórz projekt i włącz **Gmail API**
+   oraz **Google Calendar API**.
+2. Skonfiguruj ekran zgody OAuth (typ „Zewnętrzny”, dodaj siebie i współpracowników jako użytkowników
+   testowych) ze scope'ami `gmail.readonly` i `calendar.events`.
+3. Utwórz identyfikator klienta OAuth typu **Rozszerzenie Chrome** i wpisz ID rozszerzenia
+   (z `chrome://extensions`). Aby ID się nie zmieniało (np. na innym komputerze), ustaw
+   `VITE_EXTENSION_KEY` (klucz publiczny z panelu Chrome Web Store) – trafi do pola `key` manifestu.
+4. W `frontend/.env` dopisz `VITE_GOOGLE_OAUTH_CLIENT_ID=…apps.googleusercontent.com`, zbuduj ponownie
+   rozszerzenie i przeładuj je.
+5. W Ustawienia → Kalendarz kliknij „Połącz z Google”.
+
+Bez tej zmiennej rozszerzenie działa normalnie (bez uprawnienia `identity`), a w ustawieniach widać
+informację, że integracja nie jest skonfigurowana. **Uwaga:** `gmail.readonly` to zakres „restricted” –
+do publicznej dystrybucji (Chrome Web Store, użytkownicy spoza listy testowej) Google wymaga weryfikacji
+aplikacji i audytu bezpieczeństwa.
+
 ## Model danych (multi-tenancy)
 
 Każda restauracja to **grupa** (`groups`). Wszystkie dane operacyjne mają kolumnę `group_id` i trait
@@ -246,6 +305,15 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 | CRUD | `/reminders` | `window`, `type=email\|reservation\|general`, `search`, `contact_id`, `reservation_id` |
 | CRUD | `/reservations` | `from, to, status, contact_id, upcoming=1` |
 | GET | `/categories`, `/team` | Kategorie grupy; współpracownicy (do przypisywania zadań) |
+| GET | `/settings` | Wszystkie słowniki grupy (kategorie, statusy, kategorie zadań, szablony pól) z liczbą użyć |
+| POST / PATCH / DELETE | `/settings/{categories\|statuses\|task-categories\|field-templates}[/{id}]` | Usuwanie używanego statusu/kategorii zadań wymaga `?move_to=<key>` |
+| POST | `/settings/{słownik}/reorder` | `{ids: [...]}` |
+| GET / PATCH | `/me/preferences` | Preferencje użytkownika (działa także bez licencji) |
+| POST / DELETE | `/me/calendar-feed` | Utworzenie nowego / wyłączenie prywatnego linku ICS |
+| GET | `/calendar/{token}.ics` | Publiczny (token w adresie) kanał iCalendar, limit 60/min |
+| PUT / DELETE | `/calendar-events/{task\|reminder}/{id}` | Powiązanie z wydarzeniem w Kalendarzu Google |
+| PATCH / DELETE | `/activities/{id}` | Edycja / usunięcie własnej notatki |
+| POST | `/contacts/{id}/emails/import` | Import historii (do 500 maili; `complete=true` zapisuje datę synchronizacji) |
 
 ### API panelu webowego (`/api`, sesja, tylko Master Admin)
 

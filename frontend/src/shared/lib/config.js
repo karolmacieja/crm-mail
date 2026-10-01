@@ -14,13 +14,14 @@ export const DASHBOARD_ROUTE_ID = 'gastroflowx'
 
 export const REQUEST_TIMEOUT_MS = 20_000
 
+/**
+ * Google integration (Gmail history import + Google Calendar sync) is enabled
+ * when the build has an OAuth client id (Google Cloud → Credentials → "Chrome extension").
+ */
+export const GOOGLE_ENABLED = Boolean(import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID)
+
+/** chrome.runtime message type for Google API calls made by the service worker. */
+export const GOOGLE_MESSAGE_TYPE = 'gcrm:google-request'
+
 /** chrome.runtime message type used to proxy API calls through the service worker. */
 export const API_MESSAGE_TYPE = 'gcrm:api-request'
-
-/** Labels live in the locale files under `status.<value>`. */
-export const CONTACT_STATUSES = [
-  { value: 'lead', classes: 'bg-sky-100 text-sky-800 ring-sky-200' },
-  { value: 'prospect', classes: 'bg-amber-100 text-amber-800 ring-amber-200' },
-  { value: 'customer', classes: 'bg-emerald-100 text-emerald-800 ring-emerald-200' },
-  { value: 'inactive', classes: 'bg-gray-100 text-gray-700 ring-gray-200' },
-]

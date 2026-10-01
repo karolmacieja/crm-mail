@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\ContactStatus;
 use App\Models\Contact;
 use App\Models\Group;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +20,7 @@ class ContactFactory extends Factory
             'name' => fake()->name(),
             'company' => null,
             'phone' => fake()->numerify('+48 ### ### ###'),
-            'status' => fake()->randomElement(ContactStatus::values()),
+            'status' => fake()->randomElement(['lead', 'prospect', 'customer', 'inactive']),
             'is_client' => false,
             'notes' => null,
         ];
@@ -29,6 +28,6 @@ class ContactFactory extends Factory
 
     public function client(): static
     {
-        return $this->state(fn () => ['is_client' => true, 'status' => ContactStatus::Customer]);
+        return $this->state(fn () => ['is_client' => true, 'status' => 'customer']);
     }
 }

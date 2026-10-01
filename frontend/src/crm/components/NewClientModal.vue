@@ -10,7 +10,7 @@
           <span class="gcrm-label">{{ t('crm.client.category') }}</span>
           <select v-model="form.category_id" class="gcrm-input">
             <option :value="null">—</option>
-            <option v-for="c in contacts.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+            <option v-for="c in settings.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
       </div>
@@ -30,6 +30,7 @@ import { api, toApiError } from '@/crm/api.js'
 import Modal from '@/shared/components/Modal.vue'
 import { t } from '@/shared/lib/i18n.js'
 import { useContactsStore } from '@/crm/stores/contacts.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 import { useDashboardStore } from '@/crm/stores/dashboard.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
 
@@ -37,6 +38,7 @@ const props = defineProps({ isClient: { type: Boolean, default: true } })
 const emit = defineEmits(['close', 'created'])
 
 const contacts = useContactsStore()
+const settings = useSettingsStore()
 const form = reactive({ name: '', email: '', phone: '', company: '', category_id: null, is_client: props.isClient })
 const saving = ref(false)
 const errors = ref([])

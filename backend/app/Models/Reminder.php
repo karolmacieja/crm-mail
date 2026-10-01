@@ -10,6 +10,7 @@ use Database\Factories\ReminderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * "Przypomnienie": a moment to come back to an email, reservation or contact.
@@ -55,6 +56,9 @@ class Reminder extends Model
 
     protected static function booted(): void
     {
+        // Polymorphic links have no FK cascade.
+        static::deleting(fn (Reminder $item) => $item->calendarEvents()->delete());
+
         static::saving(function (Reminder $reminder) {
             if ($reminder->isDirty('is_done')) {
                 $reminder->done_at = $reminder->is_done ? now() : null;
@@ -65,6 +69,11 @@ class Reminder extends Model
                 $reminder->contact_id = $reminder->reservation?->contact_id;
             }
         });
+    }
+
+    public function calendarEvents(): MorphMany
+    {
+        return $this->morphMany(CalendarEvent::class, 'eventable');
     }
 
     public function creator(): BelongsTo

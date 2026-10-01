@@ -26,6 +26,7 @@
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-1">
           <ContactDetails class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" />
+          <NotesPanel class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" />
           <ReservationsPanel class="rounded-xl border border-orange-100 bg-orange-50/30 p-6 shadow-sm" />
           <ClientWork class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm" />
         </div>
@@ -47,6 +48,7 @@ import { t } from '@/shared/lib/i18n.js'
 import ClientHeader from '@/crm/components/client/ClientHeader.vue'
 import ClientWork from '@/crm/components/client/ClientWork.vue'
 import ContactDetails from '@/crm/components/client/ContactDetails.vue'
+import NotesPanel from '@/crm/components/client/NotesPanel.vue'
 import QuickNote from '@/crm/components/client/QuickNote.vue'
 import ReservationsPanel from '@/crm/components/client/ReservationsPanel.vue'
 import Timeline from '@/crm/components/client/Timeline.vue'

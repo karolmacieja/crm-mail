@@ -33,7 +33,7 @@ class ReminderController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = Reminder::query()->with(['contact:id,email,name', 'reservation']);
+        $query = Reminder::query()->with($this->relations($request));
         $this->applyWindow($query, $validated['window'] ?? 'open', $this->timezone($request));
 
         $reminders = $query
@@ -58,21 +58,31 @@ class ReminderController extends Controller
         $reminder->user_id = $request->user()->id;
         $reminder->save();
 
-        return (new ReminderResource($reminder->load(['contact:id,email,name', 'reservation'])))
+        return (new ReminderResource($reminder->load($this->relations($request))))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function show(Reminder $reminder): ReminderResource
+    public function show(Request $request, Reminder $reminder): ReminderResource
     {
-        return new ReminderResource($reminder->load(['contact:id,email,name', 'reservation']));
+        return new ReminderResource($reminder->load($this->relations($request)));
     }
 
     public function update(UpdateReminderRequest $request, Reminder $reminder): ReminderResource
     {
         $reminder->update($request->validated());
 
-        return new ReminderResource($reminder->load(['contact:id,email,name', 'reservation']));
+        return new ReminderResource($reminder->load($this->relations($request)));
+    }
+
+    /** @return array<int|string, mixed> */
+    private function relations(Request $request): array
+    {
+        return [
+            'contact:id,email,name',
+            'reservation',
+            'calendarEvents' => fn ($q) => $q->where('user_id', $request->user()->id),
+        ];
     }
 
     public function destroy(Reminder $reminder): JsonResponse

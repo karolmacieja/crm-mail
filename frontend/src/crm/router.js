@@ -9,6 +9,7 @@ import DashboardView from '@/crm/views/DashboardView.vue'
 import FullClientProfile from '@/crm/views/FullClientProfile.vue'
 import LoginView from '@/crm/views/LoginView.vue'
 import RemindersView from '@/crm/views/RemindersView.vue'
+import SettingsView from '@/crm/views/SettingsView.vue'
 import TasksView from '@/crm/views/TasksView.vue'
 
 /**
@@ -38,6 +39,7 @@ export const crmRoutes = [
       { path: 'contacts', name: 'crm.contacts', component: ContactsView, meta: { title: 'nav.contacts' } },
       { path: 'tasks', name: 'crm.tasks', component: TasksView, meta: { title: 'nav.tasks' } },
       { path: 'reminders', name: 'crm.reminders', component: RemindersView, meta: { title: 'nav.reminders' } },
+      { path: 'settings', name: 'crm.settings', component: SettingsView, meta: { title: 'nav.settings' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: { name: 'crm.dashboard' } },

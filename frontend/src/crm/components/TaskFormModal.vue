@@ -6,7 +6,7 @@
         <label>
           <span class="gcrm-label">{{ t('crm.form.type') }}</span>
           <select v-model="form.type" class="gcrm-input">
-            <option v-for="type in ['follow_up', 'offer', 'internal']" :key="type" :value="type">{{ t(`crm.taskTypes.${type}`) }}</option>
+            <option v-for="category in settings.taskCategories" :key="category.key" :value="category.key">{{ category.name }}</option>
           </select>
         </label>
         <label>
@@ -18,7 +18,7 @@
         </label>
       </div>
       <label class="block"><span class="gcrm-label">{{ t('tasks.dueDate') }}</span><input v-model="form.due" type="datetime-local" class="gcrm-input" /></label>
-      <div v-if="form.type !== 'internal'">
+      <div>
         <span class="gcrm-label">{{ t('crm.form.contact') }}</span>
         <ContactPicker v-model="form.contact_id" :initial="contact" />
       </div>
@@ -45,6 +45,7 @@ import { defaultDueInputValue, fromLocalInputValue } from '@/shared/lib/format.j
 import { t } from '@/shared/lib/i18n.js'
 import ContactPicker from '@/crm/components/ContactPicker.vue'
 import { useClientStore } from '@/crm/stores/client.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 import { useTasksStore } from '@/crm/stores/tasks.js'
 import { useTeamStore } from '@/crm/stores/team.js'
 
@@ -57,11 +58,24 @@ const emit = defineEmits(['close', 'saved'])
 const tasks = useTasksStore()
 const team = useTeamStore()
 const client = useClientStore()
-const form = reactive({ title: '', type: 'follow_up', priority: 'normal', due: defaultDueInputValue(), contact_id: props.contact?.id ?? null, assigned_to: null })
+const settings = useSettingsStore()
+const form = reactive({
+  title: '',
+  type: settings.taskCategories[0]?.key ?? 'follow_up',
+  priority: 'normal',
+  due: defaultDueInputValue(settings.preferences),
+  contact_id: props.contact?.id ?? null,
+  assigned_to: null,
+})
 const saving = ref(false)
 const errors = ref([])
 
-onMounted(() => team.load().catch(() => {}))
+onMounted(() => {
+  team.load().catch(() => {})
+  settings.load().then(() => {
+    form.type = settings.taskCategories.some((c) => c.key === form.type) ? form.type : settings.taskCategories[0]?.key
+  })
+})
 
 async function submit() {
   saving.value = true
@@ -73,7 +87,7 @@ async function submit() {
       type: form.type,
       priority: form.priority,
       due_date: fromLocalInputValue(form.due),
-      contact_id: form.type === 'internal' ? null : form.contact_id,
+      contact_id: form.contact_id,
       assigned_to: form.assigned_to,
       ...(fromFocusedEmail ? { source_email_id: client.context.messageId, source_email_subject: client.context.subject ?? null } : {}),
     })

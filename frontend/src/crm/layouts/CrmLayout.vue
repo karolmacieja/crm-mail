@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { inject, watch } from 'vue'
+import { inject, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Avatar from '@/shared/components/Avatar.vue'
 import LanguageSwitch from '@/shared/components/LanguageSwitch.vue'
@@ -81,6 +81,8 @@ import GlobalSearch from '@/crm/components/GlobalSearch.vue'
 import { useAuthStore } from '@/crm/stores/auth.js'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useDashboardStore } from '@/crm/stores/dashboard.js'
+import { useGoogleStore } from '@/crm/stores/google.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const auth = useAuthStore()
 const dashboard = useDashboardStore()
@@ -94,7 +96,14 @@ const nav = [
   { name: 'crm.contacts', label: 'nav.contacts', icon: 'address-book' },
   { name: 'crm.tasks', label: 'nav.tasks', icon: 'list-check', badge: () => dashboard.summary?.tasks.overdue || null },
   { name: 'crm.reminders', label: 'nav.reminders', icon: ['far', 'bell'], badge: () => dashboard.summary?.reminders.overdue || null },
+  { name: 'crm.settings', label: 'nav.settings', icon: 'gear' },
 ]
+
+// Statuses, categories and preferences are needed everywhere in the CRM.
+onMounted(() => {
+  useSettingsStore().load()
+  useGoogleStore().checkStatus()
+})
 
 // "Klienci" stays highlighted on a client's full profile.
 const isSection = (item) => item.name === 'crm.clients' && route.name === 'crm.clients.show'

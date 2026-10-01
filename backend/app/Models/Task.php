@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\TaskPriority;
-use App\Enums\TaskType;
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
 use App\Models\Concerns\HasDueWindows;
@@ -12,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Work item ("Zadanie"), optionally about a contact and/or created from an email.
@@ -42,7 +42,6 @@ class Task extends Model
 
     protected $attributes = [
         'is_completed' => false,
-        'type' => 'follow_up',
         'priority' => 'normal',
     ];
 
@@ -52,14 +51,20 @@ class Task extends Model
             'due_date' => 'datetime',
             'is_completed' => 'boolean',
             'completed_at' => 'datetime',
-            'type' => TaskType::class,
             'priority' => TaskPriority::class,
         ];
     }
 
     protected static function booted(): void
     {
+        // Polymorphic links have no FK cascade.
+        static::deleting(fn (Task $item) => $item->calendarEvents()->delete());
+
         // Keep completed_at in sync with the is_completed flag.
+        static::creating(function (Task $task) {
+            $task->type ??= TaskCategory::defaultKeyFor($task->group_id);
+        });
+
         static::saving(function (Task $task) {
             if ($task->isDirty('is_completed')) {
                 $task->completed_at = $task->is_completed ? now() : null;
@@ -82,6 +87,11 @@ class Task extends Model
     public function user(): BelongsTo
     {
         return $this->creator();
+    }
+
+    public function calendarEvents(): MorphMany
+    {
+        return $this->morphMany(CalendarEvent::class, 'eventable');
     }
 
     public function assignee(): BelongsTo

@@ -1,4 +1,3 @@
-import { CONTACT_STATUSES } from '@/shared/lib/config.js'
 import { locale, t } from '@/shared/lib/i18n.js'
 
 // Formatters are cached per language; reading locale.value keeps templates reactive.
@@ -55,16 +54,16 @@ export function fromLocalInputValue(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
-/** Default reminder: tomorrow at 09:00 local time. */
-export function defaultDueInputValue() {
+/**
+ * Default due date for new tasks/reminders: in N days at HH:MM, from the
+ * person's preferences (Settings → Preferences); "tomorrow at 09:00" otherwise.
+ */
+export function defaultDueInputValue(preferences = null) {
+  const [hours, minutes] = String(preferences?.default_reminder_time ?? '09:00').split(':').map(Number)
   const date = new Date()
-  date.setDate(date.getDate() + 1)
-  date.setHours(9, 0, 0, 0)
+  date.setDate(date.getDate() + Number(preferences?.default_task_due_days ?? 1))
+  date.setHours(hours || 0, minutes || 0, 0, 0)
   return toLocalInputValue(date.toISOString())
-}
-
-export function statusMeta(value) {
-  return CONTACT_STATUSES.find((s) => s.value === value) ?? CONTACT_STATUSES[0]
 }
 
 export function initials(name, email) {

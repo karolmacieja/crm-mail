@@ -16,6 +16,7 @@ class ReminderResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id, // created by
             'type' => $this->type->value,
             'title' => $this->title,
             'notes' => $this->notes,
@@ -34,6 +35,8 @@ class ReminderResource extends JsonResource
                 'name' => $this->contact->name,
             ] : null),
             'reservation' => $this->whenLoaded('reservation', fn () => $this->reservation?->summary()),
+            // Event in the signed-in person's own Google Calendar (eager-loaded for them only).
+            'calendar_event_id' => $this->whenLoaded('calendarEvents', fn () => $this->calendarEvents->first()?->external_id),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

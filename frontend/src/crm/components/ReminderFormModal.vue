@@ -40,6 +40,7 @@ import { t } from '@/shared/lib/i18n.js'
 import ContactPicker from '@/crm/components/ContactPicker.vue'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const props = defineProps({ contact: { type: Object, default: null } })
 const emit = defineEmits(['close', 'saved'])
@@ -51,7 +52,7 @@ const fromFocusedEmail = Boolean(props.contact && client.context?.messageId && c
 const form = reactive({
   title: '',
   type: fromFocusedEmail ? 'email' : 'general',
-  when: defaultDueInputValue(),
+  when: defaultDueInputValue(useSettingsStore().preferences),
   contact_id: props.contact?.id ?? null,
   reservation_id: null,
   notes: '',

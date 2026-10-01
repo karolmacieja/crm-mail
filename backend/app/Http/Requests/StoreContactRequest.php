@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ContactStatus;
 use App\Enums\CustomFieldType;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +29,7 @@ class StoreContactRequest extends TenantRequest
             'name' => ['nullable', 'string', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50', 'regex:/^[0-9+().\-\s\/x]*$/i'],
-            'status' => [Rule::enum(ContactStatus::class)],
+            'status' => ['string', $this->existsInGroup('contact_statuses', 'key')],
             'is_client' => ['boolean'],
             'category_id' => ['nullable', 'integer', $this->existsInGroup('contact_categories')],
             'notes' => ['nullable', 'string', 'max:10000'],

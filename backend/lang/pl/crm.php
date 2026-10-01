@@ -18,4 +18,16 @@ return [
     'master_admin_no_group' => 'Master Admin nie może należeć do grupy.',
     'user_needs_group' => 'Wybierz restaurację (grupę) dla tego użytkownika.',
     'custom_field_exists' => 'Ten kontakt ma już pole „:label”.',
+    'settings' => [
+        'last_item' => 'Musi zostać co najmniej jedna pozycja.',
+        'in_use' => 'Używane przez :count rekordów. Wybierz, dokąd je przenieść przed usunięciem.',
+    ],
+    'calendar' => [
+        'description' => 'Zadania, przypomnienia i rezerwacje: :name (GastroFlowx).',
+        'task' => 'Zadanie',
+        'reminder' => 'Przypomnienie',
+        'reservation' => 'Rezerwacja',
+        'reservation_summary' => 'Rezerwacja: :name, gości: :count',
+        'from_email' => 'Z maila: :subject',
+    ],
 ];

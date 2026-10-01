@@ -4,10 +4,11 @@ import { api, toApiError } from '@/crm/api.js'
 import { createPaginatedList } from '@/shared/stores/paginatedList.js'
 import { useClientStore } from './client.js'
 import { useDashboardStore } from './dashboard.js'
+import { useGoogleStore } from './google.js'
 
 /**
- * "Moduł Zadań". Board columns follow the mockup:
- * Pilne (high priority or due today/overdue), Kontakt i Follow-up, Oferty, Wewnętrzne.
+ * "Moduł Zadań". Board: a computed "Pilne" column (high priority or due
+ * today/overdue) followed by one column per task category from Settings.
  */
 export const useTasksStore = defineStore('tasks', () => {
   const list = createPaginatedList((params) => api.get('/tasks', { params }), {
@@ -19,18 +20,22 @@ export const useTasksStore = defineStore('tasks', () => {
   list.state.meta.per_page = 100
 
   const board = computed(() => {
-    const columns = { urgent: [], follow_up: [], offer: [], internal: [] }
+    const columns = { urgent: [] }
     for (const task of list.state.items) {
       const urgent = !task.is_completed && (task.priority === 'high' || ['overdue', 'today'].includes(task.time_status))
-      columns[urgent ? 'urgent' : task.type]?.push(task)
+      const key = urgent ? 'urgent' : task.type
+      ;(columns[key] ??= []).push(task)
     }
     return columns
   })
 
-  function afterChange(task, options) {
-    useClientStore().syncTask(task, options)
+  function afterChange(item, options) {
+    useClientStore().syncTask(item, options)
     useDashboardStore().invalidate()
+    // Own items also land in the person's Google Calendar (when enabled in Settings).
+    useGoogleStore().syncCalendar('task', item, options)
   }
+
 
   async function create(payload) {
     try {

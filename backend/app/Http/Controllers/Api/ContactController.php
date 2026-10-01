@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\ContactStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
@@ -28,7 +27,7 @@ class ContactController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', Rule::enum(ContactStatus::class)],
+            'status' => ['nullable', 'string', 'max:40'],
             'category' => ['nullable', 'string', 'max:60'],   // id or slug
             'is_client' => ['nullable', 'boolean'],          // "Klienci" (1) vs "Kontakty" (0)
             'sort' => ['nullable', Rule::in(self::SORTABLE)],
@@ -131,9 +130,15 @@ class ContactController extends Controller
             'category',
             'customFields',
             'latestActivity',
-            'tasks' => fn ($q) => $q->with('assignee:id,name')->orderBy('is_completed')->orderByRaw('due_date IS NULL')->orderBy('due_date'),
-            'reminders' => fn ($q) => $q->pending()->orderBy('remind_at'),
+            'recentNotes' => fn ($q) => $q->with('author:id,name')->limit(3),
+            'tasks' => fn ($q) => $q->with(['assignee:id,name', 'calendarEvents' => $this->myCalendarEvents($request)])->orderBy('is_completed')->orderByRaw('due_date IS NULL')->orderBy('due_date'),
+            'reminders' => fn ($q) => $q->with(['calendarEvents' => $this->myCalendarEvents($request)])->pending()->orderBy('remind_at'),
             'upcomingReservations' => fn ($q) => $q->upcoming($this->timezone($request)),
-        ])->loadCount('openTasks');
+        ])->loadCount(['openTasks', 'notes']);
+    }
+
+    private function myCalendarEvents(Request $request): \Closure
+    {
+        return fn ($q) => $q->where('user_id', $request->user()->id);
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -41,6 +42,24 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'calendar_token',
+        'calendar_token_hash',
+    ];
+
+    /**
+     * Personal settings with their defaults (merged with users.preferences).
+     */
+    public const DEFAULT_PREFERENCES = [
+        'default_reminder_time' => '09:00',   // used for "tomorrow at …" defaults
+        'default_task_due_days' => 1,
+        'calendar' => [
+            'alarm_minutes' => 15,            // VALARM in the iCalendar feed
+            'include_reservations' => true,   // restaurant bookings in the feed
+        ],
+        'google' => [
+            'calendar_sync' => false,         // create events in Google Calendar directly
+            'email_history' => true,          // import past Gmail correspondence of contacts
+        ],
     ];
 
     protected $attributes = [
@@ -56,6 +75,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'preferences' => 'array',
+            'calendar_token' => 'encrypted',
         ];
     }
 
@@ -85,6 +106,36 @@ class User extends Authenticatable
     public function assignedTasks(): HasMany
     {
         return $this->hasMany(Task::class, 'assigned_to');
+    }
+
+    /** @return array<string, mixed> */
+    public function preferences(): array
+    {
+        return array_replace_recursive(self::DEFAULT_PREFERENCES, $this->preferences ?? []);
+    }
+
+    /**
+     * New private iCalendar feed URL (the previous one stops working).
+     */
+    public function rotateCalendarToken(): string
+    {
+        $token = Str::random(48);
+        $this->forceFill([
+            'calendar_token' => $token,
+            'calendar_token_hash' => hash('sha256', $token),
+        ])->save();
+
+        return $token;
+    }
+
+    public function disableCalendarFeed(): void
+    {
+        $this->forceFill(['calendar_token' => null, 'calendar_token_hash' => null])->save();
+    }
+
+    public static function findByCalendarToken(string $token): ?self
+    {
+        return static::where('calendar_token_hash', hash('sha256', $token))->first();
     }
 
     public function isMasterAdmin(): bool
