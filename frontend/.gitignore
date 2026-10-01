@@ -6,3 +6,4 @@ dist
 # Copied from @inboxsdk/core at build time (see vite.config.js).
 public/pageWorld.js
 dist-admin
+*.zip

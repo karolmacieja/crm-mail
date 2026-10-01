@@ -150,7 +150,196 @@ npm run dev:admin                 # http://localhost:5173 (ten adres jest w SANC
 
 Zaloguj się kontem Master Admina (`php artisan crm:license ty@firma.pl --admin`). Produkcyjnie:
 `npm run build:admin` tworzy `frontend/dist-admin/`. Serwuj go na np. `app.domena.pl` z przekierowaniem
-wszystkich ścieżek na `index.html` (SPA).
+wszystkich ścieżek na `index.html` (SPA) – pełna instrukcja w sekcji [Wdrożenie na własny serwer](#wdrożenie-na-własny-serwer-produkcja).
+
+## Wdrożenie na własny serwer (produkcja)
+
+Instrukcja dla serwera VPS z **Ubuntu 24.04**, Nginx i PHP 8.3. Zamień `domena.pl` na swoją domenę.
+
+### 0. Domeny
+
+API i panel admina muszą być subdomenami tej samej domeny, bo od tego zależy ciasteczko sesji panelu.
+W DNS dodaj dwa rekordy A wskazujące na IP serwera:
+
+* `api.domena.pl` – backend Laravel (korzysta z niego też rozszerzenie),
+* `app.domena.pl` – panel Master Admina.
+
+### 1. Pakiety
+
+```bash
+sudo apt update
+sudo apt install -y nginx git unzip mariadb-server certbot python3-certbot-nginx \
+  php8.3-fpm php8.3-cli php8.3-mysql php8.3-sqlite3 php8.3-mbstring php8.3-xml \
+  php8.3-curl php8.3-zip php8.3-bcmath php8.3-intl
+curl -sS https://getcomposer.org/installer | php && sudo mv composer.phar /usr/local/bin/composer
+# Node.js 20+ (tylko do zbudowania frontendu; może być też na Twoim komputerze)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
+```
+
+### 2. Kod i baza danych
+
+```bash
+sudo mkdir -p /var/www && cd /var/www
+sudo git clone -b claude/gmail-crm-extension-laravel-gsketl https://github.com/karolmacieja/crm-mail.git gastroflowx
+sudo chown -R $USER:www-data gastroflowx && cd gastroflowx/backend
+composer install --no-dev --optimize-autoloader
+
+sudo mysql -e "CREATE DATABASE gastroflowx CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'gastroflowx'@'localhost' IDENTIFIED BY 'MOCNE_HASLO';
+GRANT ALL ON gastroflowx.* TO 'gastroflowx'@'localhost'; FLUSH PRIVILEGES;"
+```
+
+> Testy automatyczne działają na SQLite. Migracje są standardowe, ale pierwszą migrację na MariaDB/MySQL
+> sprawdź na serwerze. W małej skali wystarczy też SQLite (`DB_CONNECTION=sqlite`, bez tworzenia bazy w MariaDB).
+
+### 3. Plik `backend/.env`
+
+```bash
+cp .env.example .env && php artisan key:generate
+```
+
+Zmień w nim:
+
+```ini
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://api.domena.pl
+LOG_LEVEL=warning
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=gastroflowx
+DB_USERNAME=gastroflowx
+DB_PASSWORD=MOCNE_HASLO
+
+WEB_PANEL_URL=https://app.domena.pl
+SANCTUM_STATEFUL_DOMAINS=app.domena.pl
+SESSION_DOMAIN=.domena.pl
+SESSION_SECURE_COOKIE=true
+CHROME_EXTENSION_IDS=          # uzupełnisz w kroku 8
+```
+
+Następnie:
+
+```bash
+php artisan migrate --force
+php artisan crm:license twoj@email.pl --admin     # konto Master Admina
+php artisan config:cache && php artisan route:cache
+sudo chown -R www-data:www-data storage bootstrap/cache
+```
+
+Nie uruchamiaj `db:seed` – to dane demonstracyjne (na produkcji i tak są zablokowane).
+
+### 4. Panel admina
+
+```bash
+cd /var/www/gastroflowx/frontend
+echo "VITE_API_BASE_URL=https://api.domena.pl/api" > .env
+npm ci && npm run build:admin          # wynik: frontend/dist-admin
+```
+
+### 5. Nginx
+
+`/etc/nginx/sites-available/gastroflowx`:
+
+```nginx
+server {
+    server_name api.domena.pl;
+    root /var/www/gastroflowx/backend/public;
+    index index.php;
+    client_max_body_size 10m;
+
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+    }
+    location ~ /\.(?!well-known) { deny all; }
+}
+
+server {
+    server_name app.domena.pl;
+    root /var/www/gastroflowx/frontend/dist-admin;
+    location / { try_files $uri /index.html; }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/gastroflowx /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### 6. HTTPS (wymagane)
+
+```bash
+sudo certbot --nginx -d api.domena.pl -d app.domena.pl
+```
+
+Sprawdzenie: `https://api.domena.pl/up` zwraca 200, a `https://app.domena.pl` pokazuje logowanie Master Admina.
+
+### 7. Cron (codzienne czyszczenie wygasłych tokenów)
+
+```bash
+(sudo crontab -u www-data -l 2>/dev/null; echo "* * * * * cd /var/www/gastroflowx/backend && php artisan schedule:run >> /dev/null 2>&1") | sudo crontab -u www-data -
+```
+
+### 8. Rozszerzenie Chrome
+
+Zbuduj je z adresem produkcyjnego API (na swoim komputerze albo na serwerze). W `frontend/.env`:
+
+```ini
+VITE_API_BASE_URL=https://api.domena.pl/api
+VITE_INBOXSDK_APP_ID=sdk_twoj_identyfikator
+VITE_GOOGLE_OAUTH_CLIENT_ID=            # opcjonalnie, krok 9
+VITE_EXTENSION_KEY=                     # stałe ID rozszerzenia, patrz niżej
+```
+
+```bash
+npm run zip:extension        # tworzy gastroflowx-extension.zip
+```
+
+Dystrybucja – jedna z dwóch dróg:
+
+* **Chrome Web Store jako „Niepubliczne” (zalecane).** Wgrywasz ZIP, osoby instalują rozszerzenie z linku,
+  aktualizacje przychodzą same, a ID jest stałe. Konto dewelopera kosztuje jednorazowo 5 USD. Klucz
+  publiczny z panelu Store (Pakiet → Klucz publiczny) wpisz jako `VITE_EXTENSION_KEY`.
+* **Ręcznie.** Każda osoba rozpakowuje ZIP i wczytuje go w `chrome://extensions` (tryb dewelopera →
+  „Załaduj rozpakowane”). Żeby ID było takie samo na każdym komputerze, wygeneruj klucz raz:
+
+  ```bash
+  openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -out extension-key.pem   # trzymaj w sekrecie
+  openssl rsa -in extension-key.pem -pubout -outform DER | base64 -w0          # wynik wpisz w VITE_EXTENSION_KEY
+  ```
+
+Po instalacji odczytaj ID rozszerzenia z `chrome://extensions` i wpisz je na serwerze:
+
+```bash
+# backend/.env
+CHROME_EXTENSION_IDS=abcdefghijklmnopabcdefghijklmnop
+php artisan config:cache
+```
+
+Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID nie jest dopuszczane.
+
+### 9. Google (opcjonalnie)
+
+Do importu historii maili i synchronizacji z Kalendarzem Google utwórz w Google Cloud klienta OAuth typu
+„Rozszerzenie Chrome” z **produkcyjnym** ID rozszerzenia z kroku 8 i dodaj użytkowników testowych
+(szczegóły w sekcji [Konfiguracja Google](#konfiguracja-google-wymagana-dla-historii-maili-i-synchronizacji-kalendarza)).
+Potem wpisz `VITE_GOOGLE_OAUTH_CLIENT_ID` do `frontend/.env` i zbuduj rozszerzenie ponownie.
+
+Link kalendarza (ICS) działa od razu po kroku 6, bo Google pobiera go z publicznego adresu `https://api.domena.pl`.
+
+### Aktualizacje
+
+```bash
+cd /var/www/gastroflowx && git pull
+cd backend && composer install --no-dev --optimize-autoloader \
+  && php artisan migrate --force && php artisan config:cache && php artisan route:cache
+cd ../frontend && npm ci && npm run build:admin
+# rozszerzenie: npm run zip:extension i nowa wersja w Web Store albo rozesłanie ZIP-a
+```
 
 ## Język interfejsu
 
