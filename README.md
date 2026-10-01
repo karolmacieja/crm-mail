@@ -5,7 +5,7 @@ CRM w modelu SaaS działający wewnątrz Gmaila: **rozszerzenie Chrome (Manifest
 ```
 crm-mail/
 ├── backend/     API w Laravel 11 (Sanctum, licencje, kontakty, zadania, dashboard)
-└── extension/   Vite + CRXJS + Vue 3 + Pinia + Tailwind + InboxSDK
+└── frontend/    Vue 3 + Pinia + Vue Router + Tailwind: rozszerzenie Gmail (CRM) i panel webowy (Master Admin)
 ```
 
 ## Jak to działa
@@ -83,12 +83,12 @@ Sprawdzenie: http://localhost:8000/up powinno pokazać stronę „Application up
 ### 4. Zbuduj rozszerzenie (terminal nr 2)
 
 ```bash
-cd extension
+cd frontend
 npm install
 cp .env.example .env              # Windows: copy .env.example .env
 ```
 
-W pliku `extension/.env` uzupełnij:
+W pliku `frontend/.env` uzupełnij:
 
 ```
 VITE_API_BASE_URL=http://localhost:8000/api
@@ -98,14 +98,14 @@ VITE_INBOXSDK_APP_ID=sdk_twoj_identyfikator
 Następnie:
 
 ```bash
-npm run build                     # wynik trafia do extension/dist
+npm run build:extension           # wynik trafia do frontend/dist
 ```
 
 ### 5. Załaduj rozszerzenie do Chrome
 
 1. Otwórz `chrome://extensions`.
 2. W prawym górnym rogu włącz **Tryb programisty**.
-3. Kliknij **Załaduj rozpakowane** i wskaż folder `extension/dist`.
+3. Kliknij **Załaduj rozpakowane** i wskaż folder `frontend/dist`.
 4. Przypnij ikonę „Gmail CRM” na pasku (ikona puzzla → pinezka).
 
 ### 6. Zaloguj się i korzystaj
@@ -125,9 +125,20 @@ npm run build                     # wynik trafia do extension/dist
 | „Gmail CRM został zaktualizowany” | Po przebudowaniu rozszerzenia kliknij ⟳ przy nim w `chrome://extensions` i odśwież Gmaila |
 | „Twoja licencja wygasła” | `php artisan crm:license twoj@email.pl --days=365`, potem „Licencja odnowiona – sprawdź ponownie” |
 | „Zbyt wiele żądań” przy logowaniu | Limit to 5 prób na minutę. Odczekaj minutę |
-| Zmieniłeś `VITE_API_BASE_URL` | Uruchom ponownie `npm run build` i przeładuj rozszerzenie (adres jest wbudowywany w manifest) |
+| Zmieniłeś `VITE_API_BASE_URL` | Uruchom ponownie `npm run build:extension` i przeładuj rozszerzenie (adres jest wbudowywany w manifest) |
 
-Podczas pracy nad kodem zamiast `npm run build` możesz użyć `npm run dev`. Zmiany w Vue przeładują się automatycznie.
+Podczas pracy nad kodem zamiast `npm run build:extension` możesz użyć `npm run dev:extension`. Zmiany w Vue przeładują się automatycznie.
+
+### 7. Panel webowy Master Admina (przeglądarka)
+
+```bash
+cd frontend
+npm run dev:admin                 # http://localhost:5173 (ten adres jest w SANCTUM_STATEFUL_DOMAINS)
+```
+
+Zaloguj się kontem Master Admina (`php artisan crm:license ty@firma.pl --admin`). Produkcyjnie:
+`npm run build:admin` tworzy `frontend/dist-admin/`. Serwuj go na np. `app.domena.pl` z przekierowaniem
+wszystkich ścieżek na `index.html` (SPA).
 
 ## Język interfejsu
 
@@ -138,7 +149,7 @@ Gmaila (pozycja w lewym menu), które zmieniają się po odświeżeniu karty.
 
 Rozszerzenie wysyła wybrany język w nagłówku `Accept-Language`, a API (middleware `SetLocaleFromHeader`)
 zwraca w nim komunikaty walidacji i błędów (`lang/pl`, `lang/en`). Tłumaczenia interfejsu są w
-`extension/src/locales/pl.js` i `en.js`.
+`frontend/src/shared/locales/pl.js` i `en.js`.
 
 ## Model danych (multi-tenancy)
 
@@ -256,33 +267,50 @@ Panel: https://app.domena.pl      SANCTUM_STATEFUL_DOMAINS=app.domena.pl
 Ciasteczko sesji ma `SameSite=Lax`, a Sanctum uruchamia sesję tylko dla domen ze `SANCTUM_STATEFUL_DOMAINS`.
 Żądanie z Gmaila nie może więc użyć sesji Master Admina (zwraca 401).
 
-## Rozszerzenie
+## Frontend (`frontend/`)
 
-```bash
-cd extension
-npm install
-cp .env.example .env
-#   VITE_API_BASE_URL=http://localhost:8000/api
-#   VITE_INBOXSDK_APP_ID=sdk_xxx   ← darmowe, z https://www.inboxsdk.com/register
-npm run dev      # build z HMR w dist/
-npm run build    # build produkcyjny w dist/ (API spoza localhost musi używać https)
+Jeden projekt Vue 3 budowany na dwa sposoby:
+
+| | Rozszerzenie Gmail (pracownicy) | Panel webowy (Master Admin) |
+|---|---|---|
+| Uruchomienie | `npm run dev:extension` / `build:extension` → `dist/` | `npm run dev:admin` / `build:admin` → `dist-admin/` |
+| Konfiguracja Vite | `vite.config.js` (CRXJS, Manifest V3) | `vite.admin.config.js` (zwykłe SPA) |
+| Router | `createMemoryHistory()`, bo adresem zarządza Gmail | `createWebHistory()` |
+| Trasy | `/dashboard`, `/clients`, `/clients/:id`, `/contacts`, `/tasks`, `/reminders` | `/`, `/groups`, `/groups/:id`, `/users`, `/licenses` |
+| Meta tras | `requiresAuth`, `requiresLicense`, `roles: ['manager','staff']` | `requiresAuth`, `roles: ['master_admin']` |
+| Logowanie | token w `chrome.storage.local`, zapytania przez service worker | sesja Sanctum + CSRF (`withCredentials`, `withXSRFToken`) |
+
+```
+frontend/src/
+├── shared/      i18n (PL/EN), formatowanie, ApiError, guard routera, wspólne komponenty, Tailwind
+├── extension/   service worker, content script (InboxSDK), popup, klient API przez service worker
+├── crm/         CRM w Gmailu: router, store'y Pinia, widoki
+│   └── legacy/  obecny panel boczny i dashboard (do zastąpienia komponentami z makiety w kroku 4)
+└── admin/       panel Master Admina: router, store'y Pinia, widoki, klient API sesyjny
 ```
 
-Żeby załadować rozszerzenie, otwórz `chrome://extensions`, włącz tryb programisty, kliknij **Załaduj rozpakowane** i wskaż `extension/dist`.
+**Guard routera** (`shared/router/guards.js`) czyta meta tras w obu aplikacjach. Reaguje też na zmiany sesji
+poza nawigacją: wylogowanie w popupie, 401 albo 402 z API od razu przenosi na logowanie lub ekran licencji,
+a po zalogowaniu wraca do żądanej strony (`?redirect=`).
 
-| Plik | Do czego służy |
+**Store'y Pinia:**
+
+| Store | Rola |
 |---|---|
-| `manifest.config.js` | Manifest MV3 (kompilowany do `dist/manifest.json`). Origin API trafia do `host_permissions` z `.env` |
-| `vite.config.js` | Vue, CRXJS i kopiowanie `pageWorld.js` z InboxSDK do katalogu głównego rozszerzenia |
-| `src/background/index.js` | Wstrzykiwanie pageWorld InboxSDK (MV3) i proxy API z autoryzacją |
-| `src/content/content.js` | InboxSDK: panel boczny wątku, własna trasa, pozycja w menu, przycisk na pasku |
-| `src/content/mount.js` | Montowanie Vue w Shadow DOM |
-| `src/lib/i18n.js`, `src/locales/` | Tłumaczenia PL/EN i przełączanie języka |
-| `src/lib/api.js` | Instancja axios, adapter do service workera, ujednolicanie błędów (`ApiError`) |
-| `src/stores/auth.js`, `src/stores/crm.js` | Store'y Pinia (sesja i licencja; cache kontaktów, zadań i dashboardu) |
-| `src/sidebar/SidebarApp.vue` | Karta kontaktu nadawcy: dodawanie, edycja, status, zadania |
-| `src/dashboard/DashboardApp.vue` | Dashboard pełnoekranowy: liczniki, przypomnienia, tabela klientów |
-| `src/popup/` | Popup na pasku przeglądarki: logowanie, status licencji, wylogowanie |
+| `useClientStore` | Klient/mail w fokusie. Zasila `ContextSidebar` (klik maila) i `FullClientProfile` (klik w „Klienci”): profil, oś czasu, notatki, rezerwacje, własne pola, zadania i przypomnienia klienta. Odrzuca odpowiedzi dla maila, który nie jest już w fokusie |
+| `useDashboardStore` | Liczniki zadań i przypomnień (zaległe / dziś / 7 dni), odświeżane po każdej zmianie |
+| `useContactsStore` | „Klienci” (grupowani po kategoriach) i „Kontakty” (książka adresowa), kategorie |
+| `useTasksStore` | Moduł zadań i kolumny z makiety: Pilne, Follow-up, Oferty, Wewnętrzne |
+| `useRemindersStore` | Przypomnienia pogrupowane: z maili, rezerwacje, ogólne |
+| `useAuthStore` (CRM), `useAdminAuthStore` | Sesja rozszerzenia (token) i panelu (cookie) |
+| `useGroupsStore`, `useUsersStore`, `useLicensesStore`, `useAdminStatsStore` | Panel Master Admina |
+
+Zmiana w zadaniu albo przypomnieniu aktualizuje otwarty profil klienta i liczniki dashboardu. Zmiana
+zalogowanego pracownika czyści dane wszystkich store'ów CRM.
+
+```bash
+npm test          # Vitest: guard routera, store'y, klient API panelu (CSRF/419/401), router CRM
+```
 
 ## Uwagi
 

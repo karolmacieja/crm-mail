@@ -1,7 +1,0 @@
-node_modules
-dist
-.vite
-.env
-.env.local
-# Copied from @inboxsdk/core at build time (see vite.config.js).
-public/pageWorld.js
