@@ -15,8 +15,9 @@
       <p class="text-sm font-bold transition-colors" :class="task.is_completed ? 'text-gray-400 line-through' : 'text-gray-900 group-hover:text-primary'">
         {{ task.title }}
       </p>
-      <p class="mt-1 flex items-center justify-between gap-2 text-xs text-gray-500">
-        <span class="min-w-0 truncate">
+      <!-- Narrow board columns: wrap the date under the name instead of cutting the name off. -->
+      <p class="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-gray-500">
+        <span class="min-w-0 max-w-full truncate">
           <template v-if="task.contact && !hideContact">
             <button type="button" class="hover:text-primary hover:underline" @click.prevent="$emit('open-contact', task.contact)">
               <Icon icon="user" class="mr-1 text-gray-400" />{{ task.contact.name || task.contact.email }}

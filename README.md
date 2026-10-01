@@ -332,8 +332,9 @@ Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID n
    potem `npm run zip:extension` → `frontend/gastroflowx-extension.zip`. Skrypt działa też na Windows i sam usuwa
    z manifestu pole `key` (Web Store go nie przyjmuje).
 3. **Nowy element:** w panelu *Items → New item* wgraj ZIP. Od razu dostajesz **ID rozszerzenia** (32 litery).
-4. **Karta w sklepie (Store listing):** opis, kategoria (np. *Productivity*), ikona 128×128 (jest w paczce),
-   co najmniej jeden zrzut ekranu 1280×800 lub 640×400, mała grafika promocyjna 440×280.
+4. **Karta w sklepie (Store listing):** opis, kategoria (np. *Productivity*) i grafiki – gotowe są w folderze
+   [`store-assets/`](store-assets/): ikona `icon-128.png`, zrzuty ekranu 1280×800 `screenshot-*.png` (sklep
+   przyjmuje maks. 5), mała grafika promocyjna `promo-small-440x280.png` i duża `promo-marquee-1400x560.png`.
 5. **Prywatność (Privacy):**
    * *Single purpose:* „CRM dla restauracji w Gmailu: kontakty, zadania i przypomnienia przy wiadomościach”.
    * Uzasadnienie uprawnień: `storage` (logowanie i ustawienia), `scripting` (InboxSDK w Gmailu),

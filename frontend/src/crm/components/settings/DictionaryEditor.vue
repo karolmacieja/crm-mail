@@ -14,7 +14,7 @@
 
         <template v-if="options.color">
           <span class="h-4 w-4 shrink-0 rounded-full" :class="tone(item.color).swatch" />
-          <select :value="item.color" class="gcrm-input w-32 py-1" :aria-label="t('settings.color')" @change="save(item, { color: $event.target.value })">
+          <select :value="item.color" class="gcrm-input w-36 py-1" :aria-label="t('settings.color')" @change="save(item, { color: $event.target.value })">
             <option v-for="color in COLOR_NAMES" :key="color" :value="color">{{ t(`settings.colors.${color}`) }}</option>
           </select>
         </template>
