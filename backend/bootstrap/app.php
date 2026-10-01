@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureClientType;
+use App\Http\Middleware\EnsureTenantMember;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureValidLicense;
 use App\Http\Middleware\SetLocaleFromHeader;
@@ -16,7 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Cookie/session auth for the web panel (SANCTUM_STATEFUL_DOMAINS);
+        // token requests from the Gmail extension are unaffected.
+        $middleware->statefulApi();
+
         $middleware->alias([
+            'client' => EnsureClientType::class,
+            'tenant' => EnsureTenantMember::class,
             'license' => EnsureValidLicense::class,
             'admin' => EnsureUserIsAdmin::class,
         ]);

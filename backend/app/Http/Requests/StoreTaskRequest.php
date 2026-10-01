@@ -2,30 +2,29 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\TaskPriority;
+use App\Enums\TaskType;
 use Illuminate\Validation\Rule;
 
-class StoreTaskRequest extends FormRequest
+class StoreTaskRequest extends TenantRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            // The contact must exist AND belong to the user's group (restaurant).
-            'contact_id' => [
-                'required', 'integer',
-                Rule::exists('contacts', 'id')->where('group_id', $this->user()->group_id),
-            ],
+            // Optional: internal tasks ("Rozesłać grafik kelnerów") have no contact.
+            'contact_id' => ['nullable', 'integer', $this->existsInGroup('contacts')],
+            'assigned_to' => ['nullable', 'integer', $this->existsInGroup('users')],
             'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'type' => [Rule::enum(TaskType::class)],
+            'priority' => [Rule::enum(TaskPriority::class)],
             'due_date' => ['nullable', 'date'],
-            'is_completed' => ['sometimes', 'boolean'],
+            'is_completed' => ['boolean'],
+            'source_email_id' => ['nullable', 'string', 'max:255'],
+            'source_email_subject' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

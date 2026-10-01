@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Support\Tenancy\MissingGroupContext;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TenancyTest extends TestCase
@@ -42,7 +41,7 @@ class TenancyTest extends TestCase
 
     public function test_each_model_only_returns_the_current_users_group(): void
     {
-        Sanctum::actingAs(User::factory()->for($this->pizzeria)->create());
+        $this->actingAsExtension(User::factory()->for($this->pizzeria)->create());
 
         foreach ([Contact::class, Task::class, Reservation::class, Reminder::class, ContactCategory::class] as $model) {
             $this->assertTrue(
@@ -58,7 +57,7 @@ class TenancyTest extends TestCase
 
     public function test_other_groups_records_are_not_found_by_id(): void
     {
-        Sanctum::actingAs(User::factory()->for($this->pizzeria)->licensed()->create());
+        $this->actingAsExtension(User::factory()->for($this->pizzeria)->licensed()->create());
         $foreign = Contact::withoutGlobalScopes()->where('group_id', $this->sushi->id)->first();
 
         $this->assertNull(Contact::find($foreign->id));
@@ -68,7 +67,7 @@ class TenancyTest extends TestCase
     public function test_group_id_is_filled_from_the_signed_in_user(): void
     {
         $user = User::factory()->for($this->sushi)->create();
-        Sanctum::actingAs($user);
+        $this->actingAsExtension($user);
 
         $contact = $user->contacts()->create(['email' => 'nowy@gosc.pl']);
 
@@ -78,7 +77,7 @@ class TenancyTest extends TestCase
 
     public function test_group_id_cannot_be_mass_assigned(): void
     {
-        Sanctum::actingAs(User::factory()->for($this->sushi)->create());
+        $this->actingAsExtension(User::factory()->for($this->sushi)->create());
 
         $contact = Contact::create(['email' => 'x@y.pl', 'group_id' => $this->pizzeria->id]);
 
@@ -95,14 +94,14 @@ class TenancyTest extends TestCase
     public function test_user_without_group_sees_nothing(): void
     {
         $user = User::factory()->create(['group_id' => null]);
-        Sanctum::actingAs($user);
+        $this->actingAsExtension($user);
 
         $this->assertSame(0, Contact::count());
     }
 
     public function test_master_admin_sees_all_groups(): void
     {
-        Sanctum::actingAs(User::factory()->admin()->create());
+        $this->actingAsExtension(User::factory()->admin()->create());
 
         $this->assertSame(2, Contact::count());
         $this->assertSame(1, Contact::forGroup($this->sushi)->count());
@@ -115,7 +114,7 @@ class TenancyTest extends TestCase
         $emails = $tenancy->runAs($this->sushi, fn () => Contact::pluck('group_id')->unique()->all());
         $this->assertSame([$this->sushi->id], $emails);
 
-        Sanctum::actingAs(User::factory()->for($this->pizzeria)->create());
+        $this->actingAsExtension(User::factory()->for($this->pizzeria)->create());
         $this->assertSame(1, Contact::count());
         $this->assertSame(2, $tenancy->withoutScope(fn () => Contact::count()));
         $this->assertSame(1, Contact::count(), 'scope must be restored after withoutScope()');

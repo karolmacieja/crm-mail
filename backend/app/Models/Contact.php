@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A person or company the restaurant talks to.
@@ -114,6 +115,12 @@ class Contact extends Model
     public function timeline(): HasMany
     {
         return $this->hasMany(Activity::class)->latest('occurred_at')->latest('id');
+    }
+
+    /** Newest timeline entry ("Ostatnia aktywność" column). */
+    public function latestActivity(): HasOne
+    {
+        return $this->hasOne(Activity::class)->latestOfMany('occurred_at');
     }
 
     /** Add a manual note to the timeline. */

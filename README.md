@@ -182,41 +182,79 @@ php artisan migrate
 
 # utworzenie użytkownika i licencji (komenda zapyta o hasło)
 php artisan crm:license ty@firma.pl --days=365 --name="Ty" --group="Moja Restauracja"
-php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin (bez grupy i licencji)
+php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje się tylko w panelu webowym
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 44 testy
+php artisan test                      # 68 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
 
-### API
+### Dwa typy logowania
 
-Wszystkie ścieżki mają prefiks `/api`, przyjmują i zwracają JSON. Wysyłaj nagłówek `Authorization: Bearer <token>`.
+| | Rozszerzenie Gmail (pracownicy) | Panel webowy (Master Admin) |
+|---|---|---|
+| Logowanie | `POST /api/auth/login` → token Bearer | `GET /sanctum/csrf-cookie`, potem `POST /api/web/login` → ciasteczko sesji |
+| Mechanizm | Sanctum Personal Access Token z uprawnieniem `crm` | Sanctum SPA (sesja + CSRF) |
+| Kto może | `staff` / `manager` z grupą (restauracją) i miejscem w licencji | tylko `master_admin` |
+| Middleware | `auth:sanctum` → `client:extension` → `tenant` → `license` | `auth:sanctum` → `client:web` → `admin` |
+| Dostęp | dane CRM własnej restauracji | grupy, użytkownicy, licencje; **bez** danych CRM |
 
-| Metoda | Ścieżka | Middleware | Uwagi |
-|---|---|---|---|
-| POST | `/auth/login` | throttle 5/min | `{email, password, device_name?}` → `{token, expires_at, user}` |
-| GET | `/auth/me` | auth | Dane użytkownika i status licencji (działa też przy wygasłej licencji) |
-| POST | `/auth/logout` | auth | Unieważnia tylko bieżący token |
-| GET | `/contacts` | auth, license | `search, status, sort, direction, page, per_page` (stronicowane, zawiera `open_tasks_count`) |
-| GET | `/contacts/lookup?email=` | auth, license | Kontakt z zadaniami albo `{"data": null}` |
-| POST/GET/PATCH/DELETE | `/contacts/{id}` | auth, license | `email` unikalny w obrębie użytkownika, `status ∈ lead, prospect, customer, inactive` |
-| GET | `/tasks` | auth, license | `status=open\|completed\|overdue\|all`, `contact_id` |
-| POST/GET/PATCH/DELETE | `/tasks/{id}` | auth, license | `{contact_id, title, due_date, is_completed}` |
-| GET | `/dashboard/summary?tz=` | auth, license | Liczniki i listy przypomnień (zaległe / dziś / 7 dni) w strefie czasowej użytkownika |
-| GET | `/admin/users` | auth, admin | |
-| POST | `/admin/users/{id}/license` | auth, admin | `{days, regenerate_key?}`. Jeśli licencja jest aktywna, przedłuża ją od obecnej daty wygaśnięcia |
-| DELETE | `/admin/users/{id}/license` | auth, admin | Kończy licencję i unieważnia wszystkie tokeny użytkownika |
+`client:web` przyjmuje wyłącznie sesję, więc token z rozszerzenia nigdy nie dotrze do zarządzania licencjami,
+nawet jeśli należy do Master Admina. Master Admin nie dostaje też tokena rozszerzenia (`403 use_web_panel`).
+Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `license_expired`, `license_missing`, `admin_only`).
 
-Każde zapytanie jest ograniczone do zalogowanego użytkownika. Rekordy innych użytkowników zwracają 404,
-a zadanie można przypiąć tylko do własnego kontaktu (walidacja `exists` z warunkiem na `user_id`).
+### API rozszerzenia (`/api`, token Bearer)
 
-**CORS** (`config/cors.php`): dozwolone tylko `https://mail.google.com` i originy `chrome-extension://…`,
-wyłącznie tokeny Bearer (`supports_credentials=false`). Na produkcji przypnij ID swojego rozszerzenia:
-`CORS_ALLOWED_ORIGINS="https://mail.google.com,chrome-extension://<id>"` oraz
-`CORS_ALLOWED_ORIGIN_PATTERNS=`.
+| Metoda | Ścieżka | Uwagi |
+|---|---|---|
+| POST | `/auth/login` | `{email, password, device_name?}` → `{token, expires_at, user}` (limit 5/min) |
+| GET / POST | `/auth/me`, `/auth/logout` | Działa także bez ważnej licencji |
+| GET | `/dashboard/summary` | Osobne liczniki i listy dla **zadań** i **przypomnień**: `overdue`, `due_today`, `upcoming_week`; do tego kontakty, rezerwacje, maile |
+| GET | `/contacts` | `search, status, category (id/slug), is_client, sort, direction, page, per_page` |
+| GET | `/contacts/lookup?email=` | Pełna karta albo `{"data": null}` |
+| CRUD | `/contacts/{id}` | Karta: kategoria, własne pola, zadania, przypomnienia, nadchodzące rezerwacje |
+| POST / PATCH / DELETE | `/contacts/{id}/custom-fields[/{field}]` | „Dodaj pole”, np. Alergie (typy: text, number, date, boolean) |
+| GET | `/contacts/{id}/activities` | Oś czasu, `type=email\|note\|system`, stronicowana |
+| POST | `/contacts/{id}/notes` | „Zapisz do osi czasu” |
+| POST | `/contacts/{id}/emails` | Zapis maila z Gmaila na osi czasu (idempotentny po `message_id`) |
+| CRUD | `/tasks` | `window=overdue\|today\|upcoming\|open\|done\|all`, `type`, `priority`, `urgent=1`, `assigned_to=me\|id`, `search` |
+| CRUD | `/reminders` | `window`, `type=email\|reservation\|general`, `search`, `contact_id`, `reservation_id` |
+| CRUD | `/reservations` | `from, to, status, contact_id, upcoming=1` |
+| GET | `/categories`, `/team` | Kategorie grupy; współpracownicy (do przypisywania zadań) |
+
+### API panelu webowego (`/api`, sesja, tylko Master Admin)
+
+| Metoda | Ścieżka | Uwagi |
+|---|---|---|
+| POST / GET / POST | `/web/login`, `/web/me`, `/web/logout` | Logowanie sesyjne |
+| GET | `/admin/stats` | Grupy, użytkownicy bez miejsca, licencje wygasające w ciągu 30 dni |
+| CRUD | `/admin/groups` | Usunięcie wymaga `?confirm=<slug>` i kasuje dane restauracji oraz jej konta |
+| CRUD | `/admin/users` | `role`, `group_id`, opcjonalnie `license_id` (od razu przydziela miejsce) |
+| POST | `/admin/users/{id}/revoke-tokens` | Wylogowuje użytkownika ze wszystkich rozszerzeń |
+| CRUD | `/admin/licenses` | `group_id, seats, days \| expires_at, plan, status`; liczba miejsc nie może spaść poniżej zajętych |
+| POST | `/admin/licenses/{id}/extend` | `{days}` |
+| POST / DELETE | `/admin/licenses/{id}/assignments[/{user}]` | Przydział / zwolnienie miejsca |
+
+### CORS i domeny
+
+`config/cors.php` dopuszcza panel webowy (`WEB_PANEL_URL`), rozszerzenie (`CHROME_EXTENSION_IDS`) i
+`https://mail.google.com`, z `supports_credentials=true` (wymagane przez sesję panelu). Lokalnie, przy pustym
+`CHROME_EXTENSION_IDS`, dopuszczane jest dowolne ID rozszerzenia, ale nigdy na produkcji.
+
+Na produkcji panel i API muszą mieć wspólną domenę nadrzędną, np.:
+
+```
+API:   https://api.domena.pl      WEB_PANEL_URL=https://app.domena.pl
+Panel: https://app.domena.pl      SANCTUM_STATEFUL_DOMAINS=app.domena.pl
+                                  SESSION_DOMAIN=.domena.pl
+                                  SESSION_SECURE_COOKIE=true
+                                  CHROME_EXTENSION_IDS=<id z chrome://extensions>
+```
+
+Ciasteczko sesji ma `SameSite=Lax`, a Sanctum uruchamia sesję tylko dla domen ze `SANCTUM_STATEFUL_DOMAINS`.
+Żądanie z Gmaila nie może więc użyć sesji Master Admina (zwraca 401).
 
 ## Rozszerzenie
 

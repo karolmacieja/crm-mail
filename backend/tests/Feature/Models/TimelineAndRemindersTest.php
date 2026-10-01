@@ -12,7 +12,6 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TimelineAndRemindersTest extends TestCase
@@ -28,7 +27,7 @@ class TimelineAndRemindersTest extends TestCase
         parent::setUp();
         $this->user = User::factory()->licensed()->create();
         $this->contact = Contact::factory()->for($this->user->group)->client()->create();
-        Sanctum::actingAs($this->user);
+        $this->actingAsExtension($this->user);
     }
 
     protected function tearDown(): void

@@ -84,9 +84,9 @@ class Reservation extends Model
     }
 
     /** Start of the booking in the group's timezone. */
-    public function startsAt(): Carbon
+    public function startsAt(?string $timezone = null): Carbon
     {
-        $timezone = $this->group?->timezone ?? config('app.timezone');
+        $timezone ??= $this->group?->timezone ?? config('app.timezone');
 
         return Carbon::parse($this->reservation_date->format('Y-m-d').' '.$this->reservation_time, $timezone);
     }

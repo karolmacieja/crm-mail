@@ -121,7 +121,8 @@ export function toApiError(error) {
     case 402:
       return new ApiError({ status, code: data?.code ?? 'license_invalid', message: t('errors.licenseInvalid'), cause: error })
     case 403:
-      return new ApiError({ status, code: 'forbidden', message: t('errors.forbidden'), cause: error })
+      // The API explains 403s (wrong app, no restaurant, inactive restaurant) in the request language.
+      return new ApiError({ status, code: data?.code ?? 'forbidden', message: serverMessage ?? t('errors.forbidden'), cause: error })
     case 404:
       return new ApiError({ status, code: 'not_found', message: t('errors.notFound'), cause: error })
     case 422:

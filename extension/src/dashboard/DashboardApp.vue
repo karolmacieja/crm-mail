@@ -71,7 +71,7 @@
               </div>
               <TaskList
                 v-else
-                :tasks="summary?.reminders[activeReminderTab] ?? []"
+                :tasks="summary?.tasks.lists[activeReminderTab] ?? []"
                 show-contact
                 :removable="false"
                 :empty-text="reminderEmptyText"
@@ -246,9 +246,9 @@ const rowError = ref('')
 const summary = computed(() => crm.summary.data)
 
 const reminderTabs = computed(() => [
-  { key: 'overdue', label: t('dashboard.tabs.overdue'), count: summary.value?.reminders.overdue.length ?? 0 },
-  { key: 'today', label: t('dashboard.tabs.today'), count: summary.value?.reminders.today.length ?? 0 },
-  { key: 'upcoming', label: t('dashboard.tabs.upcoming'), count: summary.value?.reminders.upcoming.length ?? 0 },
+  { key: 'overdue', label: t('dashboard.tabs.overdue'), count: summary.value?.tasks.lists.overdue.length ?? 0 },
+  { key: 'today', label: t('dashboard.tabs.today'), count: summary.value?.tasks.lists.today.length ?? 0 },
+  { key: 'upcoming', label: t('dashboard.tabs.upcoming'), count: summary.value?.tasks.lists.upcoming.length ?? 0 },
 ])
 
 const reminderEmptyText = computed(() => t(`dashboard.empty.${activeReminderTab.value}`))
@@ -274,8 +274,8 @@ watch(
 
 // Jump to the most relevant reminder tab once numbers first arrive.
 watch(summary, (data, previous) => {
-  if (!previous && data && !data.reminders.overdue.length) {
-    activeReminderTab.value = data.reminders.today.length ? 'today' : 'upcoming'
+  if (!previous && data && !data.tasks.lists.overdue.length) {
+    activeReminderTab.value = data.tasks.lists.today.length ? 'today' : 'upcoming'
   }
 })
 

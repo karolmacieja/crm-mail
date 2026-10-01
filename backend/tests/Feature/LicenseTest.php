@@ -3,73 +3,60 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
+/**
+ * License gate for the extension's CRM endpoints.
+ */
 class LicenseTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_expired_license_is_rejected_with_402(): void
     {
-        Sanctum::actingAs(User::factory()->expiredLicense()->create());
+        $this->actingAsExtension(User::factory()->expiredLicense()->create());
 
         $this->getJson('/api/contacts')
             ->assertStatus(402)
             ->assertJsonPath('code', 'license_expired');
     }
 
-    public function test_missing_license_is_rejected_with_402(): void
+    public function test_missing_seat_is_rejected_with_402(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        $this->actingAsExtension(User::factory()->create());
 
         $this->getJson('/api/contacts')
             ->assertStatus(402)
             ->assertJsonPath('code', 'license_missing');
     }
 
-    public function test_valid_license_and_admins_pass(): void
+    public function test_staff_with_a_seat_passes(): void
     {
-        Sanctum::actingAs(User::factory()->licensed()->create());
-        $this->getJson('/api/contacts')->assertOk();
+        $this->actingAsExtension(User::factory()->licensed()->create());
 
-        Sanctum::actingAs(User::factory()->admin()->create());
         $this->getJson('/api/contacts')->assertOk();
     }
 
-    public function test_admin_can_grant_extend_and_revoke_licenses(): void
+    public function test_me_works_without_license_to_show_renewal_state(): void
     {
-        $customer = User::factory()->licensed(10)->create();
-        $customer->createToken('chrome');
-        $originalExpiry = $customer->license->expires_at;
+        $this->actingAsExtension(User::factory()->expiredLicense()->create());
 
-        Sanctum::actingAs(User::factory()->admin()->create());
-
-        $this->postJson("/api/admin/users/{$customer->id}/license", ['days' => 30])
-            ->assertOk()
-            ->assertJsonPath('data.license.key', $customer->license->key);
-
-        // Extending an active license stacks on top of the remaining time.
-        $this->assertTrue($customer->refresh()->license->expires_at->equalTo($originalExpiry->copy()->addDays(30)));
-
-        $this->deleteJson("/api/admin/users/{$customer->id}/license")
-            ->assertOk()
-            ->assertJsonPath('data.license.is_valid', false);
-
-        $this->assertCount(0, $customer->tokens()->get());
+        $this->getJson('/api/auth/me')->assertOk()->assertJsonPath('data.license.status', 'expired');
     }
 
-    public function test_non_admin_cannot_manage_licenses(): void
+    public function test_inactive_group_blocks_crm(): void
     {
         $user = User::factory()->licensed()->create();
-        Sanctum::actingAs($user);
+        $user->group->update(['is_active' => false]);
+        $this->actingAsExtension($user);
 
-        $this->postJson("/api/admin/users/{$user->id}/license", ['days' => 365])->assertForbidden();
+        $this->getJson('/api/contacts')->assertForbidden()->assertJsonPath('code', 'group_inactive');
     }
 
-    public function test_license_command_creates_user_and_license(): void
+    public function test_license_command_creates_group_user_and_seat(): void
     {
         $this->artisan('crm:license', ['email' => 'New@Example.com', '--days' => 14, '--group' => 'Bistro Nowe'])
             ->expectsQuestion('Password for the new user (min. 8 characters)', 'secret-password')
@@ -80,5 +67,6 @@ class LicenseTest extends TestCase
         $this->assertSame('Bistro Nowe', $user->group->name);
         $this->assertSame(UserRole::Manager, $user->role);
         $this->assertMatchesRegularExpression('/^GFX-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/', $user->license->key);
+        $this->assertSame(1, Group::count());
     }
 }

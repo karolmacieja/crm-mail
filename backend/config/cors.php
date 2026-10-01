@@ -2,44 +2,53 @@
 
 /*
 |--------------------------------------------------------------------------
-| CORS for the Gmail CRM extension
+| CORS for GastroFlowx
 |--------------------------------------------------------------------------
-| The extension routes API calls through its MV3 service worker (origin
-| chrome-extension://<id>), and may also call directly from Gmail
-| (origin https://mail.google.com). Authentication uses bearer tokens,
-| never cookies, so credentials support stays disabled.
+| Allowed callers:
+|  - the Master Admin web panel (WEB_PANEL_URL, e.g. https://app.domena.pl),
+|    which sends cookies → supports_credentials = true;
+|  - the Gmail extension (chrome-extension://<CHROME_EXTENSION_IDS>), which
+|    uses bearer tokens from its service worker;
+|  - https://mail.google.com, for direct calls from the content script.
 |
-| Lock the extension origin down in production:
-|   CORS_ALLOWED_ORIGINS="https://mail.google.com,chrome-extension://<your-extension-id>"
+| Credentials are allowed for every listed origin, but that does not expose
+| the admin session to Gmail: the session cookie is SameSite=Lax (not sent on
+| cross-site fetches) and Sanctum only starts sessions for SANCTUM_STATEFUL_DOMAINS.
+|
+| Locally, when CHROME_EXTENSION_IDS is empty, any extension id is allowed so
+| an unpacked build (whose id differs per machine) works. Never in production.
 */
 
-$origins = array_values(array_filter(array_map('trim', explode(',', (string) env(
-    'CORS_ALLOWED_ORIGINS',
-    'https://mail.google.com'
-)))));
+$list = fn (?string $value) => array_values(array_filter(array_map('trim', explode(',', (string) $value))));
 
-$patterns = array_values(array_filter(array_map('trim', explode(',', (string) env(
-    'CORS_ALLOWED_ORIGIN_PATTERNS',
-    // Any Chrome extension id (32 chars a-p). Override with a fixed origin in production.
-    '#^chrome-extension://[a-p]{32}$#'
-)))));
+$extensionOrigins = array_map(fn (string $id) => "chrome-extension://{$id}", $list(env('CHROME_EXTENSION_IDS')));
+
+$allowAnyExtension = $extensionOrigins === [] && env('APP_ENV', 'production') !== 'production';
 
 return [
 
-    'paths' => ['api/*'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => $origins,
+    'allowed_origins' => array_values(array_unique(array_filter([
+        rtrim((string) env('WEB_PANEL_URL', 'http://localhost:5173'), '/'),
+        'https://mail.google.com',
+        ...$extensionOrigins,
+        ...$list(env('CORS_EXTRA_ORIGINS')),
+    ]))),
 
-    'allowed_origins_patterns' => $patterns,
+    'allowed_origins_patterns' => $allowAnyExtension ? ['#^chrome-extension://[a-p]{32}$#'] : [],
 
-    'allowed_headers' => ['Accept', 'Authorization', 'Content-Type', 'X-Requested-With', 'X-Client-Version'],
+    'allowed_headers' => [
+        'Accept', 'Accept-Language', 'Authorization', 'Content-Type',
+        'X-Requested-With', 'X-XSRF-TOKEN', 'X-Client-Version',
+    ],
 
-    'exposed_headers' => ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
+    'exposed_headers' => ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'Content-Language'],
 
     'max_age' => 86400,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

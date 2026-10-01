@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Contact;
+use App\Models\Reminder;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TaskTest extends TestCase
@@ -22,7 +22,7 @@ class TaskTest extends TestCase
         parent::setUp();
         $this->user = User::factory()->licensed()->create();
         $this->contact = Contact::factory()->for($this->user->group)->create();
-        Sanctum::actingAs($this->user);
+        $this->actingAsExtension($this->user);
     }
 
     public function test_create_complete_and_delete_task(): void
@@ -78,22 +78,37 @@ class TaskTest extends TestCase
         $this->getJson('/api/tasks?status=all')->assertJsonCount(3, 'data');
     }
 
-    public function test_dashboard_summary(): void
+    public function test_dashboard_summary_has_separate_task_and_reminder_counters(): void
     {
-        $base = ['contact_id' => $this->contact->id, 'user_id' => $this->user->id];
+        $base = ['contact_id' => $this->contact->id, 'group_id' => $this->user->group_id];
         Task::factory()->create($base + ['due_date' => now()->subDay()]);
         Task::factory()->create($base + ['due_date' => now()->addDays(3)]);
-        Task::factory()->create(); // other user's task must not leak
+        Task::factory()->create(); // another restaurant's task must not leak
 
-        $this->getJson('/api/dashboard/summary?tz=Europe/Warsaw')
+        Reminder::factory()->for($this->contact)->create(['remind_at' => now()->subHour()]);
+        Reminder::factory()->for($this->contact)->create(['remind_at' => now()->subHours(2)]);
+        Reminder::factory()->for($this->contact)->create(['remind_at' => now()->addDays(2)]);
+        Reminder::factory()->create(['remind_at' => now()->subHour()]); // other group
+
+        $this->getJson('/api/dashboard/summary')
             ->assertOk()
+            ->assertJsonPath('data.timezone', 'Europe/Warsaw') // restaurant timezone by default
             ->assertJsonPath('data.contacts.total', 1)
             ->assertJsonPath('data.tasks.open', 2)
             ->assertJsonPath('data.tasks.overdue', 1)
             ->assertJsonPath('data.tasks.upcoming_week', 1)
-            ->assertJsonCount(1, 'data.reminders.overdue')
-            ->assertJsonCount(1, 'data.reminders.upcoming')
-            ->assertJsonPath('data.timezone', 'Europe/Warsaw');
+            ->assertJsonCount(1, 'data.tasks.lists.overdue')
+            ->assertJsonPath('data.reminders.overdue', 2)
+            ->assertJsonPath('data.reminders.upcoming_week', 1)
+            ->assertJsonCount(2, 'data.reminders.lists.overdue')
+            ->assertJsonPath('data.reminders.lists.overdue.0.time_status', 'overdue')
+            ->assertJsonStructure(['data' => [
+                'contacts' => ['total', 'clients', 'by_category', 'by_status'],
+                'tasks' => ['overdue', 'due_today', 'upcoming_week', 'open', 'urgent', 'lists' => ['overdue', 'today', 'upcoming']],
+                'reminders' => ['overdue', 'due_today', 'upcoming_week', 'lists' => ['overdue', 'today', 'upcoming']],
+                'reservations' => ['today', 'today_guests', 'upcoming'],
+                'emails' => ['today'],
+            ]]);
 
         $this->getJson('/api/dashboard/summary?tz=Mars/Base')->assertStatus(422);
     }

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class LocalizationTest extends TestCase
@@ -16,7 +15,7 @@ class LocalizationTest extends TestCase
     {
         $user = User::factory()->licensed()->create();
         Contact::factory()->for($user->group)->create(['email' => 'dup@acme.com']);
-        Sanctum::actingAs($user);
+        $this->actingAsExtension($user);
 
         $this->withHeader('Accept-Language', 'pl-PL,pl;q=0.9')
             ->postJson('/api/contacts', ['email' => 'dup@acme.com', 'phone' => 'zadzwoń'])

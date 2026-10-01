@@ -9,10 +9,6 @@ class UpdateTaskRequest extends StoreTaskRequest
      */
     public function rules(): array
     {
-        $rules = parent::rules();
-        $rules['contact_id'] = array_merge(['sometimes'], array_diff($rules['contact_id'], ['required']));
-        $rules['title'] = ['sometimes', 'string', 'max:255'];
-
-        return $rules;
+        return $this->partial(parent::rules());
     }
 }

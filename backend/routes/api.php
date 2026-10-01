@@ -1,41 +1,93 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\Admin\GroupController;
 use App\Http\Controllers\Api\Admin\LicenseController;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Admin\StatsController;
+use App\Http\Controllers\Api\Admin\UserController;
+use App\Http\Controllers\Api\Auth\SessionAuthController;
+use App\Http\Controllers\Api\Auth\TokenAuthController;
+use App\Http\Controllers\Api\ContactCategoryController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\ContactCustomFieldController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ReminderController;
+use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\TeamController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Gmail CRM API  (prefix: /api)
+| GastroFlowx API  (prefix: /api) — one backend, two clients
 |--------------------------------------------------------------------------
-| Auth: Sanctum bearer tokens (Authorization: Bearer <token>).
-| CRM endpoints additionally require a valid license (HTTP 402 otherwise).
+|
+| A) Gmail extension (restaurant staff)
+|    Auth: Sanctum personal access token (Authorization: Bearer <token>) with
+|    the "crm" ability. Middleware chain: client:extension → tenant → license.
+|    No access to user/license management.
+|
+| B) Web panel (Master Admin, e.g. app.domena.pl)
+|    Auth: Sanctum SPA session cookie (GET /sanctum/csrf-cookie, then
+|    POST /api/web/login). Middleware chain: client:web → admin.
 */
 
-Route::post('/auth/login', [AuthController::class, 'login'])
+// ---------------------------------------------------------------- A) Extension
+Route::post('/auth/login', [TokenAuthController::class, 'login'])
     ->middleware('throttle:login')
     ->name('auth.login');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
     // Available without a license so the extension can show account/renewal state.
-    Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
-    Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+    Route::get('/auth/me', [TokenAuthController::class, 'me'])->name('auth.me');
+    Route::post('/auth/logout', [TokenAuthController::class, 'logout'])->name('auth.logout');
 
-    Route::middleware(['license', 'throttle:api'])->group(function () {
+    Route::middleware(['tenant', 'license', 'throttle:api'])->group(function () {
+        Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
+        Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+        Route::get('/categories', [ContactCategoryController::class, 'index'])->name('categories.index');
+
         Route::get('/contacts/lookup', [ContactController::class, 'lookup'])->name('contacts.lookup');
         Route::apiResource('contacts', ContactController::class)->whereNumber('contact');
 
-        Route::apiResource('tasks', TaskController::class)->whereNumber('task');
+        Route::prefix('contacts/{contact}')->whereNumber('contact')->name('contacts.')->group(function () {
+            Route::post('/custom-fields', [ContactCustomFieldController::class, 'store'])->name('custom-fields.store');
+            Route::patch('/custom-fields/{field}', [ContactCustomFieldController::class, 'update'])->whereNumber('field')->name('custom-fields.update');
+            Route::delete('/custom-fields/{field}', [ContactCustomFieldController::class, 'destroy'])->whereNumber('field')->name('custom-fields.destroy');
 
-        Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->name('dashboard.summary');
+            Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
+            Route::post('/notes', [ActivityController::class, 'storeNote'])->name('notes.store');
+            Route::post('/emails', [ActivityController::class, 'storeEmail'])->name('emails.store');
+            Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->whereNumber('activity')->name('activities.destroy');
+        });
+
+        Route::apiResource('tasks', TaskController::class)->whereNumber('task');
+        Route::apiResource('reminders', ReminderController::class)->whereNumber('reminder');
+        Route::apiResource('reservations', ReservationController::class)->whereNumber('reservation');
     });
+});
+
+// ---------------------------------------------------------------- B) Web panel
+Route::post('/web/login', [SessionAuthController::class, 'login'])
+    ->middleware('throttle:login')
+    ->name('web.login');
+
+Route::middleware(['auth:sanctum', 'client:web'])->group(function () {
+    Route::get('/web/me', [SessionAuthController::class, 'me'])->name('web.me');
+    Route::post('/web/logout', [SessionAuthController::class, 'logout'])->name('web.logout');
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/users', [LicenseController::class, 'index'])->name('users.index');
-        Route::post('/users/{user}/license', [LicenseController::class, 'grant'])->name('users.license.grant');
-        Route::delete('/users/{user}/license', [LicenseController::class, 'revoke'])->name('users.license.revoke');
+        Route::get('/stats', StatsController::class)->name('stats');
+
+        Route::apiResource('groups', GroupController::class)->whereNumber('group');
+
+        Route::apiResource('users', UserController::class)->whereNumber('user');
+        Route::post('/users/{user}/revoke-tokens', [UserController::class, 'revokeTokens'])->whereNumber('user')->name('users.revoke-tokens');
+
+        Route::apiResource('licenses', LicenseController::class)->whereNumber('license');
+        Route::post('/licenses/{license}/extend', [LicenseController::class, 'extend'])->whereNumber('license')->name('licenses.extend');
+        Route::post('/licenses/{license}/assignments', [LicenseController::class, 'assign'])->whereNumber('license')->name('licenses.assign');
+        Route::delete('/licenses/{license}/assignments/{user}', [LicenseController::class, 'unassign'])
+            ->whereNumber(['license', 'user'])->name('licenses.unassign');
     });
 });

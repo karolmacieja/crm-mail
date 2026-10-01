@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Blocks CRM endpoints for users without an active, unexpired license.
+ * Blocks CRM endpoints for staff without a seat on an active, unexpired license.
  *
  * Responds with HTTP 402 (Payment Required) and a machine-readable `code`
  * so the extension can distinguish license problems from auth (401) and
@@ -23,7 +23,7 @@ class EnsureValidLicense
             return response()->json(['message' => 'Unauthenticated.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        if ($user->isMasterAdmin() || $user->hasValidLicense()) {
+        if ($user->hasValidLicense()) {
             return $next($request);
         }
 

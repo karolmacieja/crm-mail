@@ -6,7 +6,6 @@ use App\Models\Contact;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ContactTest extends TestCase
@@ -19,7 +18,7 @@ class ContactTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->licensed()->create();
-        Sanctum::actingAs($this->user);
+        $this->actingAsExtension($this->user);
     }
 
     public function test_full_crud_cycle(): void

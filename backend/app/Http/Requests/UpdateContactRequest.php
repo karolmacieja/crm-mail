@@ -5,14 +5,12 @@ namespace App\Http\Requests;
 class UpdateContactRequest extends StoreContactRequest
 {
     /**
-     * Same rules as creation, but every field is optional (PATCH semantics).
-     *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $rules = parent::rules();
-        $rules['email'] = array_merge(['sometimes'], array_diff($rules['email'], ['required']));
+        $rules = $this->partial(parent::rules());
+        unset($rules['custom_fields'], $rules['custom_fields.*.label'], $rules['custom_fields.*.type'], $rules['custom_fields.*.value']);
 
         return $rules;
     }
