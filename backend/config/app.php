@@ -55,6 +55,12 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Master Admin web panel (separate SPA). The API root redirects there.
+    */
+
+    'web_panel_url' => rtrim((string) env('WEB_PANEL_URL', 'http://localhost:5173'), '/'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
