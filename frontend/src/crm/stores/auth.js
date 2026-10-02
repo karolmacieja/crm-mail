@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.post('/auth/login', {
         email,
         password,
-        device_name: `Gmail CRM extension (${navigator.platform || 'Chrome'})`,
+        device_name: `GastroFlowx extension (${navigator.platform || 'Chrome'})`,
       })
 
       const next = { token: data.token, expires_at: data.expires_at, user: data.user }

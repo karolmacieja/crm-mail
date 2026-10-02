@@ -25,7 +25,7 @@ export default {
   login: {
     adminTitle: 'GastroFlowx – administrator panel',
     remember: 'Keep me signed in',
-    title: 'Sign in to Gmail CRM',
+    title: 'Sign in to GastroFlowx',
     subtitle: 'Use the account linked to your license.',
     email: 'Email',
     password: 'Password',
@@ -136,7 +136,7 @@ export default {
   },
   errors: {
     sessionExpired: 'Your session has expired. Please refresh the page and sign in again.',
-    extensionReloaded: 'Gmail CRM was updated. Please reload this Gmail tab.',
+    extensionReloaded: 'GastroFlowx was updated. Please reload this Gmail tab.',
     timeout: 'The CRM server took too long to respond. Please try again.',
     network: 'Cannot reach the CRM server. Check your connection and try again.',
     unauthenticated: 'Your session has expired. Please sign in again.',

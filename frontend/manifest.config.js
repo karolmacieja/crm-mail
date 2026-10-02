@@ -26,9 +26,10 @@ export function createManifest(env) {
 
   return defineManifest({
     manifest_version: 3,
-    name: 'Gmail CRM',
-    short_name: 'Gmail CRM',
-    description: 'Lightweight CRM inside Gmail: contacts, deal status and follow-up reminders next to every email.',
+    // Store name must not start with a Google trademark ("Gmail").
+    name: 'GastroFlowx – CRM dla restauracji',
+    short_name: 'GastroFlowx',
+    description: 'CRM dla restauracji w Gmailu: karta klienta przy każdym mailu, rezerwacje, zadania, przypomnienia i notatki zespołu.',
     version: pkg.version,
     minimum_chrome_version: '114',
     icons: {
@@ -38,7 +39,7 @@ export function createManifest(env) {
       128: 'icons/icon-128.png',
     },
     action: {
-      default_title: 'Gmail CRM',
+      default_title: 'GastroFlowx',
       default_popup: 'src/extension/popup/index.html',
       default_icon: {
         16: 'icons/icon-16.png',

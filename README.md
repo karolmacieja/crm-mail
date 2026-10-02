@@ -1,4 +1,4 @@
-# Gmail CRM
+# GastroFlowx – CRM dla restauracji w Gmailu
 
 CRM w modelu SaaS działający wewnątrz Gmaila: **rozszerzenie Chrome (Manifest V3, Vue 3, InboxSDK)** połączone z **API w Laravel 11**, z tokenami Sanctum i licencjami przypisanymi do użytkowników.
 
@@ -106,7 +106,7 @@ npm run build:extension           # wynik trafia do frontend/dist
 1. Otwórz `chrome://extensions`.
 2. W prawym górnym rogu włącz **Tryb programisty**.
 3. Kliknij **Załaduj rozpakowane** i wskaż folder `frontend/dist`.
-4. Przypnij ikonę „Gmail CRM” na pasku (ikona puzzla → pinezka).
+4. Przypnij ikonę „GastroFlowx” na pasku (ikona puzzla → pinezka).
 
 ### 6. Zaloguj się i korzystaj
 
@@ -133,8 +133,8 @@ Hasło do wszystkich kont to `password`:
 | Objaw | Co zrobić |
 |---|---|
 | „Brak połączenia z serwerem CRM” | Sprawdź, czy w terminalu nr 1 działa `php artisan serve` |
-| Brak ikony CRM w Gmailu | Odśwież kartę Gmaila (F5). Sprawdź konsolę (F12) pod kątem błędów `[Gmail CRM]`, np. złego `VITE_INBOXSDK_APP_ID` |
-| „Gmail CRM został zaktualizowany” | Po przebudowaniu rozszerzenia kliknij ⟳ przy nim w `chrome://extensions` i odśwież Gmaila |
+| Brak ikony CRM w Gmailu | Odśwież kartę Gmaila (F5). Sprawdź konsolę (F12) pod kątem błędów `[GastroFlowx]`, np. złego `VITE_INBOXSDK_APP_ID` |
+| „GastroFlowx został zaktualizowany” | Po przebudowaniu rozszerzenia kliknij ⟳ przy nim w `chrome://extensions` i odśwież Gmaila |
 | „Twoja licencja wygasła” | `php artisan crm:license twoj@email.pl --days=365`, potem „Licencja odnowiona – sprawdź ponownie” |
 | „Zbyt wiele żądań” przy logowaniu | Limit to 5 prób na minutę. Odczekaj minutę |
 | Zmieniłeś `VITE_API_BASE_URL` | Uruchom ponownie `npm run build:extension` i przeładuj rozszerzenie (adres jest wbudowywany w manifest) |

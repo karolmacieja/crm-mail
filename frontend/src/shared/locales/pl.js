@@ -25,7 +25,7 @@ export default {
   login: {
     adminTitle: 'GastroFlowx – panel administratora',
     remember: 'Nie wylogowuj mnie',
-    title: 'Zaloguj się do Gmail CRM',
+    title: 'Zaloguj się do GastroFlowx',
     subtitle: 'Użyj konta powiązanego z licencją.',
     email: 'E-mail',
     password: 'Hasło',
@@ -141,7 +141,7 @@ export default {
   },
   errors: {
     sessionExpired: 'Sesja wygasła. Odśwież stronę i zaloguj się ponownie.',
-    extensionReloaded: 'Gmail CRM został zaktualizowany. Odśwież tę kartę Gmaila.',
+    extensionReloaded: 'GastroFlowx został zaktualizowany. Odśwież tę kartę Gmaila.',
     timeout: 'Serwer CRM odpowiada zbyt długo. Spróbuj ponownie.',
     network: 'Brak połączenia z serwerem CRM. Sprawdź internet i spróbuj ponownie.',
     unauthenticated: 'Sesja wygasła. Zaloguj się ponownie.',
