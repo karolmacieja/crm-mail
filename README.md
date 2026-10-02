@@ -207,6 +207,7 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://api.domena.pl
 LOG_LEVEL=warning
+LOG_STACK=daily               # dzienniki rotowane, kasowane po 14 dniach (polityka prywatności)
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -343,7 +344,10 @@ Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID n
    * *Remote code:* „No” – cały kod jest w paczce.
    * Dane: zaznacz *Personally identifiable information*, *Personal communications* i *Authentication
      information*; potwierdź, że nie sprzedajesz danych.
-   * **Polityka prywatności (URL)** – wymagana, np. strona `https://domena.pl/polityka-prywatnosci`.
+   * **Polityka prywatności (URL)** – wymagana. Gotowa strona (PL + EN) jest w
+     `frontend/public-admin/polityka-prywatnosci.html` i po `npm run build:admin` jest dostępna pod
+     `https://app.domena.pl/polityka-prywatnosci.html`. Przed publikacją uzupełnij pola w `[NAWIASACH]`
+     (nazwa firmy, adres, NIP, e-mail, hosting).
 6. **Dystrybucja (Distribution):** *Visibility* → **Unlisted** (niepubliczne – instalacja tylko z linku).
    Alternatywa: *Private* – tylko dla wskazanych testerów lub Twojej domeny Google Workspace.
 7. **Submit for review.** Weryfikacja trwa zwykle od kilku godzin do kilku dni. Potem link do instalacji
