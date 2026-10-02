@@ -323,7 +323,9 @@ CHROME_EXTENSION_IDS=abcdefghijklmnopabcdefghijklmnop
 php artisan config:cache
 ```
 
-Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID nie jest dopuszczane.
+To ustawienie jest opcjonalne: rozszerzenie łączy się z API przez swój service worker, a Chrome nie stosuje
+CORS do rozszerzeń z uprawnieniem do hosta API. Lista ID dotyczy tylko nagłówków CORS (porządek, nie blokada) –
+wystarczy wpisać ID ze sklepu; lokalnego ID z `chrome://extensions` wpisywać nie trzeba.
 
 ### Publikacja w Chrome Web Store (niepubliczne)
 
@@ -352,7 +354,7 @@ Bez tego API odrzuci żądania rozszerzenia (CORS), bo na produkcji dowolne ID n
    Alternatywa: *Private* – tylko dla wskazanych testerów lub Twojej domeny Google Workspace.
 7. **Submit for review.** Weryfikacja trwa zwykle od kilku godzin do kilku dni. Potem link do instalacji
    jest w panelu (*Store listing → View in store*).
-8. **Serwer:** ID z kroku 3 wpisz w `backend/.env` → `CHROME_EXTENSION_IDS=…`, potem
+8. **Serwer (opcjonalnie):** ID z kroku 3 wpisz w `backend/.env` → `CHROME_EXTENSION_IDS=…`, potem
    `php artisan config:cache`.
 
 **Aktualizacja:** podnieś `version` w `frontend/package.json` (np. `1.0.1`), `npm run zip:extension`, w panelu
@@ -632,7 +634,9 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 
 `config/cors.php` dopuszcza panel webowy (`WEB_PANEL_URL`), rozszerzenie (`CHROME_EXTENSION_IDS`) i
 `https://mail.google.com`, z `supports_credentials=true` (wymagane przez sesję panelu). Lokalnie, przy pustym
-`CHROME_EXTENSION_IDS`, dopuszczane jest dowolne ID rozszerzenia, ale nigdy na produkcji.
+`CHROME_EXTENSION_IDS`, dopuszczane jest dowolne ID rozszerzenia, ale nigdy na produkcji. Samo rozszerzenie
+nie zależy od tych nagłówków: wszystkie żądania wysyła jego service worker z uprawnieniem do hosta API, a Chrome
+nie stosuje do nich CORS – lista ID jest tylko dodatkowym zawężeniem.
 
 Na produkcji panel i API muszą mieć wspólną domenę nadrzędną, np.:
 
