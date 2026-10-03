@@ -1,4 +1,5 @@
 import { GOOGLE_MESSAGE_TYPE } from '@/shared/lib/config.js'
+import { googleAccount } from './account.js'
 
 export class GoogleError extends Error {
   constructor(message, { code = 'google_error', status = 0 } = {}) {
@@ -13,7 +14,7 @@ export class GoogleError extends Error {
 function send(request) {
   return new Promise((resolve, reject) => {
     try {
-      chrome.runtime.sendMessage({ type: GOOGLE_MESSAGE_TYPE, request }, (reply) => {
+      chrome.runtime.sendMessage({ type: GOOGLE_MESSAGE_TYPE, request: { account: googleAccount(), ...request } }, (reply) => {
         const lastError = chrome.runtime.lastError
         if (lastError) reject(new GoogleError(lastError.message, { code: 'extension_error' }))
         else resolve(reply ?? {})
@@ -31,7 +32,7 @@ export async function googleStatus() {
 /** Opens Google's consent screen when needed. */
 export async function googleConnect() {
   const reply = await send({ action: 'connect' })
-  if (!reply.connected) throw new GoogleError(reply.error?.message ?? 'not_connected', { code: 'not_connected' })
+  if (!reply.connected) throw new GoogleError(reply.error?.message ?? 'not_connected', { code: reply.error?.code ?? 'not_connected' })
   return true
 }
 

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { GOOGLE_ENABLED } from '@/shared/lib/config.js'
+import { t } from '@/shared/lib/i18n.js'
 import { googleConnect, googleDisconnect, googleStatus } from '@/crm/google/client.js'
 import { syncCalendarItem } from '@/crm/google/calendarSync.js'
 import { importEmailHistory } from '@/crm/google/emailHistory.js'
@@ -8,7 +9,7 @@ import { useAuthStore } from './auth.js'
 import { useSettingsStore } from './settings.js'
 
 /**
- * Google integration of the signed-in staff member (Chrome's Google account):
+ * Google integration of the signed-in staff member (the Gmail tab's Google account):
  *  - import of past Gmail correspondence of contacts into the timeline,
  *  - their tasks & reminders as events in their own Google Calendar.
  */
@@ -37,7 +38,8 @@ export const useGoogleStore = defineStore('google', () => {
       await googleConnect()
       connected.value = true
     } catch (error) {
-      lastError.value = error.message
+      const known = ['wrong_account', 'missing_scopes', 'access_denied'].includes(error.code)
+      lastError.value = known ? t(`settings.google.errors.${error.code}`) : error.message
       connected.value = false
       throw error
     }

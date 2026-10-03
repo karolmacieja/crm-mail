@@ -12,17 +12,12 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
  */
 export function createManifest(env) {
   const apiOrigin = new URL(env.VITE_API_BASE_URL).origin
-  // Optional Google integration: Gmail history + Google Calendar via chrome.identity.
+  // Optional Google integration: Gmail history + Google Calendar. OAuth runs through
+  // chrome.identity.launchWebAuthFlow for the Gmail tab's account (see background/google.js),
+  // so the manifest needs no "oauth2" block (that one would tie it to Chrome's profile account).
   const google = env.VITE_GOOGLE_OAUTH_CLIENT_ID
-    ? {
-        permissions: ['identity'],
-        hosts: ['https://www.googleapis.com/*'],
-        oauth2: {
-          client_id: env.VITE_GOOGLE_OAUTH_CLIENT_ID,
-          scopes: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.events'],
-        },
-      }
-    : { permissions: [], hosts: [], oauth2: undefined }
+    ? { permissions: ['identity'], hosts: ['https://www.googleapis.com/*'] }
+    : { permissions: [], hosts: [] }
 
   return defineManifest({
     manifest_version: 3,
@@ -59,8 +54,7 @@ export function createManifest(env) {
     ],
     permissions: ['storage', 'scripting', ...google.permissions],
     host_permissions: ['https://mail.google.com/*', `${apiOrigin}/*`, ...google.hosts],
-    ...(google.oauth2 ? { oauth2: google.oauth2 } : {}),
-    // Public key pins the extension ID (the Google OAuth client is bound to it).
+    // Public key pins the extension ID of local builds to the Web Store one (OAuth redirect URI).
     ...(env.VITE_EXTENSION_KEY ? { key: env.VITE_EXTENSION_KEY } : {}),
     web_accessible_resources: [
       {

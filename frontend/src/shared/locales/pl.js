@@ -356,6 +356,12 @@ export default {
       emailHistoryHint: 'Po otwarciu lub dodaniu klienta importuje całą wcześniejszą korespondencję z Gmaila.',
       calendarSync: 'Synchronizuj z Kalendarzem Google',
       calendarSyncHint: 'Twoje zadania i przypomnienia trafiają od razu do Twojego głównego kalendarza.',
+      account: 'Konto z tej karty Gmaila: {email}',
+      errors: {
+        wrong_account: 'Na ekranie Google wybrano inne konto niż to, w którym jest otwarty Gmail. Połącz ponownie i wybierz właściwe konto.',
+        missing_scopes: 'Nie zaznaczono wszystkich uprawnień. Połącz ponownie i zaznacz dostęp do Gmaila i Kalendarza.',
+        access_denied: 'Odmówiono dostępu na ekranie Google.',
+      },
     },
   },
   admin: {

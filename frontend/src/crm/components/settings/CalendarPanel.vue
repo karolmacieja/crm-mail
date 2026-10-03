@@ -53,6 +53,7 @@
           <button v-if="!google.connected" type="button" class="gcrm-btn-primary" @click="connect">{{ t('settings.google.connect') }}</button>
           <button v-else type="button" class="gcrm-btn-ghost text-xs" @click="google.disconnect()">{{ t('settings.google.disconnect') }}</button>
         </div>
+        <p v-if="account" class="-mt-2 mb-4 text-xs text-gray-500">{{ t('settings.google.account', { email: account }) }}</p>
         <label class="mb-2 flex items-start gap-2 text-sm text-gray-700">
           <input type="checkbox" class="mt-0.5 accent-primary" :checked="prefs.google?.calendar_sync" @change="save({ google: { calendar_sync: $event.target.checked } })" />
           <span>{{ t('settings.google.calendarSync') }}<span class="block text-xs text-gray-500">{{ t('settings.google.calendarSyncHint') }}</span></span>
@@ -72,11 +73,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
 import { t } from '@/shared/lib/i18n.js'
+import { googleAccount } from '@/crm/google/account.js'
 import { useGoogleStore } from '@/crm/stores/google.js'
 import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const settings = useSettingsStore()
 const google = useGoogleStore()
+const account = googleAccount()
 const prefs = computed(() => settings.preferences ?? {})
 const feedUrl = computed(() => prefs.value.calendar_feed_url)
 const webcalUrl = computed(() => feedUrl.value?.replace(/^https?:\/\//, 'webcal://'))

@@ -16,9 +16,12 @@ export const REQUEST_TIMEOUT_MS = 20_000
 
 /**
  * Google integration (Gmail history import + Google Calendar sync) is enabled
- * when the build has an OAuth client id (Google Cloud → Credentials → "Chrome extension").
+ * when the build has an OAuth client id (Google Cloud → Clients → "Web application"
+ * with the redirect URI https://<extension-id>.chromiumapp.org/).
  */
-export const GOOGLE_ENABLED = Boolean(import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID)
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ?? ''
+export const GOOGLE_ENABLED = Boolean(GOOGLE_CLIENT_ID)
+export const GOOGLE_SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/calendar.events']
 
 /** chrome.runtime message type for Google API calls made by the service worker. */
 export const GOOGLE_MESSAGE_TYPE = 'gcrm:google-request'

@@ -351,6 +351,12 @@ export default {
       emailHistoryHint: 'When a client is opened or added, all earlier Gmail correspondence is imported.',
       calendarSync: 'Sync with Google Calendar',
       calendarSyncHint: 'Your tasks and reminders go straight to your primary calendar.',
+      account: 'Account of this Gmail tab: {email}',
+      errors: {
+        wrong_account: 'A different account was chosen on the Google screen than the one this Gmail tab uses. Connect again and pick the right account.',
+        missing_scopes: 'Not all permissions were granted. Connect again and allow access to Gmail and Calendar.',
+        access_denied: 'Access was denied on the Google screen.',
+      },
     },
   },
   admin: {

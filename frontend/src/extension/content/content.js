@@ -2,6 +2,7 @@ import * as InboxSDK from '@inboxsdk/core'
 import { createPinia } from 'pinia'
 import { reactive } from 'vue'
 import { createCrmApp } from '@/crm/createCrmApp.js'
+import { setGoogleAccount } from '@/crm/google/account.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
 import ThreadPanelApp from '@/crm/ThreadPanelApp.vue'
 import { DASHBOARD_ROUTE_ID, INBOXSDK_APP_ID } from '@/shared/lib/config.js'
@@ -171,6 +172,8 @@ async function main() {
   await initLocale()
 
   const sdk = await InboxSDK.load(2, INBOXSDK_APP_ID, { appName: 'GastroFlowx', appIconUrl: iconUrl })
+  // Google integration acts as the account of this Gmail tab (not Chrome's profile account).
+  setGoogleAccount(sdk.User.getEmailAddress())
 
   // Gmail helpers for components: inject('gmail').
   const gmail = {

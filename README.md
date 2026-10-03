@@ -367,7 +367,7 @@ i znaki nowej linii, a wynik wpisz w `VITE_EXTENSION_KEY`. Klucz trafia tylko do
 ### 9. Google (opcjonalnie)
 
 Do importu historii maili i synchronizacji z Kalendarzem Google utwórz w Google Cloud klienta OAuth typu
-„Rozszerzenie Chrome” z **produkcyjnym** ID rozszerzenia z kroku 8 i dodaj użytkowników testowych
+„Aplikacja internetowa” z URI przekierowania `https://<ID ze sklepu>.chromiumapp.org/` i dodaj użytkowników testowych
 (szczegóły w sekcji [Konfiguracja Google](#konfiguracja-google-wymagana-dla-historii-maili-i-synchronizacji-kalendarza)).
 Potem wpisz `VITE_GOOGLE_OAUTH_CLIENT_ID` do `frontend/.env` i zbuduj rozszerzenie ponownie.
 
@@ -511,10 +511,12 @@ Na osi czasu jest też przycisk „Wczytaj historię z Gmaila” z postępem i d
    oraz **Google Calendar API**.
 2. Skonfiguruj ekran zgody OAuth (typ „Zewnętrzny”, dodaj siebie i współpracowników jako użytkowników
    testowych) ze scope'ami `gmail.readonly` i `calendar.events`.
-3. Utwórz identyfikator klienta OAuth typu **Rozszerzenie Chrome** i wpisz ID rozszerzenia
-   (z `chrome://extensions`). Aby ID się nie zmieniało (np. na innym komputerze), ustaw
-   `VITE_EXTENSION_KEY` (klucz publiczny z panelu Chrome Web Store) – trafi do pola `key` manifestu
-   buildów lokalnych (`npm run zip:extension` usuwa je z paczki dla sklepu).
+3. Utwórz identyfikator klienta OAuth typu **Aplikacja internetowa** i w *Autoryzowanych identyfikatorach URI
+   przekierowania* dodaj `https://<ID-rozszerzenia>.chromiumapp.org/` (ID ze sklepu, z ukośnikiem na końcu).
+   Typ „Rozszerzenie Chrome” się nie nadaje: loguje zawsze kontem profilu Chrome, a GastroFlowx loguje kontem
+   otwartym w karcie Gmaila (`chrome.identity.launchWebAuthFlow` z `login_hint`). Żeby build lokalny miał to samo
+   ID co sklepowy, ustaw `VITE_EXTENSION_KEY` (klucz publiczny z panelu Chrome Web Store) – trafi do pola `key`
+   manifestu buildów lokalnych (`npm run zip:extension` usuwa je z paczki dla sklepu).
 4. W `frontend/.env` dopisz `VITE_GOOGLE_OAUTH_CLIENT_ID=…apps.googleusercontent.com`, zbuduj ponownie
    rozszerzenie i przeładuj je.
 5. W Ustawienia → Kalendarz kliknij „Połącz z Google”.
