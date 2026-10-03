@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GastroFlowx – CRM dla restauracji w Gmailu</title>
+<meta name="description" content="GastroFlowx to CRM dla restauracji działający w Gmailu: karta klienta przy każdym mailu, rezerwacje, zadania, przypomnienia i notatki zespołu.">
+<link rel="icon" href="img/favicon.png">
+<style>
+  :root { --bg: #f8fafc; --card: #fff; --text: #0f172a; --muted: #475569; --line: #e2e8f0; --accent: #4f46e5; --accent-2: #f97316; --hero: #0f172a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0b1120; --card: #111827; --text: #e5e7eb; --muted: #94a3b8; --line: #1f2937; --accent: #818cf8; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  header.top { background: var(--hero); }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; padding-bottom: 18px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 20px; text-decoration: none; }
+  .brand img { width: 36px; height: 36px; }
+  nav.top a { color: #c7d2fe; text-decoration: none; font-weight: 600; margin-left: 18px; font-size: 15px; }
+  .hero { background: radial-gradient(900px 420px at 85% 0%, #4f46e5 0%, transparent 60%), linear-gradient(135deg, #0f172a, #1e1b4b); color: #fff; padding: 56px 0 72px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; }
+  .hero h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.1; margin: 0 0 16px; }
+  .hero h1 span { color: #a5b4fc; }
+  .hero p { color: #cbd5e1; font-size: 19px; margin: 0 0 26px; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 700; text-decoration: none; }
+  .btn.primary { background: var(--accent-2); color: #fff; }
+  .btn.ghost { color: #e0e7ff; border: 1px solid rgba(224, 231, 255, .35); margin-left: 8px; }
+  .hero img { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 30px 70px rgba(0, 0, 0, .45); }
+  section { padding: 56px 0; }
+  h2 { font-size: 30px; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 28px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 28px; }
+  .shots img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+  .data { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .scope { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; margin: 18px 0; }
+  .scope code { font-size: 15px; background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 2px 6px; border-radius: 6px; }
+  .note { color: var(--muted); font-size: 15px; }
+  footer { padding: 32px 0 48px; color: var(--muted); font-size: 15px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  @media (max-width: 860px) {
+    .hero .wrap, .shots { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    nav.top a { margin-left: 12px; }
+    nav.top .wide { display: none; }
+    .btn.ghost { margin: 10px 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><img src="img/logo.png" alt="">GastroFlowx</a>
+  <nav class="top"><a class="wide" href="#funkcje">Funkcje</a><a class="wide" href="#dane-google">Dane Google</a><a href="polityka-prywatnosci.html">Polityka prywatności</a><a href="#en">EN</a></nav>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <div>
+    <h1>CRM dla restauracji <span>prosto w Gmailu</span></h1>
+    <p>GastroFlowx to rozszerzenie do przeglądarki Chrome dla zespołów restauracji. Otwierasz maila od gościa lub firmy – obok wiadomości widzisz kartę klienta z rezerwacjami, zadaniami, przypomnieniami i notatkami zespołu.</p>
+    <a class="btn primary" href="[LINK DO CHROME WEB STORE]">Zainstaluj z Chrome Web Store</a>
+    <a class="btn ghost" href="https://app.gastroflowx.pl">Panel administratora</a>
+  </div>
+  <img src="img/client.jpg" alt="Karta klienta GastroFlowx otwarta obok wiadomości" width="1280" height="800">
+</div></div>
+
+<section id="funkcje"><div class="wrap">
+  <h2>Co robi GastroFlowx</h2>
+  <p class="lead">Wspólna baza klientów dla całej restauracji, dostępna tam, gdzie i tak pracujecie – w skrzynce e-mail.</p>
+  <div class="grid">
+    <div class="card"><h3>Karta klienta przy mailu</h3><p>Dane kontaktowe, kategoria, status i notatki nadawcy widoczne obok otwartej wiadomości. Nowego nadawcę dodasz do CRM jednym kliknięciem.</p></div>
+    <div class="card"><h3>Rezerwacje</h3><p>Liczba gości, sala, okazja i status rezerwacji przypięte do klienta, z przypomnieniem przed terminem.</p></div>
+    <div class="card"><h3>Zadania i przypomnienia</h3><p>Follow-upy, oferty i sprawy wewnętrzne z terminami, przypisywane członkom zespołu. Pulpit dnia pokazuje, co zaległe, a co na dziś.</p></div>
+    <div class="card"><h3>Historia korespondencji</h3><p>Po połączeniu konta Google oś czasu klienta uzupełnia się o wcześniejsze maile z tym klientem (temat, data, fragment).</p></div>
+    <div class="card"><h3>Kalendarz</h3><p>Twoje zadania i przypomnienia trafiają do Twojego Kalendarza Google albo do dowolnego kalendarza przez prywatny link ICS.</p></div>
+    <div class="card"><h3>Dopasowanie do restauracji</h3><p>Własne kategorie klientów, statusy, kategorie zadań i pola (np. alergie, NIP), licencje i role w zespole.</p></div>
+  </div>
+  <div class="shots">
+    <img src="img/dashboard.jpg" alt="Pulpit dnia GastroFlowx" width="1280" height="800" loading="lazy">
+    <img src="img/tasks.jpg" alt="Tablica zadań zespołu" width="1280" height="800" loading="lazy">
+  </div>
+</div></section>
+
+<section id="dane-google" class="data"><div class="wrap">
+  <h2>Jak GastroFlowx korzysta z danych Google</h2>
+  <p class="lead">Połączenie z kontem Google jest dobrowolne i włączasz je w ustawieniach rozszerzenia przyciskiem „Połącz z Google”. Bez niego CRM działa normalnie. Po połączeniu aplikacja prosi o dwa uprawnienia, używane wyłącznie do opisanych funkcji:</p>
+  <div class="scope"><strong>Gmail – tylko odczyt</strong> (<code>gmail.readonly</code>)<br>
+    Wczytanie historii korespondencji z klientami zapisanymi w CRM: temat, nadawca, data i krótki fragment wiadomości pojawiają się na osi czasu klienta, żeby zespół widział wcześniejsze ustalenia. Aplikacja nie wysyła, nie usuwa i nie zmienia wiadomości i nie odczytuje korespondencji z osobami spoza CRM.</div>
+  <div class="scope"><strong>Kalendarz Google – wydarzenia</strong> (<code>calendar.events</code>)<br>
+    Tworzenie, aktualizowanie i usuwanie w Twoim kalendarzu wydarzeń odpowiadających Twoim zadaniom i przypomnieniom z GastroFlowx. Aplikacja nie zmienia innych wydarzeń.</div>
+  <p class="note">Sposób, w jaki GastroFlowx wykorzystuje informacje otrzymane z interfejsów API Google i przekazuje je innym aplikacjom, jest zgodny z <a href="https://developers.google.com/terms/api-services-user-data-policy">Zasadami dotyczącymi danych użytkownika w usługach interfejsu API Google</a>, w tym z wymogami dotyczącymi ograniczonego użytkowania (Limited Use). Dane nie są sprzedawane, nie służą do reklam ani do trenowania modeli AI. Dostęp możesz cofnąć w każdej chwili w ustawieniach rozszerzenia lub na <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>. Szczegóły: <a href="polityka-prywatnosci.html">polityka prywatności</a>.</p>
+</div></section>
+
+<section id="en"><div class="wrap">
+  <h2>GastroFlowx in English</h2>
+  <p class="lead">GastroFlowx is a CRM for restaurant teams that works inside Gmail. When you open an e-mail, a client card with reservations, tasks, reminders and team notes appears next to it.</p>
+  <p>Connecting a Google account is optional. If you do, GastroFlowx requests <strong>gmail.readonly</strong> solely to import past correspondence (subject, sender, date and a short snippet) with contacts saved in the CRM into the client timeline, and <strong>calendar.events</strong> solely to create, update and delete calendar events that mirror your GastroFlowx tasks and reminders. It never sends, deletes or modifies e-mail.</p>
+  <p class="note">GastroFlowx’s use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. See our <a href="polityka-prywatnosci.html#en">Privacy Policy</a>.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <div>© 2026 [NAZWA FIRMY] · [ADRES] · NIP: [NIP]</div>
+  <div><a href="polityka-prywatnosci.html">Polityka prywatności / Privacy Policy</a> · <a href="mailto:[EMAIL KONTAKTOWY]">[EMAIL KONTAKTOWY]</a></div>
+</div></footer>
+
+</body>
+</html>
