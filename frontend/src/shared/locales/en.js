@@ -169,6 +169,7 @@ export default {
       emptyReminders: { overdue: 'No overdue reminders.', today: 'No reminders for today.', upcoming: 'No reminders in the next 7 days.' },
     },
     client: {
+      compose: 'Write e-mail',
       details: 'Contact details',
       addField: 'Add field',
       company: 'Company',
@@ -205,6 +206,8 @@ export default {
       statuses: { pending: 'Upcoming', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled', no_show: 'No-show' },
     },
     timeline: {
+      openInGmail: 'Open in Gmail',
+      reply: 'Reply',
       title: 'Timeline / History',
       filter: 'Filter',
       all: 'Everything',

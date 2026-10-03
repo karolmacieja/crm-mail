@@ -16,6 +16,9 @@
       <div class="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50/80 p-6 shadow-sm">
         <ClientHeader />
         <div class="flex gap-2">
+          <button v-if="gmail?.compose" type="button" class="gcrm-btn-primary" @click="gmail.compose(client.contact.email)">
+            <Icon :icon="['far', 'pen-to-square']" /> {{ t('crm.client.compose') }}
+          </button>
           <button v-if="gmail?.searchEmail" type="button" class="gcrm-btn-secondary" @click="gmail.searchEmail(client.contact.email)">
             <Icon :icon="['far', 'envelope']" /> {{ t('crm.profile.emails') }}
           </button>

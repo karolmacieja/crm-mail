@@ -18,6 +18,26 @@ const pinia = createPinia()
 
 const normalize = (email) => String(email ?? '').trim().toLowerCase()
 
+/**
+ * Threads opened via "Odpowiedz" on the CRM timeline: once Gmail shows the
+ * thread, its reply box is opened. InboxSDK has no reply API, so this clicks
+ * Gmail's own "Reply" button (stable .ams.bkH class); if Gmail changes it,
+ * the thread simply stays open.
+ */
+const pendingReplies = new Set()
+const REPLY_BUTTON = '.ams.bkH'
+
+function openReplyBox() {
+  let tries = 0
+  const timer = setInterval(() => {
+    const button = [...document.querySelectorAll(REPLY_BUTTON)].findLast((el) => el.offsetParent !== null)
+    if (button || ++tries > 25) {
+      clearInterval(timer)
+      button?.click()
+    }
+  }, 200)
+}
+
 function safely(fn, fallback = null) {
   try {
     return fn()
@@ -87,7 +107,10 @@ function registerThreadPanel(sdk, provide) {
     panel.on('destroy', cleanup)
 
     Promise.all([extractParticipants(threadView, myEmail), threadView.getThreadIDAsync().catch(() => null)])
-      .then(([participants, threadId]) => Object.assign(state, { participants, threadId }))
+      .then(([participants, threadId]) => {
+        Object.assign(state, { participants, threadId })
+        if (threadId && pendingReplies.delete(threadId)) openReplyBox()
+      })
       .catch((error) => console.error(LOG_PREFIX, 'Could not read thread participants', error))
       .finally(() => {
         state.resolving = false
@@ -179,6 +202,15 @@ async function main() {
   const gmail = {
     goInbox: () => sdk.Router.goto(sdk.Router.NativeRouteIDs.INBOX, { page: 1 }),
     openThread: (threadId) => sdk.Router.goto(sdk.Router.NativeRouteIDs.THREAD, { threadID: threadId }),
+    replyToThread: (threadId) => {
+      pendingReplies.add(threadId)
+      return sdk.Router.goto(sdk.Router.NativeRouteIDs.THREAD, { threadID: threadId })
+    },
+    compose: async (email) => {
+      const composeView = await sdk.Compose.openNewComposeView()
+      composeView.setToRecipients([email])
+      return composeView
+    },
     searchEmail: (email) => sdk.Router.goto(sdk.Router.NativeRouteIDs.SEARCH, { query: `from:${email} OR to:${email}`, page: 1 }),
     openCrm: (path) => crmRoute.open(path),
   }

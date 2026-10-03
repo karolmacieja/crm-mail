@@ -174,6 +174,7 @@ export default {
       emptyReminders: { overdue: 'Brak zaległych przypomnień.', today: 'Brak przypomnień na dziś.', upcoming: 'Brak przypomnień w ciągu 7 dni.' },
     },
     client: {
+      compose: 'Napisz e-mail',
       details: 'Dane Kontaktowe',
       addField: 'Dodaj pole',
       company: 'Firma',
@@ -210,6 +211,8 @@ export default {
       statuses: { pending: 'Nadchodząca', confirmed: 'Potwierdzona', completed: 'Zakończona', cancelled: 'Anulowana', no_show: 'Nie przyszli' },
     },
     timeline: {
+      openInGmail: 'Otwórz w Gmailu',
+      reply: 'Odpowiedz',
       title: 'Oś czasu / Historia',
       filter: 'Filtruj',
       all: 'Wszystko',

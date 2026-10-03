@@ -48,13 +48,32 @@
             <Icon icon="trash" />
           </button>
         </p>
-        <div class="rounded-lg border p-3 text-sm shadow-sm" :class="item.type === 'note' ? 'border-yellow-100 bg-yellow-50' : 'border-gray-200 bg-white'">
+        <div
+          class="rounded-lg border p-3 text-sm shadow-sm"
+          :class="[
+            item.type === 'note' ? 'border-yellow-100 bg-yellow-50' : 'border-gray-200 bg-white',
+            canOpen(item) && 'cursor-pointer transition-colors hover:border-primary/40 hover:bg-indigo-50/40',
+          ]"
+          :role="canOpen(item) ? 'link' : undefined"
+          :tabindex="canOpen(item) ? 0 : undefined"
+          :title="canOpen(item) ? t('crm.timeline.openInGmail') : undefined"
+          @click="canOpen(item) && gmail.openThread(threadOf(item))"
+          @keydown.enter="canOpen(item) && gmail.openThread(threadOf(item))"
+        >
           <template v-if="item.type === 'email'">
             <p class="mb-1 font-bold text-gray-800">
               <Icon :icon="item.meta?.direction === 'out' ? 'reply' : ['far', 'envelope']" class="mr-1 text-gray-400" />
               {{ item.title || t('crm.timeline.noSubject') }}
             </p>
             <p v-if="item.body" class="text-gray-600">{{ item.body }}</p>
+            <p v-if="canOpen(item)" class="mt-2 flex gap-4 text-xs font-medium">
+              <button type="button" class="text-primary hover:underline" @click.stop="gmail.openThread(threadOf(item))">
+                <Icon icon="arrow-up-right-from-square" class="mr-1" />{{ t('crm.timeline.openInGmail') }}
+              </button>
+              <button v-if="gmail.replyToThread" type="button" class="text-primary hover:underline" @click.stop="gmail.replyToThread(threadOf(item))">
+                <Icon icon="reply" class="mr-1" />{{ t('crm.timeline.reply') }}
+              </button>
+            </p>
           </template>
           <p v-else-if="item.type === 'note'" class="whitespace-pre-wrap text-yellow-800">{{ item.body }}</p>
           <p v-else class="text-gray-700">{{ systemText(item) }}</p>
@@ -75,7 +94,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import Spinner from '@/shared/components/Spinner.vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar, formatReservation } from '@/shared/lib/format.js'
@@ -87,6 +106,11 @@ import { useGoogleStore } from '@/crm/stores/google.js'
 const client = useClientStore()
 const auth = useAuthStore()
 const timeline = client.timeline
+/** Gmail helpers from the content script (absent outside Gmail, e.g. in tests). */
+const gmail = inject('gmail', null)
+
+const threadOf = (item) => item.meta?.thread_id ?? null
+const canOpen = (item) => item.type === 'email' && Boolean(threadOf(item) && gmail?.openThread)
 
 const dotClass = (item) => ({ note: 'bg-yellow-400', email: 'bg-primary', system: 'bg-gray-400' })[item.type]
 const labelClass = (item) => ({ note: 'text-yellow-600', email: 'text-primary', system: 'text-gray-500' })[item.type]

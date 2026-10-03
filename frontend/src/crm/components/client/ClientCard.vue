@@ -7,6 +7,14 @@
     <div class="relative border-b border-gray-200 bg-gray-50/80" :class="[pad, { 'pr-14': closable }]">
       <slot name="close" />
       <ClientHeader />
+      <div v-if="gmail?.compose && client.email" class="mt-3 flex flex-wrap gap-2">
+        <button type="button" class="gcrm-btn-primary px-3 py-1.5 text-xs" @click="gmail.compose(client.email)">
+          <Icon :icon="['far', 'pen-to-square']" /> {{ t('crm.client.compose') }}
+        </button>
+        <button v-if="gmail.searchEmail" type="button" class="gcrm-btn-secondary px-3 py-1.5 text-xs" @click="gmail.searchEmail(client.email)">
+          <Icon icon="magnifying-glass" /> {{ t('crm.profile.emails') }}
+        </button>
+      </div>
       <p v-if="client.context?.subject" class="mt-3 truncate text-xs text-gray-500">
         <Icon :icon="['far', 'envelope']" class="mr-1" /> {{ client.context.subject }}
       </p>
@@ -42,7 +50,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import AlertMessage from '@/shared/components/AlertMessage.vue'
 import { Icon } from '@/shared/icons.js'
 import { t } from '@/shared/lib/i18n.js'
@@ -65,6 +73,7 @@ const props = defineProps({
 const pad = computed(() => (props.dense ? 'p-4' : 'p-6'))
 defineEmits(['open-profile'])
 
+const gmail = inject('gmail', null)
 const client = useClientStore()
 
 async function remove() {
