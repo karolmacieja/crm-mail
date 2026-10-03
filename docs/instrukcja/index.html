@@ -93,16 +93,16 @@
     <li><span class="n">1</span>Czym jest GastroFlowx</li>
     <li><span class="n">2</span>Role i uprawnienia</li>
     <li><span class="n">3</span>Pierwsze kroki – instalacja i logowanie</li>
-    <li><span class="n">4</span>Instrukcja dla pracownika</li>
+    <li><span class="n">4</span>Instrukcja dla pracownika i kierownika</li>
     <li class="sub">Pulpit dnia · karta klienta przy mailu · notatki · rezerwacje · zadania · przypomnienia · oś czasu · pisanie maili · klienci i kontakty · kalendarz</li>
-    <li><span class="n">5</span>Instrukcja dla kierownika</li>
-    <li class="sub">Ustawienia restauracji · praca zespołu · porządek w bazie</li>
+    <li><span class="n">5</span>Ustawienia restauracji i praca w zespole</li>
+    <li class="sub">Kategorie, statusy, kategorie zadań i pola · zasady pracy zespołu · konta i licencje</li>
     <li><span class="n">6</span>Instrukcja dla Master Admina</li>
     <li class="sub">Panel administratora · restauracje · użytkownicy · licencje · wdrożenie nowej restauracji</li>
     <li><span class="n">7</span>Najczęstsze pytania i rozwiązywanie problemów</li>
     <li><span class="n">8</span>Bezpieczeństwo i dane</li>
   </ol>
-  <div class="tip" style="margin-top:10mm"><b>Jak czytać ten dokument</b>Rozdziały 1–3 są wspólne dla wszystkich. Pracownicy czytają rozdział 4, kierownicy rozdziały 4 i 5, a osoba zarządzająca systemem – rozdział 6. Nazwy przycisków i zakładek zapisano <span class="ui">tym kolorem</span>, dokładnie tak jak w aplikacji.</div>
+  <div class="tip" style="margin-top:10mm"><b>Jak czytać ten dokument</b>Rozdziały 1–3 są wspólne dla wszystkich. Pracownicy i kierownicy czytają rozdziały 4 i 5 (mają w systemie te same funkcje), a osoba zarządzająca systemem – rozdział 6. Nazwy przycisków i zakładek zapisano <span class="ui">tym kolorem</span>, dokładnie tak jak w aplikacji.</div>
 </section>
 
 <!-- ============================================================== 1 -->
@@ -146,7 +146,7 @@
 <section class="chapter">
   <span class="num">Rozdział 2</span>
   <h1>Role i uprawnienia</h1>
-  <p class="lead">W systemie są trzy role. Pracownik i kierownik pracują w Gmailu i mają te same uprawnienia w CRM – rola kierownika służy wskazaniu osoby odpowiedzialnej w restauracji. Master Admin zarządza całym systemem z poziomu przeglądarki i nie korzysta z CRM.</p>
+  <p class="lead">W systemie są trzy role. Pracownik i kierownik pracują w Gmailu i mają <b>dokładnie te same uprawnienia</b> – rola kierownika jest wyłącznie oznaczeniem stanowiska w zespole i nie daje dodatkowych funkcji. Master Admin zarządza całym systemem z poziomu przeglądarki i nie korzysta z CRM.</p>
   <table>
     <tr><th style="width:46%">Czynność</th><th class="c">Pracownik</th><th class="c">Kierownik</th><th class="c">Master Admin</th></tr>
     <tr><td>Praca w Gmailu: karta klienta, pulpit, oś czasu</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
@@ -160,8 +160,8 @@
     <tr><td>Wylogowanie użytkownika ze wszystkich urządzeń</td><td class="c no">nie</td><td class="c no">nie</td><td class="c yes">tak</td></tr>
     <tr><td>Gdzie pracuje</td><td class="c">Gmail</td><td class="c">Gmail</td><td class="c">app.gastroflowx.pl</td></tr>
   </table>
-  <div class="tip"><b>Dlaczego kierownik nie zakłada kont?</b>Konta i licencje są powiązane z rozliczeniami, dlatego zarządza nimi wyłącznie Master Admin. Kierownik, który potrzebuje nowego konta dla pracownika, zgłasza to administratorowi (rozdział 6).</div>
-  <div class="warn"><b>Ustawienia są wspólne dla całej restauracji</b>Zmiana kategorii, statusu czy pola w <span class="ui">Ustawieniach</span> od razu widzi cały zespół. Warto ustalić, kto w restauracji za nie odpowiada – zwykle kierownik.</div>
+  <div class="tip"><b>Kto zakłada konta?</b>Konta i licencje są powiązane z rozliczeniami, dlatego zarządza nimi wyłącznie Master Admin – ani pracownik, ani kierownik nie mają do tego dostępu. Potrzebę nowego konta zgłasza się administratorowi (rozdział 6).</div>
+  <div class="warn"><b>Ustawienia są wspólne dla całej restauracji</b>Zmiana kategorii, statusu czy pola w <span class="ui">Ustawieniach</span> od razu widzi cały zespół. Może je zmieniać każdy użytkownik restauracji, dlatego warto ustalić w zespole, kto się nimi zajmuje.</div>
 </section>
 
 <!-- ============================================================== 3 -->
@@ -215,8 +215,8 @@
 <!-- ============================================================== 4 -->
 <section class="chapter">
   <span class="num">Rozdział 4</span>
-  <h1>Instrukcja dla pracownika</h1>
-  <p class="lead">Ten rozdział opisuje codzienną pracę z klientami w Gmailu. Dotyczy także kierowników.</p>
+  <h1>Instrukcja dla pracownika i kierownika</h1>
+  <p class="lead">Ten rozdział opisuje codzienną pracę z klientami w Gmailu. Dotyczy w tym samym stopniu pracowników i kierowników – obie role mają identyczne funkcje.</p>
 
   <h2>4.1 Pulpit dnia</h2>
   <p>Kliknij <b>GastroFlowx</b> w lewym menu Gmaila. <span class="ui">Dashboard</span> pokazuje:</p>
@@ -328,8 +328,8 @@
 <!-- ============================================================== 5 -->
 <section class="chapter">
   <span class="num">Rozdział 5</span>
-  <h1>Instrukcja dla kierownika</h1>
-  <p class="lead">Kierownik korzysta z tych samych funkcji co pracownik (rozdział 4). Dodatkowo zwykle odpowiada za konfigurację CRM restauracji i za to, by zespół pracował na wspólnych zasadach.</p>
+  <h1>Ustawienia restauracji i praca w zespole</h1>
+  <p class="lead">Wszystko, co opisuje ten rozdział, może robić każdy użytkownik restauracji – pracownik i kierownik mają tu te same możliwości. Poniżej ustawienia wspólne dla całej restauracji oraz dobre praktyki pracy zespołowej.</p>
 
   <h2>5.1 Ustawienia restauracji</h2>
   <p>W <span class="ui">Ustawienia</span> znajdziesz zakładki słowników wspólnych dla całego zespołu:</p>
@@ -348,7 +348,7 @@
   </ul>
   <figure><img src="img/c11-settings.jpg" alt=""><figcaption>Ustawienia – statusy kontaktów z licznikiem użyć</figcaption></figure>
 
-  <h2>5.2 Praca zespołu</h2>
+  <h2>5.2 Dobre praktyki pracy zespołu</h2>
   <ul>
     <li><b>Przydzielaj zadania</b> polem <span class="ui">Przypisz do</span> – osoba zobaczy je na swoim pulpicie i (jeśli tak ustawi) w swoim kalendarzu.</li>
     <li><b>Przeglądaj tablicę</b> <span class="ui">Zadania</span> – kolumna <b>Pilne (Dziś/Zaległe)</b> pokazuje, co wymaga reakcji. Przełącz filtr na wykonane, aby sprawdzić, co zespół zamknął.</li>
@@ -414,10 +414,10 @@
   <ol class="steps">
     <li><span class="ui">Grupy (Restauracje)</span> → <span class="ui">Nowa grupa</span> – nazwa, e-mail, strefa czasowa.</li>
     <li>W szczegółach restauracji dodaj <b>licencję</b> z odpowiednią liczbą miejsc i okresem.</li>
-    <li>Dodaj <b>konta</b>: najpierw kierownika, potem pracowników, każdemu przydzielając miejsce.</li>
+    <li>Dodaj <b>konta</b> dla osób z zespołu, każdemu przydzielając miejsce. Rola Pracownik lub Kierownik jest tylko oznaczeniem stanowiska – obie mają w CRM te same funkcje.</li>
     <li>Przekaż każdej osobie: link do rozszerzenia w Chrome Web Store, swój e-mail i hasło startowe oraz ten dokument.</li>
     <li>Jeśli restauracja korzysta z integracji Google w trybie testowym, dopisz adresy Gmail pracowników jako <b>użytkowników testowych</b> w Google Cloud (Google Auth Platform → Odbiorcy).</li>
-    <li>Poproś kierownika o przejrzenie <span class="ui">Ustawień</span> (kategorie, statusy, pola) przed startem pracy zespołu.</li>
+    <li>Poproś restaurację o przejrzenie <span class="ui">Ustawień</span> (kategorie, statusy, pola) przed startem pracy zespołu.</li>
   </ol>
 </section>
 
