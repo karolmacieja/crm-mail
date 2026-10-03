@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>GastroFlowx – opis systemu i instrukcja obsługi</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm; }
+  @page :first { margin: 0; }
+  :root { --accent: #4f46e5; --accent-soft: #eef2ff; --orange: #f97316; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb; --dark: #0f172a; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; color: var(--text); font: 10.5pt/1.55 "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 6mm; color: var(--dark); }
+  h2 { font-size: 14pt; margin: 6mm 0 2.5mm; color: var(--dark); }
+  h3 { font-size: 11.5pt; margin: 6mm 0 2mm; color: var(--accent); }
+  h1, h2, h3 { break-after: avoid; }
+  h2 + p, h2 + ul, h2 + ol, h2 + table { break-before: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin: 0 0 1.2mm; }
+  b, strong { color: var(--dark); }
+  .ui { font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .chapter { break-before: page; }
+  .chapter > .num { display: inline-block; font-size: 9pt; font-weight: 700; letter-spacing: .12em; color: var(--orange); text-transform: uppercase; margin-bottom: 2mm; }
+  .lead { font-size: 11.5pt; color: #374151; margin-bottom: 5mm; }
+  figure { margin: 4mm 0 5mm; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 2.5mm; display: block; }
+  figure.narrow img { width: 62%; margin: 0 auto; }
+  figure.half img { width: 48%; margin: 0 auto; }
+  figcaption { font-size: 8.5pt; color: var(--muted); text-align: center; margin-top: 1.5mm; }
+  .tip, .warn { border-radius: 2mm; padding: 3mm 4mm; margin: 3mm 0 4mm; break-inside: avoid; font-size: 10pt; }
+  .tip { background: var(--accent-soft); border-left: 1.2mm solid var(--accent); }
+  .warn { background: #fff7ed; border-left: 1.2mm solid var(--orange); }
+  .tip b:first-child, .warn b:first-child { display: block; margin-bottom: 1mm; }
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9.5pt; break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 2mm 2.5mm; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); color: var(--dark); }
+  tr { break-inside: avoid; }
+  td.c { text-align: center; }
+  .yes { color: #15803d; font-weight: 700; }
+  .no { color: #b91c1c; font-weight: 700; }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 9mm; margin-bottom: 2mm; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: .3mm; width: 6mm; height: 6mm; border-radius: 50%; background: var(--accent); color: #fff; font-size: 8.5pt; font-weight: 700; display: grid; place-items: center; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
+  .card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 4mm; break-inside: avoid; }
+  .card h3 { margin-top: 0; }
+
+  /* Cover */
+  .cover { height: 297mm; width: 210mm; padding: 28mm 22mm; color: #fff; display: flex; flex-direction: column; justify-content: space-between;
+    background: radial-gradient(140mm 90mm at 85% 5%, #6366f1 0%, transparent 65%), linear-gradient(150deg, #0f172a 0%, #1e1b4b 100%); }
+  .cover .brand { display: flex; align-items: center; gap: 5mm; font-size: 20pt; font-weight: 800; }
+  .cover .brand img { width: 18mm; height: 18mm; }
+  .cover h1 { color: #fff; font-size: 34pt; line-height: 1.12; margin: 0 0 6mm; }
+  .cover h1 span { color: #a5b4fc; }
+  .cover p { color: #cbd5e1; font-size: 13pt; max-width: 140mm; }
+  .cover .meta { font-size: 10pt; color: #94a3b8; border-top: 1px solid rgba(255,255,255,.15); padding-top: 5mm; display: flex; justify-content: space-between; }
+  .roles-pill { display: flex; gap: 3mm; margin-top: 8mm; flex-wrap: wrap; }
+  .roles-pill span { border: 1px solid rgba(165,180,252,.5); color: #e0e7ff; border-radius: 99px; padding: 1.5mm 4mm; font-size: 10pt; }
+
+  /* TOC */
+  .toc { list-style: none; padding: 0; margin: 0; }
+  .toc li { display: flex; align-items: baseline; gap: 2mm; padding: 2mm 0; border-bottom: 1px dotted #d1d5db; font-size: 11pt; }
+  .toc li .n { color: var(--orange); font-weight: 700; width: 8mm; }
+  .toc li.sub { padding-left: 10mm; font-size: 10pt; color: #374151; border-bottom-style: none; padding-top: .6mm; padding-bottom: .6mm; }
+
+  /* Architecture diagram */
+  .arch { display: grid; grid-template-columns: 1fr 14mm 1fr 14mm 1fr; align-items: center; margin: 5mm 0; break-inside: avoid; }
+  .arch .box { border: 1.5px solid var(--accent); border-radius: 3mm; padding: 4mm; text-align: center; background: #fff; min-height: 34mm; }
+  .arch .box b { display: block; font-size: 11pt; margin-bottom: 1mm; }
+  .arch .box small { color: var(--muted); font-size: 8.5pt; display: block; line-height: 1.35; }
+  .arch .box.server { border-color: var(--orange); }
+  .arch .arrow { text-align: center; color: var(--muted); font-size: 16pt; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================== COVER -->
+<section class="cover">
+  <div class="brand"><img src="img/logo.png" alt="">GastroFlowx</div>
+  <div>
+    <h1>Opis systemu<br>i <span>instrukcja obsługi</span></h1>
+    <p>CRM dla restauracji działający w Gmailu: karta klienta przy każdym mailu, rezerwacje, zadania, przypomnienia i notatki zespołu.</p>
+    <div class="roles-pill"><span>Pracownik</span><span>Kierownik</span><span>Master Admin</span></div>
+  </div>
+  <div class="meta"><span>Wersja dokumentu 1.0 · październik 2026</span><span>[NAZWA FIRMY] · [EMAIL KONTAKTOWY]</span></div>
+</section>
+
+<!-- ============================================================== TOC -->
+<section class="chapter">
+  <h1>Spis treści</h1>
+  <ol class="toc">
+    <li><span class="n">1</span>Czym jest GastroFlowx</li>
+    <li><span class="n">2</span>Role i uprawnienia</li>
+    <li><span class="n">3</span>Pierwsze kroki – instalacja i logowanie</li>
+    <li><span class="n">4</span>Instrukcja dla pracownika</li>
+    <li class="sub">Pulpit dnia · karta klienta przy mailu · notatki · rezerwacje · zadania · przypomnienia · oś czasu · pisanie maili · klienci i kontakty · kalendarz</li>
+    <li><span class="n">5</span>Instrukcja dla kierownika</li>
+    <li class="sub">Ustawienia restauracji · praca zespołu · porządek w bazie</li>
+    <li><span class="n">6</span>Instrukcja dla Master Admina</li>
+    <li class="sub">Panel administratora · restauracje · użytkownicy · licencje · wdrożenie nowej restauracji</li>
+    <li><span class="n">7</span>Najczęstsze pytania i rozwiązywanie problemów</li>
+    <li><span class="n">8</span>Bezpieczeństwo i dane</li>
+  </ol>
+  <div class="tip" style="margin-top:10mm"><b>Jak czytać ten dokument</b>Rozdziały 1–3 są wspólne dla wszystkich. Pracownicy czytają rozdział 4, kierownicy rozdziały 4 i 5, a osoba zarządzająca systemem – rozdział 6. Nazwy przycisków i zakładek zapisano <span class="ui">tym kolorem</span>, dokładnie tak jak w aplikacji.</div>
+</section>
+
+<!-- ============================================================== 1 -->
+<section class="chapter">
+  <span class="num">Rozdział 1</span>
+  <h1>Czym jest GastroFlowx</h1>
+  <p class="lead">GastroFlowx to system CRM (zarządzania relacjami z klientami) zaprojektowany dla restauracji. Zamiast osobnego programu działa tam, gdzie zespół i tak pracuje – w skrzynce Gmail. Gdy otwierasz maila od gościa, firmy zamawiającej catering czy organizatora wesela, obok wiadomości od razu widzisz wszystko, co restauracja o nim wie.</p>
+
+  <h2>Z czego składa się system</h2>
+  <div class="arch">
+    <div class="box"><b>Rozszerzenie Chrome</b><small>Działa w Gmailu. Z niego korzystają pracownicy i kierownicy: karta klienta, pulpit, zadania, ustawienia.</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box server"><b>Serwer GastroFlowx</b><small>api.gastroflowx.pl – przechowuje dane CRM każdej restauracji osobno, pilnuje licencji i uprawnień.</small></div>
+    <div class="arrow">⇄</div>
+    <div class="box"><b>Panel administratora</b><small>app.gastroflowx.pl w przeglądarce. Tylko dla Master Admina: restauracje, konta, licencje.</small></div>
+  </div>
+
+  <h2>Najważniejsze możliwości</h2>
+  <div class="grid2">
+    <div class="card"><h3>Karta klienta przy mailu</h3>Dane kontaktowe, kategoria (np. VIP, B2B), status relacji, pola dodatkowe (np. alergie, NIP), notatki zespołu, rezerwacje, zadania i pełna oś czasu.</div>
+    <div class="card"><h3>Rezerwacje</h3>Data, godzina, liczba gości, sala, okazja i status (nadchodząca, potwierdzona, zakończona, anulowana, nie przyszli).</div>
+    <div class="card"><h3>Zadania i przypomnienia</h3>Terminy, priorytety, kategorie, przypisanie do osoby z zespołu. Pulpit dnia pokazuje, co jest zaległe, co na dziś, a co w ciągu 7 dni.</div>
+    <div class="card"><h3>Wspólna baza restauracji</h3>Każdy członek zespołu widzi tych samych klientów i notatki. Dane różnych restauracji są od siebie całkowicie odseparowane.</div>
+    <div class="card"><h3>Gmail pod ręką</h3>Z osi czasu otworzysz mail w Gmailu lub od razu na niego odpowiesz; przy kliencie napiszesz nową wiadomość jednym kliknięciem.</div>
+    <div class="card"><h3>Kalendarz</h3>Zadania i przypomnienia w Twoim kalendarzu (Google Calendar, Outlook, Apple) przez prywatny link lub – opcjonalnie – bezpośrednio w Kalendarzu Google.</div>
+  </div>
+
+  <h2>Pojęcia używane w dokumencie</h2>
+  <table>
+    <tr><th style="width:28%">Pojęcie</th><th>Znaczenie</th></tr>
+    <tr><td>Restauracja (grupa)</td><td>Jedna firma korzystająca z systemu. Ma własnych użytkowników, klientów, ustawienia i licencję.</td></tr>
+    <tr><td>Kontakt</td><td>Wpis w książce adresowej restauracji (np. dostawca, osoba, która raz napisała).</td></tr>
+    <tr><td>Klient</td><td>Kontakt z pełnym profilem (kategoria, status, rezerwacje). Kontakt można w każdej chwili zamienić w klienta.</td></tr>
+    <tr><td>Licencja</td><td>Uprawnienie restauracji do korzystania z systemu na określony czas, z określoną liczbą miejsc (kont).</td></tr>
+    <tr><td>Miejsce w licencji</td><td>Przydział licencji konkretnej osobie. Bez przydzielonego miejsca konto nie może pracować w CRM.</td></tr>
+    <tr><td>Oś czasu</td><td>Chronologiczna historia klienta: maile, notatki i zdarzenia (np. utworzenie rezerwacji, wykonanie zadania).</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================== 2 -->
+<section class="chapter">
+  <span class="num">Rozdział 2</span>
+  <h1>Role i uprawnienia</h1>
+  <p class="lead">W systemie są trzy role. Pracownik i kierownik pracują w Gmailu i mają te same uprawnienia w CRM – rola kierownika służy wskazaniu osoby odpowiedzialnej w restauracji. Master Admin zarządza całym systemem z poziomu przeglądarki i nie korzysta z CRM.</p>
+  <table>
+    <tr><th style="width:46%">Czynność</th><th class="c">Pracownik</th><th class="c">Kierownik</th><th class="c">Master Admin</th></tr>
+    <tr><td>Praca w Gmailu: karta klienta, pulpit, oś czasu</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Dodawanie i edycja klientów, kontaktów, notatek</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Rezerwacje, zadania, przypomnienia</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Przypisywanie zadań innym osobom z restauracji</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Ustawienia restauracji (kategorie, statusy, kategorie zadań, pola)</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Własne preferencje, link kalendarza, połączenie z Google</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Tworzenie restauracji, kont użytkowników i licencji</td><td class="c no">nie</td><td class="c no">nie</td><td class="c yes">tak</td></tr>
+    <tr><td>Przydzielanie miejsc w licencji, przedłużanie licencji</td><td class="c no">nie</td><td class="c no">nie</td><td class="c yes">tak</td></tr>
+    <tr><td>Wylogowanie użytkownika ze wszystkich urządzeń</td><td class="c no">nie</td><td class="c no">nie</td><td class="c yes">tak</td></tr>
+    <tr><td>Gdzie pracuje</td><td class="c">Gmail</td><td class="c">Gmail</td><td class="c">app.gastroflowx.pl</td></tr>
+  </table>
+  <div class="tip"><b>Dlaczego kierownik nie zakłada kont?</b>Konta i licencje są powiązane z rozliczeniami, dlatego zarządza nimi wyłącznie Master Admin. Kierownik, który potrzebuje nowego konta dla pracownika, zgłasza to administratorowi (rozdział 6).</div>
+  <div class="warn"><b>Ustawienia są wspólne dla całej restauracji</b>Zmiana kategorii, statusu czy pola w <span class="ui">Ustawieniach</span> od razu widzi cały zespół. Warto ustalić, kto w restauracji za nie odpowiada – zwykle kierownik.</div>
+</section>
+
+<!-- ============================================================== 3 -->
+<section class="chapter">
+  <span class="num">Rozdział 3</span>
+  <h1>Pierwsze kroki – instalacja i logowanie</h1>
+  <div class="grid2">
+  <div>
+  <h2 style="margin-top:2mm">Czego potrzebujesz</h2>
+  <ul>
+    <li>przeglądarki <b>Google Chrome</b> (lub innej opartej na Chromium, np. Edge, Brave) na komputerze,</li>
+    <li>konta <b>Gmail</b> (prywatnego lub firmowego Google Workspace), z którego obsługujesz maile restauracji,</li>
+    <li>konta <b>GastroFlowx</b> – adresu e-mail i hasła otrzymanych od administratora – z przydzielonym miejscem w licencji.</li>
+  </ul>
+  </div>
+  <div>
+  <h2 style="margin-top:2mm">Instalacja rozszerzenia</h2>
+  <ol class="steps">
+    <li>Otwórz link do rozszerzenia w Chrome Web Store otrzymany od administratora.</li>
+    <li>Kliknij <span class="ui">Dodaj do Chrome</span> i potwierdź <span class="ui">Dodaj rozszerzenie</span>.</li>
+    <li>Kliknij ikonę puzzla na pasku Chrome i przypnij <b>GastroFlowx</b> pinezką – ikona będzie zawsze widoczna.</li>
+  </ol>
+  </div>
+  </div>
+
+  <h2>Logowanie</h2>
+  <div class="grid2">
+    <div>
+      <ol class="steps">
+        <li>Kliknij ikonę GastroFlowx na pasku Chrome.</li>
+        <li>Wpisz <span class="ui">E-mail</span> i <span class="ui">Hasło</span> konta GastroFlowx i kliknij <span class="ui">Zaloguj się</span>.</li>
+        <li>Kliknij <span class="ui">Otwórz Gmail</span> albo odśwież otwartą kartę Gmaila (F5).</li>
+      </ol>
+      <p>Ten sam formularz pokaże się w Gmailu po kliknięciu <b>GastroFlowx</b> w lewym menu. Logowanie jest zapamiętywane na 30 dni; wylogujesz się przyciskiem <span class="ui">Wyloguj</span> w okienku rozszerzenia lub ikoną drzwi w lewym dolnym rogu CRM.</p>
+    </div>
+    <figure class="narrow" style="margin-top:0"><img src="img/c0-popup.jpg" alt=""><figcaption>Okienko logowania rozszerzenia</figcaption></figure>
+  </div>
+
+  <h2>Gdzie znajdziesz GastroFlowx w Gmailu</h2>
+  <ul>
+    <li><b>Pozycja „GastroFlowx” w lewym menu Gmaila</b> – otwiera pełny panel CRM: pulpit, klientów, kontakty, zadania, przypomnienia i ustawienia.</li>
+    <li><b>Ikona GastroFlowx po prawej stronie otwartej wiadomości</b> – panel boczny z kartą nadawcy tego maila.</li>
+    <li><b>Przycisk na górnym pasku Gmaila</b> – szybkie przejście do pulpitu.</li>
+  </ul>
+  <div style="display:flex;gap:4mm;margin-top:4mm;break-inside:avoid">
+  <div class="tip" style="margin:0;flex:1"><b>Język interfejsu</b>Przełącznik <span class="ui">PL / EN</span> znajdziesz w okienku rozszerzenia, w lewym dolnym rogu panelu CRM oraz w <span class="ui">Ustawienia → Preferencje</span>. Wybór obowiązuje od razu we wszystkich kartach.</div>
+  <div class="warn" style="margin:0;flex:1"><b>Licencja wygasła lub brak licencji?</b>Zamiast CRM zobaczysz ekran z informacją o licencji. Poproś administratora o przedłużenie lub przydzielenie miejsca, a potem kliknij <span class="ui">Licencja odnowiona – sprawdź ponownie</span>.</div>
+  </div>
+</section>
+
+<!-- ============================================================== 4 -->
+<section class="chapter">
+  <span class="num">Rozdział 4</span>
+  <h1>Instrukcja dla pracownika</h1>
+  <p class="lead">Ten rozdział opisuje codzienną pracę z klientami w Gmailu. Dotyczy także kierowników.</p>
+
+  <h2>4.1 Pulpit dnia</h2>
+  <p>Kliknij <b>GastroFlowx</b> w lewym menu Gmaila. <span class="ui">Dashboard</span> pokazuje:</p>
+  <ul>
+    <li>liczbę kontaktów i klientów oraz <b>Podsumowanie na dziś</b> – nowe maile, zadania i przypomnienia,</li>
+    <li><b>Przypomnienia</b> i <b>Zadania</b> w zakładkach <span class="ui">Zaległe</span>, <span class="ui">Dziś</span> i <span class="ui">7 dni</span> – zaznacz pole lub ✓, aby oznaczyć jako wykonane,</li>
+    <li><b>Ostatnie maile</b> ze skrzynki odbiorczej z kategorią nadawcy – kliknięcie otwiera kartę klienta.</li>
+  </ul>
+  <figure><img src="img/c1-dashboard.jpg" alt=""><figcaption>Pulpit dnia</figcaption></figure>
+
+  <h2>4.2 Karta klienta przy mailu</h2>
+  <p>Otwórz dowolną wiadomość. Po prawej stronie Gmaila kliknij ikonę GastroFlowx – zobaczysz kartę nadawcy. Tę samą kartę otwiera kliknięcie maila na liście <b>Ostatnie maile</b> na pulpicie. Karta zawiera kolejno:</p>
+  <ul>
+    <li><b>nagłówek</b> – imię i nazwisko, firma, kategoria i status, przyciski <span class="ui">Napisz e-mail</span> i <span class="ui">Maile w Gmailu</span>,</li>
+    <li><b>Dane kontaktowe</b> – e-mail, telefon, firma i pola dodatkowe,</li>
+    <li><b>Notatki</b> – trzy ostatnie notatki zespołu,</li>
+    <li><b>Dodaj notatkę</b>, <b>Rezerwacje</b>, <b>Zadania</b>, <b>Przypomnienia</b>,</li>
+    <li><b>Oś czasu / Historia</b> – wszystkie maile, notatki i zdarzenia.</li>
+  </ul>
+  <figure><img src="img/c2-client.jpg" alt=""><figcaption>Karta klienta otwarta z pulpitu</figcaption></figure>
+
+  <h2>4.3 Nowy nadawca – dodanie do CRM</h2>
+  <div class="grid2">
+    <div>
+      <p>Jeśli nadawcy nie ma jeszcze w bazie, karta pokaże komunikat <b>„Tego nadawcy nie ma jeszcze w CRM”</b> i krótki formularz:</p>
+      <ol class="steps">
+        <li>Sprawdź <span class="ui">Imię i nazwisko</span> (podpowiadane z maila).</li>
+        <li>Uzupełnij <span class="ui">Firma</span>, <span class="ui">Telefon</span>, wybierz <span class="ui">Kategoria</span>.</li>
+        <li>Zostaw zaznaczone <span class="ui">Klient (pełny profil)</span> albo odznacz, jeśli to tylko kontakt.</li>
+        <li>Kliknij <span class="ui">Dodaj do CRM</span>.</li>
+      </ol>
+      <p>Mail, przy którym dodałeś osobę, od razu trafi na jej oś czasu.</p>
+    </div>
+    <figure class="narrow" style="margin-top:0"><img src="img/c13-thread.jpg" alt=""><figcaption>Panel przy wiadomości od nowego nadawcy</figcaption></figure>
+  </div>
+
+  <h2>4.4 Dane kontaktowe i pola dodatkowe</h2>
+  <ul>
+    <li><span class="ui">Edytuj</span> w sekcji <b>Dane kontaktowe</b> zmienia imię, firmę, telefon, kategorię i status.</li>
+    <li><span class="ui">Dodaj pole</span> dodaje własną informację, np. <i>Alergie: orzechy</i> albo <i>NIP</i>. Podpowiedzi pól ustawia się w <span class="ui">Ustawienia → Pola dodatkowe</span>.</li>
+  </ul>
+
+  <h2>4.5 Notatki</h2>
+  <ol class="steps">
+    <li>Wpisz treść w polu <span class="ui">Dodaj notatkę</span> („Napisz szybką notatkę o tym kliencie…”).</li>
+    <li>Kliknij <span class="ui">Zapisz do osi czasu</span>.</li>
+  </ol>
+  <p>Notatka pojawi się na osi czasu oraz w sekcji <b>Notatki</b> pod danymi kontaktowymi (trzy najnowsze; <span class="ui">Pokaż wszystkie</span> filtruje oś czasu). Swoje notatki możesz edytować i usuwać – najedź na notatkę i użyj ikony ołówka lub kosza.</p>
+
+  <h2>4.6 Rezerwacje</h2>
+  <ol class="steps">
+    <li>W sekcji <b>Rezerwacje</b> kliknij <span class="ui">Dodaj</span>.</li>
+    <li>Uzupełnij <span class="ui">Data</span>, <span class="ui">Godzina</span>, <span class="ui">Goście</span>, opcjonalnie <span class="ui">Stolik / sala</span>, <span class="ui">Okazja</span>, <span class="ui">Uwagi</span> i zapisz.</li>
+    <li>Gdy gość potwierdzi, kliknij <span class="ui">Potwierdź</span>; rezygnację oznacz <span class="ui">Anuluj rezerwację</span>.</li>
+  </ol>
+  <p>Każda zmiana zapisuje się na osi czasu jako zdarzenie systemowe.</p>
+  <figure><img src="img/c3-client-work.jpg" alt=""><figcaption>Rezerwacje, zadania i przypomnienia w karcie klienta</figcaption></figure>
+
+  <h2>4.7 Zadania</h2>
+  <p>Zadanie to coś do zrobienia z terminem, np. „Wysłać ofertę na wesele”. Dodasz je w karcie klienta (sekcja <b>Zadania → Dodaj</b>), na pulpicie lub w module <span class="ui">Zadania</span> przyciskiem <span class="ui">Utwórz Zadanie</span>:</p>
+  <ol class="steps">
+    <li>Wpisz <span class="ui">Tytuł</span>, wybierz <span class="ui">Kategoria</span> i <span class="ui">Priorytet</span> (Normalny / Wysoki).</li>
+    <li>Ustaw <span class="ui">Termin</span> – domyślny termin ustawisz w Preferencjach.</li>
+    <li>Wybierz <span class="ui">Kontakt</span> (wpisz nazwę lub e-mail) i <span class="ui">Przypisz do</span> – siebie lub osobę z zespołu.</li>
+    <li>Kliknij <span class="ui">Zapisz</span>.</li>
+  </ol>
+  <figure><img src="img/c7-tasks.jpg" alt=""><figcaption>Moduł Zadań – kolumna „Pilne” zbiera zaległe i dzisiejsze zadania, pozostałe kolumny to kategorie zadań</figcaption></figure>
+  <p>W module <span class="ui">Zadania</span> możesz szukać, filtrować po kategorii i stanie (otwarte / wykonane) oraz zaznaczyć <span class="ui">Tylko moje</span>. Zadanie wykonane zaznacz polem wyboru.</p>
+  <figure><img src="img/c8-task-new.jpg" alt=""><figcaption>Formularz nowego zadania</figcaption></figure>
+
+  <h2>4.8 Przypomnienia</h2>
+  <p>Przypomnienie to sygnał „wróć do tego o danej porze”, np. „Oddzwonić w sprawie menu”. Dodasz je w karcie klienta (<b>Przypomnienia → Dodaj</b>) lub w module <span class="ui">Przypomnienia</span> przyciskiem <span class="ui">Dodaj Przypomnienie</span>: podaj <span class="ui">Tytuł</span>, <span class="ui">Kategoria</span>, <span class="ui">Kiedy</span>, opcjonalnie <span class="ui">Kontakt</span> i <span class="ui">Notatki</span>. Przypomnienia utworzone przy mailu pamiętają jego temat.</p>
+  <figure><img src="img/c9-reminders.jpg" alt=""><figcaption>Kalendarz przypomnień – pogrupowany na przypomnienia z maili, rezerwacje i pozostałe</figcaption></figure>
+  <p>Czerwona plakietka <b>Zaległe</b> oznacza, że termin minął. Kliknij ✓, aby oznaczyć przypomnienie jako zrobione. Liczba zaległych przypomnień widnieje też przy pozycji <span class="ui">Przypomnienia</span> w menu.</p>
+
+  <h2>4.9 Oś czasu, otwieranie maili i odpowiadanie</h2>
+  <ul>
+    <li><b>Kliknięcie karty maila</b> na osi czasu otwiera ten wątek w Gmailu.</li>
+    <li><span class="ui">Otwórz w Gmailu</span> – to samo, osobnym linkiem.</li>
+    <li><span class="ui">Odpowiedz</span> – otwiera wątek i od razu pole odpowiedzi Gmaila. Odpowiedź zostaje w tym samym wątku.</li>
+    <li>Lista <span class="ui">Wszystko</span> w nagłówku osi czasu filtruje: tylko maile, tylko notatki lub tylko zdarzenia.</li>
+    <li><span class="ui">Wczytaj historię z Gmaila</span> (jeśli integracja Google jest włączona) dociąga wcześniejszą korespondencję z klientem.</li>
+  </ul>
+  <figure><img src="img/c4-timeline.jpg" alt=""><figcaption>Oś czasu z linkami „Otwórz w Gmailu” i „Odpowiedz”</figcaption></figure>
+
+  <h2>4.10 Pisanie nowego maila do klienta</h2>
+  <p>W nagłówku karty klienta (oraz w pełnym profilu) kliknij <span class="ui">Napisz e-mail</span> – otworzy się nowe okno wiadomości Gmaila z adresem klienta w polu „Do”. <span class="ui">Maile w Gmailu</span> wyszukuje całą korespondencję z tym klientem.</p>
+
+  <h2>4.11 Klienci, kontakty i wyszukiwanie</h2>
+  <ul>
+    <li><span class="ui">Klienci</span> – baza klientów pogrupowana według kategorii, z ostatnią aktywnością. <span class="ui">Nowy Klient</span> dodaje klienta ręcznie. Kliknięcie wiersza otwiera <b>pełną kartę klienta</b>.</li>
+    <li><span class="ui">Kontakty</span> – książka adresowa. <span class="ui">Utwórz profil klienta</span> zamienia kontakt w klienta.</li>
+    <li><b>Globalne szukanie</b> (pole na górze) przeszukuje klientów i kontakty po nazwie, firmie i e-mailu.</li>
+  </ul>
+  <figure><img src="img/c6-profile.jpg" alt=""><figcaption>Pełna karta klienta</figcaption></figure>
+
+  <h2>4.12 Kalendarz</h2>
+  <p>W <span class="ui">Ustawienia → Kalendarz</span>:</p>
+  <ul>
+    <li><b>Subskrypcja kalendarza (ICS)</b> – kliknij <span class="ui">Utwórz link kalendarza</span>, a potem <span class="ui">Dodaj do Google</span>, <span class="ui">Dodaj do Outlooka</span> lub skopiuj link do kalendarza Apple. W kalendarzu pojawią się Twoje zadania i przypomnienia (opcjonalnie także rezerwacje), z powiadomieniem przed terminem. Kalendarze odświeżają subskrypcje z opóźnieniem – Google nawet do kilku godzin.</li>
+    <li><b>Konto Google</b> (jeśli włączone w Twojej restauracji) – <span class="ui">Połącz z Google</span> łączy konto z bieżącej karty Gmaila. Zadania trafiają wtedy natychmiast do Kalendarza Google, a historia maili wczytuje się automatycznie. Przy pierwszym łączeniu Google może wyświetlić ostrzeżenie o niezweryfikowanej aplikacji – kliknij <span class="ui">Zaawansowane</span> → <span class="ui">Przejdź do GastroFlowx</span>.</li>
+  </ul>
+  <div class="warn"><b>Link kalendarza jest prywatny</b>Kto ma link, widzi Twoje zadania. Nie udostępniaj go. Jeśli wyciekł, kliknij <span class="ui">Wygeneruj nowy link</span> – stary przestanie działać.</div>
+
+  <h2>4.13 Moje preferencje</h2>
+  <p><span class="ui">Ustawienia → Preferencje</span>: domyślna godzina przypomnienia, domyślny termin zadania i język. Te ustawienia dotyczą tylko Twojego konta.</p>
+</section>
+
+<!-- ============================================================== 5 -->
+<section class="chapter">
+  <span class="num">Rozdział 5</span>
+  <h1>Instrukcja dla kierownika</h1>
+  <p class="lead">Kierownik korzysta z tych samych funkcji co pracownik (rozdział 4). Dodatkowo zwykle odpowiada za konfigurację CRM restauracji i za to, by zespół pracował na wspólnych zasadach.</p>
+
+  <h2>5.1 Ustawienia restauracji</h2>
+  <p>W <span class="ui">Ustawienia</span> znajdziesz zakładki słowników wspólnych dla całego zespołu:</p>
+  <table>
+    <tr><th style="width:24%">Zakładka</th><th>Do czego służy</th><th style="width:30%">Przykłady</th></tr>
+    <tr><td><span class="ui">Kategorie klientów</span></td><td>Grupowanie klientów na liście i plakietka w karcie. Kolor i ikona do wyboru.</td><td>VIP, B2B, Wesela, Stali goście</td></tr>
+    <tr><td><span class="ui">Statusy</span></td><td>Etap relacji z klientem. Status oznaczony jako <span class="ui">Domyślny</span> dostaje każdy nowy kontakt.</td><td>Lead, Potencjalny klient, Klient, Nieaktywny</td></tr>
+    <tr><td><span class="ui">Kategorie zadań</span></td><td>Kolumny tablicy zadań i typy w formularzu zadania.</td><td>Follow-up, Oferty, Degustacje, Wewnętrzne</td></tr>
+    <tr><td><span class="ui">Pola dodatkowe</span></td><td>Podpowiedzi pól w karcie klienta (tekst, liczba, data, tak/nie).</td><td>Alergie, NIP, Ulubiony stolik</td></tr>
+  </table>
+  <ul>
+    <li><b>Dodawanie:</b> wpisz nazwę w dolnym polu i kliknij <span class="ui">Dodaj</span>.</li>
+    <li><b>Zmiana nazwy:</b> popraw tekst w polu i naciśnij Enter. <b>Kolor/ikona:</b> wybierz z listy.</li>
+    <li><b>Kolejność:</b> strzałki ↑ ↓ po lewej. Kolejność obowiązuje na listach i na tablicy zadań.</li>
+    <li><b>Usuwanie:</b> ikona kosza. Jeśli status lub kategoria zadań jest w użyciu, system poprosi o wskazanie, dokąd przenieść powiązane kontakty lub zadania (<span class="ui">Przenieś i usuń</span>). Ostatniej pozycji nie da się usunąć.</li>
+  </ul>
+  <figure><img src="img/c11-settings.jpg" alt=""><figcaption>Ustawienia – statusy kontaktów z licznikiem użyć</figcaption></figure>
+
+  <h2>5.2 Praca zespołu</h2>
+  <ul>
+    <li><b>Przydzielaj zadania</b> polem <span class="ui">Przypisz do</span> – osoba zobaczy je na swoim pulpicie i (jeśli tak ustawi) w swoim kalendarzu.</li>
+    <li><b>Przeglądaj tablicę</b> <span class="ui">Zadania</span> – kolumna <b>Pilne (Dziś/Zaległe)</b> pokazuje, co wymaga reakcji. Przełącz filtr na wykonane, aby sprawdzić, co zespół zamknął.</li>
+    <li><b>Ustal zasady notatek</b> – np. każda rozmowa telefoniczna z klientem kończy się krótką notatką. Notatki widzi cały zespół.</li>
+    <li><b>Dbaj o statusy</b> – aktualny status klienta ułatwia planowanie działań (np. przypomnienie do wszystkich „Potencjalnych klientów”).</li>
+  </ul>
+
+  <h2>5.3 Konta i licencje zespołu</h2>
+  <p>Nowe konto, reset hasła, zmiana roli, przydział lub zwolnienie miejsca w licencji oraz wylogowanie zgubionego komputera wykonuje <b>Master Admin</b>. Zgłoś mu: imię i nazwisko, adres e-mail pracownika i jego rolę.</p>
+  <div class="tip"><b>Odejście pracownika</b>Poproś administratora o usunięcie konta lub zwolnienie miejsca. Klienci, notatki i zadania utworzone przez tę osobę zostają w restauracji.</div>
+</section>
+
+<!-- ============================================================== 6 -->
+<section class="chapter">
+  <span class="num">Rozdział 6</span>
+  <h1>Instrukcja dla Master Admina</h1>
+  <p class="lead">Master Admin zarządza restauracjami, kontami i licencjami w panelu przeglądarkowym <b>app.gastroflowx.pl</b>. Konto Master Admina nie służy do pracy w CRM – w Gmailu zobaczy jedynie informację, że zarządza systemem z panelu.</p>
+
+  <h2>6.1 Logowanie i przegląd</h2>
+  <div class="grid2">
+    <div>
+      <ol class="steps">
+        <li>Otwórz <b>https://app.gastroflowx.pl</b>.</li>
+        <li>Podaj <span class="ui">E-mail</span> i <span class="ui">Hasło</span>. Zaznacz <span class="ui">Nie wylogowuj mnie</span> tylko na własnym komputerze.</li>
+        <li>Kliknij <span class="ui">Zaloguj się</span>.</li>
+      </ol>
+      <p><span class="ui">Przegląd</span> pokazuje liczbę aktywnych restauracji, użytkowników (i ilu z nich nie ma licencji), zajęte miejsca oraz <b>licencje wygasające w ciągu 30 dni</b>.</p>
+    </div>
+    <figure style="margin-top:0"><img src="img/a0-login.jpg" alt=""><figcaption>Logowanie do panelu administratora</figcaption></figure>
+  </div>
+  <figure><img src="img/a1-overview.jpg" alt=""><figcaption>Przegląd</figcaption></figure>
+
+  <h2>6.2 Restauracje (grupy)</h2>
+  <ul>
+    <li><span class="ui">Grupy (Restauracje)</span> → <span class="ui">Nowa grupa</span>: <span class="ui">Nazwa</span>, <span class="ui">E-mail kontaktowy</span>, <span class="ui">Strefa czasowa</span>. Nowa restauracja dostaje gotowy zestaw statusów, kategorii zadań i pól.</li>
+    <li>Kliknięcie restauracji otwiera szczegóły: użytkowników, licencje i liczbę kontaktów. Stąd dodasz użytkownika lub licencję przyciskiem <span class="ui">Dodaj</span>.</li>
+    <li><span class="ui">Dezaktywuj</span> wstrzymuje dostęp całej restauracji (dane zostają). <span class="ui">Aktywuj</span> przywraca dostęp.</li>
+    <li><b>Usunięcie grupy</b> kasuje restaurację wraz z kontaktami, historią, rezerwacjami, licencjami i kontami. Aby potwierdzić, wpisz identyfikator grupy i kliknij <span class="ui">Usuń grupę na zawsze</span>. <b>Tej operacji nie można cofnąć.</b></li>
+  </ul>
+  <figure><img src="img/a3-group.jpg" alt=""><figcaption>Szczegóły restauracji</figcaption></figure>
+
+  <h2>6.3 Użytkownicy</h2>
+  <ul>
+    <li><span class="ui">Nowy użytkownik</span>: <span class="ui">Imię i nazwisko</span>, <span class="ui">E-mail</span>, <span class="ui">Hasło</span>, <span class="ui">Rola</span> (Pracownik / Kierownik / Master Admin), <span class="ui">Grupa (restauracja)</span> i od razu <span class="ui">Licencja</span>, jeśli są wolne miejsca.</li>
+    <li>Ikona ołówka – edycja danych, roli i grupy. Pole <span class="ui">Nowe hasło</span> zostaw puste, jeśli nie zmieniasz hasła. Zmiana grupy zwalnia miejsce w licencji i wylogowuje użytkownika.</li>
+    <li>Ikona wyjścia – <span class="ui">Wyloguj ze wszystkich rozszerzeń</span>, np. po zgubieniu laptopa.</li>
+    <li>Ikona kosza – usuwa konto. Kontakty i zadania zostają w restauracji.</li>
+    <li>Listę filtrujesz po restauracji, roli i wyszukiwarką.</li>
+  </ul>
+  <figure><img src="img/a5-user-new.jpg" alt=""><figcaption>Nowy użytkownik</figcaption></figure>
+
+  <h2>6.4 Licencje i przydziały</h2>
+  <ul>
+    <li><span class="ui">Nowa licencja</span>: restauracja, plan, liczba <span class="ui">Miejsca</span>, okres ważności (<span class="ui">Od</span> – <span class="ui">Do</span>) i <span class="ui">Status</span>.</li>
+    <li>Rozwiń licencję strzałką, aby zobaczyć <span class="ui">Przydziały</span>. <span class="ui">Przydziel</span> daje miejsce wybranemu użytkownikowi, <span class="ui">Zwolnij miejsce</span> je odbiera. Gdy miejsca się skończą, zwiększ ich liczbę w edycji licencji.</li>
+    <li>Przyciski <span class="ui">+30 dni</span> i <span class="ui">+1 rok</span> przedłużają licencję jednym kliknięciem.</li>
+    <li><span class="ui">Wygeneruj nowy klucz</span> zmienia klucz licencji (np. przy podejrzeniu wycieku).</li>
+    <li>Pasek <b>Miejsca</b> pokazuje wykorzystanie (np. 2/5). Filtr <span class="ui">Wygasające (30 dni)</span> pomaga planować odnowienia.</li>
+  </ul>
+  <figure><img src="img/a6-licenses.jpg" alt=""><figcaption>Licencje i przydziały</figcaption></figure>
+
+  <h2>6.5 Wdrożenie nowej restauracji – lista kontrolna</h2>
+  <ol class="steps">
+    <li><span class="ui">Grupy (Restauracje)</span> → <span class="ui">Nowa grupa</span> – nazwa, e-mail, strefa czasowa.</li>
+    <li>W szczegółach restauracji dodaj <b>licencję</b> z odpowiednią liczbą miejsc i okresem.</li>
+    <li>Dodaj <b>konta</b>: najpierw kierownika, potem pracowników, każdemu przydzielając miejsce.</li>
+    <li>Przekaż każdej osobie: link do rozszerzenia w Chrome Web Store, swój e-mail i hasło startowe oraz ten dokument.</li>
+    <li>Jeśli restauracja korzysta z integracji Google w trybie testowym, dopisz adresy Gmail pracowników jako <b>użytkowników testowych</b> w Google Cloud (Google Auth Platform → Odbiorcy).</li>
+    <li>Poproś kierownika o przejrzenie <span class="ui">Ustawień</span> (kategorie, statusy, pola) przed startem pracy zespołu.</li>
+  </ol>
+</section>
+
+<!-- ============================================================== 7 -->
+<section class="chapter">
+  <span class="num">Rozdział 7</span>
+  <h1>Najczęstsze pytania i rozwiązywanie problemów</h1>
+  <table>
+    <tr><th style="width:36%">Problem</th><th>Co zrobić</th></tr>
+    <tr><td>Nie widzę GastroFlowx w Gmailu</td><td>Odśwież kartę Gmaila (F5). Sprawdź w <b>chrome://extensions</b>, czy rozszerzenie jest włączone. Po aktualizacji rozszerzenia zawsze odśwież Gmaila.</td></tr>
+    <tr><td>„GastroFlowx został zaktualizowany. Odśwież tę kartę Gmaila.”</td><td>Rozszerzenie zaktualizowało się w tle – naciśnij F5.</td></tr>
+    <tr><td>„Twoja licencja wygasła” / „Brak aktywnej licencji”</td><td>Licencja restauracji wygasła lub nie masz przydzielonego miejsca. Skontaktuj się z administratorem, potem kliknij <span class="ui">Licencja odnowiona – sprawdź ponownie</span>.</td></tr>
+    <tr><td>Nie pamiętam hasła</td><td>Hasło resetuje Master Admin (edycja użytkownika → <span class="ui">Nowe hasło</span>).</td></tr>
+    <tr><td>Zgubiłem laptopa</td><td>Zgłoś to administratorowi – użyje opcji <span class="ui">Wyloguj ze wszystkich rozszerzeń</span>.</td></tr>
+    <tr><td>Karta klienta nie pokazuje się przy mailu</td><td>Kliknij ikonę GastroFlowx po prawej stronie otwartej wiadomości. W wątkach z kilkoma osobami wybierz właściwą osobę z listy u góry panelu.</td></tr>
+    <tr><td>Maila na osi czasu nie da się kliknąć</td><td>Starsze wpisy mogą nie mieć powiązania z wątkiem Gmaila – użyj <span class="ui">Maile w Gmailu</span> w nagłówku karty.</td></tr>
+    <tr><td>„Odpowiedz” otworzyło wątek, ale bez pola odpowiedzi</td><td>Kliknij <b>Odpowiedz</b> pod wiadomością w Gmailu ręcznie. Może się tak zdarzyć po zmianach wyglądu Gmaila.</td></tr>
+    <tr><td>Zadania nie pojawiają się w kalendarzu</td><td>Subskrypcje ICS odświeżają się z opóźnieniem (Google do kilku godzin). Natychmiastową synchronizację daje połączenie z Google w <span class="ui">Ustawienia → Kalendarz</span>.</td></tr>
+    <tr><td>Google: „Aplikacja niezweryfikowana”</td><td>To normalne w trybie testowym – kliknij <span class="ui">Zaawansowane</span> → <span class="ui">Przejdź do GastroFlowx</span>. Jeśli łączenie jest zablokowane, administrator musi dopisać Twój adres Gmail do użytkowników testowych.</td></tr>
+    <tr><td>Google: „wybrano inne konto”</td><td>Na ekranie Google wybierz to samo konto, w którym masz otwartego Gmaila, i połącz ponownie.</td></tr>
+    <tr><td>Panel administratora: „Sesja wygasła”</td><td>Odśwież stronę i zaloguj się ponownie. Jeśli powtarza się stale, problem leży w konfiguracji serwera (domena ciasteczek) – patrz dokumentacja techniczna (README).</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================== 8 -->
+<section class="chapter">
+  <span class="num">Rozdział 8</span>
+  <h1>Bezpieczeństwo i dane</h1>
+  <ul>
+    <li><b>Szyfrowane połączenia.</b> Cała komunikacja między rozszerzeniem, panelem a serwerem odbywa się przez HTTPS.</li>
+    <li><b>Hasła i tokeny</b> przechowywane są wyłącznie w postaci skrótów kryptograficznych. Logowanie rozszerzenia wygasa po 30 dniach.</li>
+    <li><b>Separacja restauracji.</b> Każdy użytkownik widzi wyłącznie dane swojej restauracji.</li>
+    <li><b>Dane z Gmaila.</b> System zapisuje tylko metadane maili klientów zapisanych w CRM: temat, nadawcę, datę i krótki fragment. Nie zapisuje pełnej treści ani załączników.</li>
+    <li><b>Konto Google (opcjonalne).</b> Token dostępu Google pozostaje w przeglądarce użytkownika i nie trafia na serwer GastroFlowx. Dostęp można cofnąć przyciskiem <span class="ui">Rozłącz</span> lub na myaccount.google.com/permissions.</li>
+    <li><b>Serwery w Polsce (UE).</b> Szczegóły przetwarzania danych osobowych opisuje polityka prywatności: <b>app.gastroflowx.pl/polityka-prywatnosci.html</b>.</li>
+  </ul>
+  <div class="tip"><b>Dobre praktyki zespołu</b>Nie udostępniaj swojego konta innym osobom – każdy pracownik powinien mieć własne konto (notatki i zadania są podpisane). Wylogowuj się na komputerach współdzielonych. Nie zapisuj w notatkach haseł ani danych kart płatniczych.</div>
+
+  <h2>Kontakt i wsparcie</h2>
+  <p>[NAZWA FIRMY] · [ADRES] · e-mail: <b>[EMAIL KONTAKTOWY]</b></p>
+</section>
+
+</body>
+</html>

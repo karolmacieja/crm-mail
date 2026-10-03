@@ -453,6 +453,19 @@ Aktualizacje: w SSH `git pull`, potem w `backend/` `composer install --no-dev --
 `php artisan migrate --force` i `php artisan config:cache && php artisan route:cache`. Panel admina zbuduj
 u siebie i wgraj ponownie.
 
+## Strona informacyjna i instrukcja PDF
+
+* `site/` – jednostronicowa strona produktu (PL) dla `https://gastroflowx.pl`. Przed publikacją uzupełnij pola
+  w `[NAWIASACH]` w `site/index.html` (link do Chrome Web Store, firma, adres, NIP, e-mail).
+* `docs/GastroFlowx-instrukcja.pdf` – opis systemu i instrukcje dla ról Pracownik, Kierownik i Master Admin.
+  Źródło: `docs/instrukcja/index.html`; ponowne wygenerowanie: `node docs/instrukcja/build-pdf.cjs`
+  (Playwright + `pdfunite`).
+
+**Wgranie strony (DirectAdmin):** do `~/domains/gastroflowx.pl/public_html/` (katalog główny domeny, obok
+dowiązań `api` i `app`) wgraj zawartość folderu `site/` (`index.html` i `img/`) oraz plik
+`docs/GastroFlowx-instrukcja.pdf`. Usuń domyślny `index.html` DirectAdmina, jeśli tam jest. Polityka prywatności
+jest serwowana z panelu (`https://app.gastroflowx.pl/polityka-prywatnosci.html`).
+
 ## Język interfejsu
 
 Rozszerzenie jest dostępne po polsku i angielsku. Domyślny język wynika z ustawień przeglądarki, a przełącznik
