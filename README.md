@@ -455,8 +455,8 @@ u siebie i wgraj ponownie.
 
 ## Strona informacyjna i instrukcja PDF
 
-* `site/` – jednostronicowa strona produktu (PL) dla `https://gastroflowx.pl`. Przed publikacją wstaw link do
-  rozszerzenia w Chrome Web Store w miejsce `[LINK DO CHROME WEB STORE]` w `site/index.html`.
+* `site/` – jednostronicowa strona produktu (PL) dla `https://gastroflowx.pl`. Strona nie linkuje do Chrome Web Store
+  (link do instalacji wysyłany jest po kontakcie); panel administratora otwiera ukryty link pod znakiem „©” w stopce.
 * `docs/GastroFlowx-instrukcja.pdf` – opis systemu i instrukcje dla ról Pracownik, Kierownik i Master Admin.
   Źródło: `docs/instrukcja/index.html`; ponowne wygenerowanie: `node docs/instrukcja/build-pdf.cjs`
   (Playwright + `pdfunite`).

@@ -124,6 +124,7 @@
   footer { padding: 36px 0 48px; color: var(--muted); font-size: 15px; }
   footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; }
   footer nav a { margin-left: 18px; color: var(--muted); }
+  footer a.quiet { color: inherit; text-decoration: none; cursor: default; }
 
   @media (max-width: 920px) {
     nav.top a.wide { display: none; }
@@ -160,10 +161,10 @@
     <h1>CRM dla restauracji <span>prosto w&nbsp;Gmailu</span></h1>
     <p class="lead">Otwierasz maila od gościa, firmy cateringowej czy pary młodej – a obok wiadomości od razu widzisz kartę klienta: rezerwacje, zadania, przypomnienia i notatki całego zespołu. Bez przełączania się między programami.</p>
     <div class="ctas">
-      <a class="btn primary" href="[LINK DO CHROME WEB STORE]"><svg class="i" viewBox="0 0 512 512" aria-hidden="true"><path d="M224 0c35.3 0 64 21.5 64 48 0 10.4-4.4 20-12 27.9-6.6 6.9-12 15.3-12 24.9 0 15 12.2 27.2 27.2 27.2l44.8 0c26.5 0 48 21.5 48 48l0 44.8c0 15 12.2 27.2 27.2 27.2 9.5 0 18-5.4 24.9-12 7.9-7.5 17.5-12 27.9-12 26.5 0 48 28.7 48 64s-21.5 64-48 64c-10.4 0-20.1-4.4-27.9-12-6.9-6.6-15.3-12-24.9-12-15 0-27.2 12.2-27.2 27.2L384 464c0 26.5-21.5 48-48 48l-56.8 0c-12.8 0-23.2-10.4-23.2-23.2 0-9.2 5.8-17.3 13.2-22.8 11.6-8.7 18.8-20.7 18.8-34 0-26.5-28.7-48-64-48s-64 21.5-64 48c0 13.3 7.2 25.3 18.8 34 7.4 5.5 13.2 13.5 13.2 22.8 0 12.8-10.4 23.2-23.2 23.2L48 512c-26.5 0-48-21.5-48-48L0 343.2c0-12.8 10.4-23.2 23.2-23.2 9.2 0 17.3 5.8 22.8 13.2 8.7 11.6 20.7 18.8 34 18.8 26.5 0 48-28.7 48-64s-21.5-64-48-64c-13.3 0-25.3 7.2-34 18.8-5.5 7.4-13.5 13.2-22.8 13.2-12.8 0-23.2-10.4-23.2-23.2L0 176c0-26.5 21.5-48 48-48l108.8 0c15 0 27.2-12.2 27.2-27.2 0-9.5-5.4-18-12-24.9-7.5-7.9-12-17.5-12-27.9 0-26.5 28.7-48 64-48z"/></svg> Zainstaluj w Chrome</a>
+      <a class="btn primary" href="#kontakt"><svg class="i" viewBox="0 0 576 512" aria-hidden="true"><path d="M288 33.9L96.4 175.8 254.5 293c5.3 3.9 11.2 6.9 17.5 8.7L272 464c0 5.5 .5 10.8 1.3 16L96 480c-35.3 0-64-28.7-64-64l0-239.9c0-20.3 9.6-39.4 25.9-51.4L254.5-21c9.7-7.2 21.4-11 33.5-11s23.8 3.9 33.5 11L518.1 124.7c7.2 5.3 13.1 12 17.4 19.6-2.5-.2-5-.3-7.5-.3L436.6 144 288 33.9zM320 240c0-26.5 21.5-48 48-48l160 0c26.5 0 48 21.5 48 48l0 224c0 26.5-21.5 48-48 48l-160 0c-26.5 0-48-21.5-48-48l0-224zm80 16c-13.3 0-24 10.7-24 24s10.7 24 24 24l96 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-96 0zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24l56 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-56 0z"/></svg> Poproś o dostęp</a>
       <a class="btn ghost" href="#jak-to-dziala">Zobacz, jak to działa <svg class="i" viewBox="0 0 512 512" aria-hidden="true"><path d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l370.7 0-105.4 105.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></a>
     </div>
-    <p class="note">Działa w przeglądarce Google Chrome na komputerze, z każdym kontem Gmail i Google Workspace.</p>
+    <p class="note">Działa w przeglądarce Google Chrome na komputerze, z każdym kontem Gmail i Google Workspace. Link do instalacji rozszerzenia wysyłamy po kontakcie.</p>
   </div>
   <figure><img src="img/hero.jpg" alt="Panel GastroFlowx z kartą klienta otwartą obok skrzynki" width="1280" height="800" fetchpriority="high"></figure>
 </div></div>
@@ -192,7 +193,7 @@
 <section id="jak-to-dziala" class="alt"><div class="wrap">
   <div class="sec-head"><span class="kicker">Jak to działa</span><h2>Gotowe w kilka minut</h2><p>Nie instalujesz programu ani nie przenosisz poczty. GastroFlowx to rozszerzenie przeglądarki, które dodaje CRM do Gmaila.</p></div>
   <div class="steps">
-    <div class="step"><h3>Zainstaluj rozszerzenie</h3><p>Dodaj GastroFlowx do Chrome z Chrome Web Store i przypnij ikonę na pasku przeglądarki.</p></div>
+    <div class="step"><h3>Zainstaluj rozszerzenie</h3><p>Po kontakcie otrzymasz link do instalacji GastroFlowx w Chrome. Wystarczy jedno kliknięcie i przypięcie ikony na pasku przeglądarki.</p></div>
     <div class="step"><h3>Zaloguj się</h3><p>Użyj konta otrzymanego od administratora restauracji. Logowanie pamięta się przez 30 dni.</p></div>
     <div class="step"><h3>Pracuj w Gmailu</h3><p>Otwórz maila – karta klienta pojawi się obok. Pełny panel znajdziesz pod pozycją „GastroFlowx” w lewym menu.</p></div>
   </div>
@@ -245,7 +246,7 @@
 <section id="kontakt"><div class="wrap">
   <div class="cta">
     <h2>Chcesz wdrożyć GastroFlowx w swojej restauracji?</h2>
-    <p>Napisz do nas – przygotujemy konto restauracji, licencję dla zespołu i pomożemy w pierwszej konfiguracji.</p>
+    <p>Napisz do nas – przygotujemy konto restauracji i licencję dla zespołu, wyślemy link do instalacji rozszerzenia i pomożemy w pierwszej konfiguracji.</p>
     <div class="ctas">
       <a class="btn primary" href="mailto:kontakt@gastroflowx.pl?subject=Wdro%C5%BCenie%20GastroFlowx"><svg class="i" viewBox="0 0 576 512" aria-hidden="true"><path d="M288 33.9L96.4 175.8 254.5 293c5.3 3.9 11.2 6.9 17.5 8.7L272 464c0 5.5 .5 10.8 1.3 16L96 480c-35.3 0-64-28.7-64-64l0-239.9c0-20.3 9.6-39.4 25.9-51.4L254.5-21c9.7-7.2 21.4-11 33.5-11s23.8 3.9 33.5 11L518.1 124.7c7.2 5.3 13.1 12 17.4 19.6-2.5-.2-5-.3-7.5-.3L436.6 144 288 33.9zM320 240c0-26.5 21.5-48 48-48l160 0c26.5 0 48 21.5 48 48l0 224c0 26.5-21.5 48-48 48l-160 0c-26.5 0-48-21.5-48-48l0-224zm80 16c-13.3 0-24 10.7-24 24s10.7 24 24 24l96 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-96 0zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24l56 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-56 0z"/></svg> Napisz do nas</a>
       <a class="btn ghost" href="GastroFlowx-instrukcja.pdf" download><svg class="i" viewBox="0 0 384 512" aria-hidden="true"><path d="M0 64C0 28.7 28.7 0 64 0L213.5 0c17 0 33.3 6.7 45.3 18.7L365.3 125.3c12 12 18.7 28.3 18.7 45.3L384 448c0 35.3-28.7 64-64 64L64 512c-35.3 0-64-28.7-64-64L0 64zm208-5.5l0 93.5c0 13.3 10.7 24 24 24L325.5 176 208 58.5zM175 441c9.4 9.4 24.6 9.4 33.9 0l64-64c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-23 23 0-86.1c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 86.1-23-23c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64z"/></svg> Pobierz instrukcję (PDF)</a>
@@ -255,11 +256,10 @@
 </main>
 
 <footer><div class="wrap">
-  <div>© 2026 <a href="https://kmenterprises.pl" rel="noopener">KM ENTERPRISES</a> Karol Macieja · Projekt i realizacja: <a href="https://codeandreach.pl" rel="noopener">Code and Reach Studio</a></div>
+  <div><a class="quiet" href="https://app.gastroflowx.pl" aria-label="Panel administratora">©</a> 2026 <a href="https://kmenterprises.pl" rel="noopener">KM ENTERPRISES</a> Karol Macieja · Projekt i realizacja: <a href="https://codeandreach.pl" rel="noopener">Code and Reach Studio</a></div>
   <nav aria-label="Stopka">
     <a href="https://app.gastroflowx.pl/polityka-prywatnosci.html">Polityka prywatności</a>
     <a href="GastroFlowx-instrukcja.pdf">Instrukcja (PDF)</a>
-    <a href="https://app.gastroflowx.pl">Panel administratora</a>
     <a href="mailto:kontakt@gastroflowx.pl">Kontakt</a>
   </nav>
 </div></footer>
