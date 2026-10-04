@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
  *
  *  - owner ("opiekun", contacts.user_id) – everything, incl. sharing;
  *  - contact without an owner (creator removed) – shared with the whole team;
+ *  - personal card in a private category ("korespondencja firmowa") – its owner only;
  *  - anyone else – only through shares (to the team or to them personally),
  *    which add up: the sections they cover plus individually shared emails.
  *
@@ -37,6 +38,11 @@ final class ContactAccess
 
     public static function resolve(User $user, Contact $contact): self
     {
+        // Personal cards (private category) belong to one person and are never shared.
+        if ($contact->isPersonal()) {
+            return $contact->user_id === $user->id ? new self(true, true, self::SCOPES) : new self(false, false, []);
+        }
+
         if ($contact->user_id === null || $contact->user_id === $user->id) {
             return new self(true, true, self::SCOPES);
         }

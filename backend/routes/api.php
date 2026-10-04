@@ -76,6 +76,9 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
             Route::post('/emails/import', [ActivityController::class, 'importEmails'])->name('emails.import');
             Route::patch('/activities/{activity}', [ActivityController::class, 'update'])->whereNumber('activity')->name('activities.update');
             Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->whereNumber('activity')->name('activities.destroy');
+            // Business correspondence: one email from my personal card into the team pool.
+            Route::post('/activities/{activity}/team-share', [ActivityController::class, 'teamShare'])->whereNumber('activity')->name('activities.team-share');
+            Route::delete('/activities/{activity}/team-share', [ActivityController::class, 'teamUnshare'])->whereNumber('activity')->name('activities.team-unshare');
 
             // Sharing (owner only) and "Poproś o dostęp".
             Route::get('/shares', [ContactShareController::class, 'index'])->name('shares.index');

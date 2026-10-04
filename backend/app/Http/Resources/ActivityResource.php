@@ -24,6 +24,9 @@ class ActivityResource extends JsonResource
             'subject_type' => $this->subject_type, // contact | reservation | task | reminder
             'subject_id' => $this->subject_id,
             'contact_id' => $this->contact_id,
+            // Business correspondence: email added to the team pool, and by whom.
+            'team_shared' => $this->team_shared_at !== null,
+            'team_shared_by' => $this->whenLoaded('sharedBy', fn () => $this->sharedBy ? ['id' => $this->sharedBy->id, 'name' => $this->sharedBy->name] : null),
             'author' => $this->whenLoaded('author', fn () => $this->author ? [
                 'id' => $this->author->id,
                 'name' => $this->author->name,

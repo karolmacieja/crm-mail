@@ -20,6 +20,7 @@ class ContactCategoryResource extends JsonResource
             'slug' => $this->slug,
             'color' => $this->color,
             'icon' => $this->icon,
+            'is_private' => (bool) $this->is_private,
             'sort_order' => $this->sort_order,
             'contacts_count' => $this->whenCounted('contacts'),
         ];

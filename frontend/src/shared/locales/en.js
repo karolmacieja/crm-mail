@@ -235,6 +235,16 @@ export default {
       review: 'Review',
       filter: { all: 'All (mine and shared)', mine: 'My clients', shared: 'Shared with me' },
     },
+    personal: {
+      cardInfo: 'Your private card ({category}). Only you can see it – add selected emails to the team pool from the timeline.',
+      othersHaveCards: 'Business correspondence ({category}): other people keep their own private cards of this contact.',
+      ownCardHint: { one: 'You will create your own card. The team pool holds {count} email.', other: 'You will create your own card. The team pool holds {count} emails.' },
+      addToPool: 'Add to team pool',
+      inPool: 'In the team pool',
+      unshareHint: 'Click to take the email out of the team pool',
+      confirmUnshare: 'Take this email out of the team pool? The team will no longer see it.',
+      fromTeam: 'From the team pool · shared by {name}',
+    },
     fieldTypes: { text: 'Text', number: 'Number', date: 'Date', boolean: 'Yes / no' },
     reservations: {
       title: 'Reservations',
@@ -344,7 +354,7 @@ export default {
   settings: {
     title: 'Settings',
     tabs: { categories: 'Client categories', statuses: 'Statuses', taskCategories: 'Task categories', fieldTemplates: 'Custom fields', preferences: 'Preferences', calendar: 'Calendar' },
-    categories: { title: 'Client categories', description: 'Group clients (e.g. VIP, companies, weddings). Shared by the whole restaurant.', add: 'Add category' },
+    categories: { title: 'Client categories', description: 'Group clients (e.g. VIP, companies, weddings). Shared by the whole restaurant. "Private cards" – business correspondence: everyone keeps their own card of the contact and only selected emails reach the team.', add: 'Add category', private: 'Private cards', privateHint: 'Business correspondence: everyone keeps their own private card of the contact; selected emails can go to the team pool.', confirmPrivate: 'Make "{name}" business correspondence? Its contacts become their owners\' private cards and existing sharing is revoked.', confirmShared: 'Turn private cards off for "{name}"? Only possible while nobody else keeps a card of the same contacts.' },
     statuses: { title: 'Contact statuses', description: 'Stages of the client relationship. New contacts get the default status.', add: 'Add status' },
     taskCategories: { title: 'Task categories', description: 'Columns of the task board and types in the task form.', add: 'Add task category' },
     fieldTemplates: { title: 'Custom field templates', description: 'Field suggestions (e.g. allergies, VAT ID) shown on the client card.', add: 'Add field' },

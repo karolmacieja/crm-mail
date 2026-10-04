@@ -45,6 +45,7 @@ class Contact extends Model
     {
         return [
             'is_client' => 'boolean',
+            'personal_key' => 'integer',
             'last_activity_at' => 'datetime',
             'email_history_synced_at' => 'datetime',
         ];
@@ -55,6 +56,15 @@ class Contact extends Model
         // BelongsToGroup has filled group_id already; new contacts get the restaurant's default status.
         static::creating(function (Contact $contact) {
             $contact->status ??= ContactStatus::defaultKeyFor($contact->group_id);
+        });
+
+        // A private category ("korespondencja firmowa") makes the card personal to its owner.
+        static::saving(function (Contact $contact) {
+            if (! $contact->exists || $contact->isDirty(['category_id', 'user_id'])) {
+                $contact->personal_key = static::isPrivateCategory($contact->category_id) && $contact->user_id !== null
+                    ? $contact->user_id
+                    : 0;
+            }
         });
     }
 
@@ -111,6 +121,27 @@ class Contact extends Model
     public function accessRequests(): HasMany
     {
         return $this->hasMany(ContactAccessRequest::class);
+    }
+
+    public static function isPrivateCategory(?int $categoryId): bool
+    {
+        return $categoryId !== null
+            && (bool) ContactCategory::withoutGlobalScopes()->whereKey($categoryId)->value('is_private');
+    }
+
+    /** A personal card in a private category: only its owner sees it, never shared. */
+    public function isPersonal(): bool
+    {
+        return (int) $this->personal_key !== 0;
+    }
+
+    /**
+     * Colleagues' personal cards of the same e-mail (their emails added to
+     * the team pool show on this card's timeline).
+     */
+    public function siblingCards(): Builder
+    {
+        return static::query()->where('email', $this->email)->where('personal_key', '!=', 0)->whereKeyNot($this->getKey());
     }
 
     /** What $user may see and do on this card (memoized per instance). */
@@ -188,7 +219,8 @@ class Contact extends Model
     }
 
     /**
-     * Contacts $user can open: own, ownerless, or shared with them / the team.
+     * Contacts $user can open: own (incl. personal cards), ownerless, or shared
+     * with them / the team. Colleagues' personal cards are never visible.
      * With $scope, only those whose share covers that section (owners always do).
      */
     public function scopeVisibleTo(Builder $query, User $user, ?string $scope = null): Builder
@@ -213,16 +245,18 @@ class Contact extends Model
     public static function constrainVisible($query, int $userId, ?string $scope = null, string $table = 'contacts'): void
     {
         $query->where(function ($q) use ($userId, $scope, $table) {
-            $q->whereNull("{$table}.user_id")
-                ->orWhere("{$table}.user_id", $userId)
-                ->orWhereExists(function ($shares) use ($userId, $scope, $table) {
-                    $shares->selectRaw('1')->from('contact_shares')
-                        ->whereColumn('contact_shares.contact_id', "{$table}.id")
-                        ->where(fn ($w) => $w->whereNull('contact_shares.user_id')->orWhere('contact_shares.user_id', $userId));
-                    if ($scope !== null) {
-                        $shares->where("contact_shares.{$scope}", true);
-                    }
-                });
+            $q->where("{$table}.user_id", $userId)
+                ->orWhere(fn ($q) => $q->where("{$table}.personal_key", 0)->where(function ($q) use ($userId, $scope, $table) {
+                    $q->whereNull("{$table}.user_id")
+                        ->orWhereExists(function ($shares) use ($userId, $scope, $table) {
+                            $shares->selectRaw('1')->from('contact_shares')
+                                ->whereColumn('contact_shares.contact_id', "{$table}.id")
+                                ->where(fn ($w) => $w->whereNull('contact_shares.user_id')->orWhere('contact_shares.user_id', $userId));
+                            if ($scope !== null) {
+                                $shares->where("contact_shares.{$scope}", true);
+                            }
+                        });
+                }));
         });
     }
 

@@ -30,7 +30,7 @@
         :title="t('settings.categories.title')"
         :description="t('settings.categories.description')"
         :add-placeholder="t('settings.categories.add')"
-        :options="{ color: true, icon: true }"
+        :options="{ color: true, icon: true, isPrivate: true }"
       />
       <DictionaryEditor
         v-else-if="active === 'statuses'"

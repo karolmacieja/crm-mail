@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\CustomFieldType;
 use App\Models\Contact;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreContactRequest extends TenantRequest
 {
@@ -12,6 +13,16 @@ class StoreContactRequest extends TenantRequest
     {
         if ($this->has('email')) {
             $this->merge(['email' => mb_strtolower(trim((string) $this->input('email')))]);
+        }
+
+        // Business correspondence: colleagues keep personal cards of this e-mail,
+        // so a new card is a personal one in the same private category.
+        if ($this->route('contact') === null && $this->filled('email') && ! Contact::isPrivateCategory($this->categoryId())) {
+            $category = Contact::query()->where('email', $this->input('email'))->where('personal_key', '!=', 0)
+                ->whereNotNull('category_id')->value('category_id');
+            if ($category !== null) {
+                $this->merge(['category_id' => $category]);
+            }
         }
     }
 
@@ -25,6 +36,7 @@ class StoreContactRequest extends TenantRequest
                 'required', 'string', 'email', 'max:255',
                 Rule::unique('contacts', 'email')
                     ->where('group_id', $this->groupId())
+                    ->where('personal_key', $this->personalKey())
                     ->ignore($this->route('contact')),
             ],
             'name' => ['nullable', 'string', 'max:255'],
@@ -48,9 +60,51 @@ class StoreContactRequest extends TenantRequest
     public function messages(): array
     {
         return [
-            'email.unique' => $this->emailTakenMessage(),
+            'email.unique' => $this->personalKey() !== 0 ? __('crm.personal.already_have_card') : $this->emailTakenMessage(),
             'phone.regex' => __('crm.phone_format'),
         ];
+    }
+
+    /**
+     * Shared cards (one per e-mail) and personal cards (one per person, private
+     * category) of the same e-mail never mix.
+     *
+     * @return array<int, \Closure>
+     */
+    public function after(): array
+    {
+        return [function (Validator $validator) {
+            $contact = $this->route('contact');
+            $email = $this->input('email', $contact?->email);
+            if ($validator->errors()->has('email') || ! is_string($email) || $email === '') {
+                return;
+            }
+
+            $others = fn () => Contact::query()->where('email', $email)->when($contact, fn ($q) => $q->whereKeyNot($contact->id));
+            if ($this->personalKey() !== 0 && $others()->where('personal_key', 0)->exists()) {
+                $validator->errors()->add('email', $this->emailTakenMessage());
+            } elseif ($this->personalKey() === 0 && $others()->where('personal_key', '!=', 0)->exists()) {
+                $validator->errors()->add($this->has('category_id') ? 'category_id' : 'email', __('crm.personal.other_cards'));
+            }
+        }];
+    }
+
+    /** Category the card will have (the request's, else the current one). */
+    protected function categoryId(): ?int
+    {
+        $id = $this->has('category_id') ? $this->input('category_id') : $this->route('contact')?->category_id;
+
+        return is_numeric($id) ? (int) $id : null;
+    }
+
+    /** 0 for shared cards; the owner's id for personal cards (private category). */
+    protected function personalKey(): int
+    {
+        if (! Contact::isPrivateCategory($this->categoryId())) {
+            return 0;
+        }
+
+        return (int) ($this->route('contact')?->user_id ?? $this->user()->id);
     }
 
     /** One card per e-mail: if a colleague looks after this client, say who. */

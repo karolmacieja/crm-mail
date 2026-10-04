@@ -29,6 +29,11 @@ export const useClientStore = defineStore('client', () => {
    * { contact_id, owner: { id, name }, access_requested }.
    */
   const ownership = ref(null)
+  /**
+   * Business correspondence kept by colleagues on their own private cards:
+   * { category: { id, name }, team_emails } – a new card will be personal too.
+   */
+  const personalInfo = ref(null)
   const error = ref(null)
   const isSidebarOpen = ref(false)
 
@@ -60,6 +65,7 @@ export const useClientStore = defineStore('client', () => {
     isSidebarOpen.value = sidebar
     contact.value = null
     ownership.value = null
+    personalInfo.value = null
     status.value = 'loading'
     error.value = null
     resetTimeline()
@@ -70,6 +76,7 @@ export const useClientStore = defineStore('client', () => {
 
       contact.value = data.data
       ownership.value = data.meta?.owned_by_colleague ?? null
+      personalInfo.value = data.meta?.personal_cards ?? null
       status.value = data.data ? 'ready' : ownership.value ? 'owned_elsewhere' : 'not_found'
 
       if (data.data) {
@@ -209,6 +216,14 @@ export const useClientStore = defineStore('client', () => {
   async function transfer(userId) {
     await call(() => api.post(`/contacts/${contact.value.id}/transfer`, { user_id: userId }))
     await reload()
+  }
+
+  /** Business correspondence: put one email of my personal card into the team pool (or take it back). */
+  async function setTeamShared(activity, shared) {
+    const url = `/contacts/${contact.value.id}/activities/${activity.id}/team-share`
+    const { data } = await call(() => (shared ? api.post(url) : api.delete(url)))
+    timeline.items = timeline.items.map((a) => (a.id === activity.id ? data.data : a))
+    return data.data
   }
 
   async function declineRequest(requestId) {
@@ -395,6 +410,7 @@ export const useClientStore = defineStore('client', () => {
     contact,
     status,
     ownership,
+    personalInfo,
     error,
     isSidebarOpen,
     timeline,
@@ -413,6 +429,7 @@ export const useClientStore = defineStore('client', () => {
     unshare,
     transfer,
     declineRequest,
+    setTeamShared,
     openEmail,
     openContact,
     closeSidebar,

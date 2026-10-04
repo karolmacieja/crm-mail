@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\Settings;
 use App\Enums\CustomFieldType;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
+use App\Models\ContactAccessRequest;
 use App\Models\ContactCategory;
+use App\Models\ContactShare;
 use App\Models\ContactStatus;
 use App\Models\CustomFieldTemplate;
 use App\Models\Task;
@@ -62,6 +64,9 @@ class DictionaryController extends Controller
         $data = $request->validate($this->rules($dictionary, creating: false, ignoreId: $item->id));
 
         DB::transaction(function () use ($item, $data) {
+            if ($item instanceof ContactCategory && array_key_exists('is_private', $data) && (bool) $data['is_private'] !== $item->is_private) {
+                $this->switchPrivacy($item, (bool) $data['is_private']);
+            }
             $item->update($data);
             if ($item instanceof ContactStatus && ($data['is_default'] ?? false)) {
                 $this->makeOnlyDefault($item);
@@ -79,6 +84,9 @@ class DictionaryController extends Controller
         DB::transaction(function () use ($request, $dictionary, $item, $class) {
             if ($item instanceof ContactStatus || $item instanceof TaskCategory) {
                 $this->reassignBeforeDelete($request, $dictionary, $item, $class);
+            }
+            if ($item instanceof ContactCategory && $item->is_private && $item->contacts()->exists()) {
+                throw ValidationException::withMessages(['id' => [__('crm.personal.category_in_use')]]);
             }
 
             $item->delete(); // contact categories: contacts.category_id → NULL (FK)
@@ -137,6 +145,7 @@ class DictionaryController extends Controller
                 'name' => [$required, 'string', 'max:60', $uniqueName('contact_categories', 'name')],
                 'color' => ['sometimes', Rule::in(self::COLORS)],
                 'icon' => ['sometimes', 'nullable', 'string', 'max:40', 'regex:/^[a-z0-9-]+$/'],
+                'is_private' => ['sometimes', 'boolean'],
                 'sort_order' => ['sometimes', 'integer', 'min:0'],
             ],
             'statuses' => [
@@ -191,6 +200,34 @@ class DictionaryController extends Controller
         $records->update([$column => $moveTo]);
     }
 
+    /**
+     * Private category on: its contacts become their owners' personal cards
+     * (sharing removed). Off: only possible while nobody else keeps a card of
+     * the same e-mail – shared cards are one per e-mail.
+     */
+    private function switchPrivacy(ContactCategory $category, bool $private): void
+    {
+        $contacts = Contact::query()->where('category_id', $category->id);
+
+        if ($private) {
+            $ids = (clone $contacts)->whereNotNull('user_id')->pluck('id');
+            Contact::query()->whereKey($ids)->update(['personal_key' => DB::raw('user_id')]);
+            ContactShare::query()->whereIn('contact_id', $ids)->delete();
+            ContactAccessRequest::query()->whereIn('contact_id', $ids)->where('status', ContactAccessRequest::PENDING)
+                ->update(['status' => ContactAccessRequest::DECLINED, 'decided_at' => now()]);
+
+            return;
+        }
+
+        $duplicates = Contact::query()->whereIn('email', (clone $contacts)->select('email'))
+            ->select('email')->groupBy('email')->havingRaw('COUNT(*) > 1')->get()->count();
+        if ($duplicates > 0) {
+            throw ValidationException::withMessages(['is_private' => [__('crm.personal.cannot_unprivate', ['count' => $duplicates])]]);
+        }
+
+        $contacts->update(['personal_key' => 0]);
+    }
+
     private function makeOnlyDefault(ContactStatus $status): void
     {
         ContactStatus::query()->whereKeyNot($status->id)->update(['is_default' => false]);
@@ -221,7 +258,7 @@ class DictionaryController extends Controller
         return match ($dictionary) {
             'categories' => [
                 'id' => $item->id, 'name' => $item->name, 'slug' => $item->slug, 'color' => $item->color,
-                'icon' => $item->icon, 'sort_order' => $item->sort_order,
+                'icon' => $item->icon, 'is_private' => (bool) $item->is_private, 'sort_order' => $item->sort_order,
                 'usage_count' => $item->contacts_count ?? $item->contacts()->count(),
             ],
             'statuses' => [

@@ -5,6 +5,11 @@
       <Icon icon="circle-exclamation" class="mb-1 text-lg text-gray-400" />
       <p>{{ t('crm.client.notInCrm') }}</p>
     </div>
+    <!-- Colleagues keep this contact on their own private cards (business correspondence). -->
+    <div v-if="personal" class="rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">
+      <p class="font-medium"><Icon icon="lock" class="mr-1" />{{ t('crm.personal.othersHaveCards', { category: personal.category?.name ?? '—' }) }}</p>
+      <p class="mt-1">{{ t('crm.personal.ownCardHint', { count: personal.team_emails }) }}</p>
+    </div>
     <form class="space-y-2.5" @submit.prevent="create">
       <label class="block"><span class="gcrm-label">{{ t('contact.name') }}</span><input v-model.trim="form.name" class="gcrm-input" /></label>
       <div class="grid grid-cols-2 gap-2.5">
@@ -13,7 +18,7 @@
       </div>
       <label class="block">
         <span class="gcrm-label">{{ t('crm.client.category') }}</span>
-        <select v-model="form.category_id" class="gcrm-input">
+        <select v-model="form.category_id" class="gcrm-input" :disabled="Boolean(personal?.category)">
           <option :value="null">—</option>
           <option v-for="c in settings.categories" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
@@ -36,7 +41,8 @@ import { useSettingsStore } from '@/crm/stores/settings.js'
 const client = useClientStore()
 const contacts = useContactsStore()
 const settings = useSettingsStore()
-const form = reactive({ name: client.context?.name ?? '', company: '', phone: '', category_id: null, is_client: true })
+const personal = client.personalInfo
+const form = reactive({ name: client.context?.name ?? '', company: '', phone: '', category_id: personal?.category?.id ?? null, is_client: true })
 const saving = ref(false)
 const errors = ref([])
 

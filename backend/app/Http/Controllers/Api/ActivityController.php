@@ -30,10 +30,13 @@ class ActivityController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+        $timeline = $contact->isPersonal()
+            ? Activity::query()->forPersonalCard($contact)
+            : $contact->timeline()->visibleWith($access, $request->user());
+
         return ActivityResource::collection(
-            $contact->timeline()
-                ->visibleWith($access, $request->user())
-                ->with('author:id,name')
+            $timeline
+                ->with(['author:id,name', 'sharedBy:id,name'])
                 ->ofType($validated['type'] ?? null)
                 ->paginate($validated['per_page'] ?? 20)
                 ->withQueryString()
@@ -185,6 +188,33 @@ class ActivityController extends Controller
         $activity->delete();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Business correspondence: add one email from my personal card to the
+     * team pool – colleagues with their own card of this contact see it.
+     */
+    public function teamShare(Request $request, Contact $contact, Activity $activity): ActivityResource
+    {
+        $this->authorizePoolEmail($request, $contact, $activity);
+        $activity->forceFill(['team_shared_at' => now(), 'team_shared_by' => $request->user()->id])->save();
+
+        return new ActivityResource($activity->load(['author:id,name', 'sharedBy:id,name']));
+    }
+
+    public function teamUnshare(Request $request, Contact $contact, Activity $activity): ActivityResource
+    {
+        $this->authorizePoolEmail($request, $contact, $activity);
+        $activity->forceFill(['team_shared_at' => null, 'team_shared_by' => null])->save();
+
+        return new ActivityResource($activity->load('author:id,name'));
+    }
+
+    private function authorizePoolEmail(Request $request, Contact $contact, Activity $activity): void
+    {
+        ContactController::authorizeManage($request->user(), $contact);
+        abort_unless($activity->contact_id === $contact->id && $activity->type === ActivityType::Email, 404);
+        abort_unless($contact->isPersonal(), 422, __('crm.personal.pool_only_personal'));
     }
 
     /** Only your own notes can be changed; emails and system events are history. */

@@ -42,6 +42,7 @@ class ContactAccessRequestController extends Controller
         $user = $request->user();
         $data = $request->validate(['message' => ['nullable', 'string', 'max:500']]);
 
+        ContactShareController::refusePersonal($contact);
         abort_if($contact->accessFor($user)->isFull(), 422, __('crm.sharing.already_has_access'));
 
         $accessRequest = ContactAccessRequest::query()->firstOrNew([

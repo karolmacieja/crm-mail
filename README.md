@@ -561,7 +561,7 @@ Master Admin (`role = master_admin`, bez grupy) widzi wszystkie grupy.
 | `contacts` | Kontakty i klienci (`is_client`), `category_id`, firma, ostatnia aktywność; `user_id` = opiekun |
 | `contact_shares` | Udostępnienia klienta: zespołowi (`user_id = null`) lub osobie; zakresy `details`, `notes`, `emails`, `reservations`, `work` + wybrane maile (`activity_ids`) |
 | `contact_access_requests` | Prośby „Poproś o dostęp” (`pending` / `approved` / `declined`) |
-| `contact_categories` | Kategorie grupy (domyślnie B2B, VIP, Indywidualni) |
+| `contact_categories` | Kategorie grupy (domyślnie B2B, VIP, Indywidualni); `is_private` = korespondencja firmowa |
 | `contact_custom_fields` | Własne pola kontaktu, np. „Alergie” (typy: tekst, liczba, data, tak/nie) |
 | `tasks` | Zadania: typ (follow-up / oferta / wewnętrzne), priorytet, osoba przypisana, mail źródłowy |
 | `reservations` | Data, godzina, liczba gości, status, stolik, okazja, `source_email_id` |
@@ -586,6 +586,22 @@ bezpośredni adres → 404), dopóki opiekun go nie udostępni. Reguły są w `A
 
 Po aktualizacji (migracja `2026_10_05_000100`) istniejący klienci stają się prywatni dla osób, które ich dodały.
 
+### Korespondencja firmowa (kategoria z „Prywatnymi kartami”)
+
+Kategoria z zaznaczonym `is_private` (Ustawienia → Kategorie klientów → **Prywatne karty**) działa inaczej:
+
+* każdy ma **własną, prywatną kartę** kontaktu – ten sam e-mail może mieć w restauracji wiele kart, po jednej na osobę
+  (`contacts.personal_key` = id właściciela, `0` dla zwykłych kart; unikalność `(group_id, email, personal_key)`);
+* takiej karty nie da się udostępnić ani przekazać; widzi ją tylko właściciel;
+* wybrane maile z własnej karty trafiają do **wspólnej puli** (`POST/DELETE /contacts/{id}/activities/{activity}/team-share`,
+  kolumny `activities.team_shared_at` / `team_shared_by`). Pula pokazuje się na osi czasu kart kolegów z tym samym
+  adresem (bez maili, które już mają u siebie);
+* `lookup` dla osoby bez własnej karty zwraca `meta.personal_cards` (kategoria i liczba maili w puli), a nowa karta tego
+  adresu automatycznie staje się prywatna w tej samej kategorii;
+* zwykła (wspólna) karta i karty prywatne jednego adresu nigdy nie istnieją jednocześnie. Przeniesienie kontaktu do
+  prywatnej kategorii cofa jego udostępnienia; powrót do zwykłej kategorii (lub wyłączenie prywatności kategorii)
+  jest możliwy tylko, gdy nikt inny nie ma karty tego adresu. Prywatnej kategorii z kontaktami nie można usunąć.
+
 Statusy czasowe zadań i przypomnień (zaległe / dziś / 7 dni) nie są zapisywane w bazie. Liczą je scope'y
 `overdue()`, `dueToday($tz)` i `upcoming($tz)` w strefie czasowej restauracji, więc nigdy się nie
 dezaktualizują.
@@ -605,7 +621,7 @@ php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje si�
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 95 testów
+php artisan test                      # 101 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
@@ -637,6 +653,7 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 | POST | `/contacts/{id}/transfer` | Przekazanie opieki `{user_id, keep_access=true}` |
 | POST | `/contacts/{id}/access-requests` | „Poproś o dostęp” `{message?}` |
 | GET | `/access-requests` | Prośby do moich klientów (`incoming`) i moje (`outgoing`) |
+| POST / DELETE | `/contacts/{id}/activities/{activity}/team-share` | Mail z prywatnej karty (korespondencja firmowa) do / ze wspólnej puli |
 | POST | `/access-requests/{id}/approve`, `/decline` | Akceptacja z wyborem zakresu `{scopes, email_ids}` lub odrzucenie |
 | CRUD | `/contacts/{id}` | Karta: kategoria, własne pola, zadania, przypomnienia, nadchodzące rezerwacje |
 | POST / PATCH / DELETE | `/contacts/{id}/custom-fields[/{field}]` | „Dodaj pole”, np. Alergie (typy: text, number, date, boolean) |

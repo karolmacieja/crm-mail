@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use App\Http\Resources\ContactResource;
+use App\Models\Activity;
 use App\Models\Contact;
 use App\Models\ContactAccessRequest;
 use App\Models\User;
@@ -72,10 +73,21 @@ class ContactController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
-        $contact = Contact::query()->with('owner:id,name')->where('email', mb_strtolower(trim($validated['email'])))->first();
+        $user = $request->user();
+        $cards = Contact::query()->with(['owner:id,name', 'category'])->where('email', mb_strtolower(trim($validated['email'])))->get();
+
+        // My personal card first, then the shared card (there is at most one of each).
+        $contact = $cards->first(fn (Contact $c) => $c->isPersonal() && $c->user_id === $user->id)
+            ?? $cards->first(fn (Contact $c) => ! $c->isPersonal());
 
         if ($contact === null) {
-            return response()->json(['data' => null]);
+            $personal = $cards->first();
+
+            // Business correspondence kept by colleagues: I can start my own card and see the team pool.
+            return response()->json($personal === null ? ['data' => null] : ['data' => null, 'meta' => ['personal_cards' => [
+                'category' => $personal->category ? ['id' => $personal->category->id, 'name' => $personal->category->name] : null,
+                'team_emails' => Activity::query()->teamPool()->whereIn('contact_id', $cards->modelKeys())->count(),
+            ]]]);
         }
 
         if (! $contact->accessFor($request->user())->canView) {
@@ -138,8 +150,22 @@ class ContactController extends Controller
     /** Only the owner changes the contact's data; colleagues add their own entries. */
     public function update(UpdateContactRequest $request, Contact $contact): ContactResource
     {
-        self::authorizeManage($request->user(), $contact);
+        $user = $request->user();
+        self::authorizeManage($user, $contact);
+        $wasPersonal = $contact->isPersonal();
+
+        // A contact without an owner moved to a private category becomes my personal card.
+        if ($contact->user_id === null && Contact::isPrivateCategory($request->validated('category_id', $contact->category_id))) {
+            $contact->user_id = $user->id;
+        }
         $contact->update($request->validated());
+
+        // Business correspondence is private: drop sharing set up before.
+        if (! $wasPersonal && $contact->isPersonal()) {
+            $contact->shares()->delete();
+            $contact->accessRequests()->where('status', ContactAccessRequest::PENDING)
+                ->update(['status' => ContactAccessRequest::DECLINED, 'decided_at' => now()]);
+        }
 
         return new ContactResource($this->loadProfile($contact, $request));
     }

@@ -1,7 +1,12 @@
 <template>
   <!-- Who looks after the client and who else can see the card. -->
   <section class="text-sm">
-    <template v-if="client.canManage">
+    <!-- Business correspondence: my own private card -->
+    <p v-if="client.contact.is_personal" class="text-gray-600">
+      <Icon icon="lock" class="mr-1.5 text-gray-400" />{{ t('crm.personal.cardInfo', { category: client.contact.category?.name ?? '' }) }}
+    </p>
+
+    <template v-else-if="client.canManage">
       <div class="flex items-center justify-between gap-3">
         <p class="min-w-0 text-gray-600">
           <Icon :icon="shares.length ? 'share-nodes' : 'lock'" class="mr-1.5 text-gray-400" />

@@ -36,6 +36,7 @@ class ContactShareController extends Controller
     public function store(Request $request, Contact $contact): JsonResponse
     {
         ContactController::authorizeManage($request->user(), $contact);
+        self::refusePersonal($contact);
         $share = self::saveShare($request, $contact, $this->validated($request, $contact));
 
         return (new ContactShareResource($share->load('user:id,name')))->response()->setStatusCode(201);
@@ -58,6 +59,7 @@ class ContactShareController extends Controller
     {
         $user = $request->user();
         ContactController::authorizeManage($user, $contact);
+        self::refusePersonal($contact);
         $data = $request->validate([
             'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('group_id', $user->group_id)],
             'keep_access' => ['sometimes', 'boolean'],
@@ -82,6 +84,12 @@ class ContactShareController extends Controller
         return response()->json(['data' => [
             'owner' => ['id' => $contact->owner->id, 'name' => $contact->owner->name],
         ]]);
+    }
+
+    /** Personal cards (business correspondence) are private; only single emails go to the team pool. */
+    public static function refusePersonal(Contact $contact): void
+    {
+        abort_if($contact->isPersonal(), 422, __('crm.personal.not_shared'));
     }
 
     /**

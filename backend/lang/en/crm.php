@@ -41,4 +41,14 @@ return [
         'already_has_access' => 'You already have full access to this client.',
         'request_closed' => 'This request has already been handled.',
     ],
+
+    // Business correspondence: private category with personal cards.
+    'personal' => [
+        'already_have_card' => 'You already have your own card of this contact.',
+        'other_cards' => 'Other people keep their own cards of this contact (business correspondence) – it cannot move to a shared category.',
+        'not_shared' => 'Cards in a private category (business correspondence) are not shared. You can add selected emails to the team pool.',
+        'pool_only_personal' => 'Only emails from private business-correspondence cards go to the team pool.',
+        'category_in_use' => 'This private category has contacts. Turn its privacy off or move the contacts first.',
+        'cannot_unprivate' => 'Privacy cannot be turned off: several people keep their own cards of the same contacts (:count). Remove the extra cards first.',
+    ],
 ];

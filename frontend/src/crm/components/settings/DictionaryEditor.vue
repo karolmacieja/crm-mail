@@ -45,6 +45,12 @@
           {{ t('settings.default') }}
         </label>
 
+        <!-- Business correspondence: everyone keeps a private card, emails shared one by one. -->
+        <label v-if="options.isPrivate" class="flex items-center gap-1 whitespace-nowrap text-xs text-gray-600" :title="t('settings.categories.privateHint')">
+          <input type="checkbox" class="accent-primary" :checked="item.is_private" @change="togglePrivate(item, $event)" />
+          <Icon icon="lock" class="text-gray-400" /> {{ t('settings.categories.private') }}
+        </label>
+
         <span v-if="item.usage_count !== undefined" class="w-24 whitespace-nowrap text-right text-xs text-gray-400">{{ t('settings.usage', { count: item.usage_count }) }}</span>
 
         <div class="ml-auto flex items-center gap-2">
@@ -84,7 +90,7 @@ const props = defineProps({
   title: { type: String, required: true },
   description: { type: String, default: '' },
   addPlaceholder: { type: String, default: '' },
-  /** { color, icon, isDefault, type, moveRequired } */
+  /** { color, icon, isDefault, isPrivate, type, moveRequired } */
   options: { type: Object, default: () => ({}) },
   labelField: { type: String, default: 'name' },
 })
@@ -111,6 +117,12 @@ async function run(action) {
 }
 
 const save = (item, patch) => run(() => settings.update(props.dictionary, item.id, patch))
+
+async function togglePrivate(item, event) {
+  const value = event.target.checked
+  const question = value ? t('settings.categories.confirmPrivate', { name: item.name }) : t('settings.categories.confirmShared', { name: item.name })
+  if (!window.confirm(question) || !(await save(item, { is_private: value }))) event.target.checked = item.is_private
+}
 
 async function rename(item, event) {
   const value = event.target.value.trim()

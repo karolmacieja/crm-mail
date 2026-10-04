@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 /**
  * Per-group contact categories, e.g. B2B, VIP, Indywidualni.
+ * is_private ("korespondencja firmowa"): every person keeps their own,
+ * private card of such a contact; selected emails go to a team pool.
  */
 class ContactCategory extends Model
 {
@@ -24,12 +26,14 @@ class ContactCategory extends Model
         'slug',
         'color',
         'icon',
+        'is_private',
         'sort_order',
     ];
 
     protected function casts(): array
     {
         return [
+            'is_private' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

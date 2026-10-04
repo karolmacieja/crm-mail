@@ -43,6 +43,7 @@ class Activity extends Model
             'type' => ActivityType::class,
             'meta' => 'array',
             'occurred_at' => 'datetime',
+            'team_shared_at' => 'datetime',
         ];
     }
 
@@ -78,6 +79,33 @@ class Activity extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Who added the email to the team pool (business correspondence). */
+    public function sharedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'team_shared_by');
+    }
+
+    /** Emails added to the team pool ("wspólna pula") from personal cards. */
+    public function scopeTeamPool(Builder $query): Builder
+    {
+        return $query->where($this->qualifyColumn('type'), ActivityType::Email)->whereNotNull($this->qualifyColumn('team_shared_at'));
+    }
+
+    /**
+     * Timeline of a personal card: its own entries plus the team pool of the
+     * same e-mail from colleagues' cards (without messages already on this card).
+     */
+    public function scopeForPersonalCard(Builder $query, Contact $contact): Builder
+    {
+        $own = static::query()->select('meta->message_id')->where('contact_id', $contact->id)->where('type', ActivityType::Email);
+
+        return $query->where(fn (Builder $q) => $q->where($this->qualifyColumn('contact_id'), $contact->id)
+            ->orWhere(fn (Builder $q) => $q->teamPool()
+                ->whereIn($this->qualifyColumn('contact_id'), $contact->siblingCards()->select('contacts.id'))
+                ->whereNotIn('meta->message_id', $own)))
+            ->latest('occurred_at')->latest('id');
     }
 
     public static function recordNote(Contact $contact, string $body, ?User $author = null): self

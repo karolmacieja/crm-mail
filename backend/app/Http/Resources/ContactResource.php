@@ -26,6 +26,8 @@ class ContactResource extends JsonResource
             'phone' => $this->when($details, $this->phone),
             'status' => $this->status,
             'is_client' => $this->is_client,
+            // Business correspondence: my own private card of this contact.
+            'is_personal' => $this->isPersonal(),
             'notes' => $this->when($details, $this->notes),
             'owner' => $this->whenLoaded('owner', fn () => $this->owner ? ['id' => $this->owner->id, 'name' => $this->owner->name] : null),
             'access' => $this->when($access !== null, fn () => [

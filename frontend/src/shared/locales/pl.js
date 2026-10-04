@@ -240,6 +240,16 @@ export default {
       review: 'Rozpatrz',
       filter: { all: 'Wszyscy (moi i udostępnieni)', mine: 'Moi klienci', shared: 'Udostępnieni mi' },
     },
+    personal: {
+      cardInfo: 'Twoja prywatna karta ({category}). Widzisz ją tylko Ty – wybrane maile możesz dodać do wspólnej puli zespołu na osi czasu.',
+      othersHaveCards: 'Korespondencja firmowa ({category}): inne osoby mają własne, prywatne karty tego kontaktu.',
+      ownCardHint: { one: 'Utworzysz własną kartę. We wspólnej puli zespołu jest {count} mail.', few: 'Utworzysz własną kartę. We wspólnej puli zespołu są {count} maile.', many: 'Utworzysz własną kartę. We wspólnej puli zespołu jest {count} maili.', other: 'Utworzysz własną kartę. We wspólnej puli zespołu jest {count} maila.' },
+      addToPool: 'Dodaj do wspólnej puli',
+      inPool: 'We wspólnej puli',
+      unshareHint: 'Kliknij, aby zabrać mail ze wspólnej puli',
+      confirmUnshare: 'Zabrać ten mail ze wspólnej puli? Zespół przestanie go widzieć.',
+      fromTeam: 'Ze wspólnej puli · udostępnił(a) {name}',
+    },
     fieldTypes: { text: 'Tekst', number: 'Liczba', date: 'Data', boolean: 'Tak / nie' },
     reservations: {
       title: 'Rezerwacje',
@@ -349,7 +359,7 @@ export default {
   settings: {
     title: 'Ustawienia',
     tabs: { categories: 'Kategorie klientów', statuses: 'Statusy', taskCategories: 'Kategorie zadań', fieldTemplates: 'Pola dodatkowe', preferences: 'Preferencje', calendar: 'Kalendarz' },
-    categories: { title: 'Kategorie klientów', description: 'Grupuj klientów (np. VIP, firmy, wesela). Wspólne dla całej restauracji.', add: 'Dodaj kategorię' },
+    categories: { title: 'Kategorie klientów', description: 'Grupuj klientów (np. VIP, firmy, wesela). Wspólne dla całej restauracji. „Prywatne karty” – korespondencja firmowa: każdy ma własną kartę kontaktu, a do zespołu trafiają tylko wybrane maile.', add: 'Dodaj kategorię', private: 'Prywatne karty', privateHint: 'Korespondencja firmowa: każdy ma własną, prywatną kartę kontaktu; wybrane maile można dodać do wspólnej puli.', confirmPrivate: 'Ustawić „{name}” jako korespondencję firmową? Kontakty tej kategorii staną się prywatnymi kartami opiekunów, a dotychczasowe udostępnienia zostaną cofnięte.', confirmShared: 'Wyłączyć prywatne karty w „{name}”? Możliwe tylko, gdy nikt inny nie ma karty tych samych kontaktów.' },
     statuses: { title: 'Statusy kontaktów', description: 'Etapy relacji z klientem. Status domyślny dostają nowe kontakty.', add: 'Dodaj status' },
     taskCategories: { title: 'Kategorie zadań', description: 'Kolumny tablicy zadań i typy w formularzu zadania.', add: 'Dodaj kategorię zadań' },
     fieldTemplates: { title: 'Szablony pól dodatkowych', description: 'Podpowiedzi pól (np. alergie, NIP) wyświetlane w karcie klienta.', add: 'Dodaj pole' },

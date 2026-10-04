@@ -41,4 +41,14 @@ return [
         'already_has_access' => 'Masz już pełny dostęp do tego klienta.',
         'request_closed' => 'Ta prośba została już rozpatrzona.',
     ],
+
+    // Business correspondence: private category with personal cards.
+    'personal' => [
+        'already_have_card' => 'Masz już własną kartę tego kontaktu.',
+        'other_cards' => 'Inne osoby mają własne karty tego kontaktu (korespondencja firmowa) – nie można go przenieść do kategorii wspólnej.',
+        'not_shared' => 'Karty z kategorii prywatnej (korespondencja firmowa) nie są udostępniane. Możesz dodać wybrane maile do wspólnej puli.',
+        'pool_only_personal' => 'Do wspólnej puli trafiają maile z prywatnych kart korespondencji firmowej.',
+        'category_in_use' => 'Ta prywatna kategoria ma przypisane kontakty. Najpierw wyłącz jej prywatność albo przenieś kontakty.',
+        'cannot_unprivate' => 'Nie można wyłączyć prywatności: kilka osób ma własne karty tych samych kontaktów (:count). Najpierw usuńcie zbędne karty.',
+    ],
 ];

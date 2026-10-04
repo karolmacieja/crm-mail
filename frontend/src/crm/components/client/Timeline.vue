@@ -66,6 +66,18 @@
               {{ item.title || t('crm.timeline.noSubject') }}
             </p>
             <p v-if="item.body" class="text-gray-600">{{ item.body }}</p>
+            <!-- Business correspondence: the team pool -->
+            <p v-if="isPoolItem(item)" class="mt-2 text-xs font-medium text-indigo-700">
+              <Icon icon="users" class="mr-1" />{{ t('crm.personal.fromTeam', { name: item.team_shared_by?.name ?? '—' }) }}
+            </p>
+            <p v-else-if="client.contact?.is_personal" class="mt-2 text-xs">
+              <button v-if="item.team_shared" type="button" class="font-medium text-indigo-700 hover:underline" :title="t('crm.personal.unshareHint')" @click.stop="setShared(item, false)">
+                <Icon icon="check" class="mr-1" />{{ t('crm.personal.inPool') }}
+              </button>
+              <button v-else type="button" class="text-gray-500 hover:text-primary hover:underline" @click.stop="setShared(item, true)">
+                <Icon icon="share-nodes" class="mr-1" />{{ t('crm.personal.addToPool') }}
+              </button>
+            </p>
             <p v-if="canOpen(item)" class="mt-2 flex gap-4 text-xs font-medium">
               <button type="button" class="text-primary hover:underline" @click.stop="gmail.openThread(threadOf(item))">
                 <Icon icon="arrow-up-right-from-square" class="mr-1" />{{ t('crm.timeline.openInGmail') }}
@@ -137,6 +149,18 @@ function systemText(item) {
       return t('crm.timeline.events.taskCompleted', { title: meta.title ?? '' })
     default:
       return item.event ?? ''
+  }
+}
+
+/** Email from a colleague's personal card, shown here through the team pool. */
+const isPoolItem = (item) => item.type === 'email' && client.contact && item.contact_id !== client.contact.id
+
+async function setShared(item, shared) {
+  if (!shared && !window.confirm(t('crm.personal.confirmUnshare'))) return
+  try {
+    await client.setTeamShared(item, shared)
+  } catch (e) {
+    window.alert(e.message)
   }
 }
 
