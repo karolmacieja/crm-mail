@@ -449,9 +449,28 @@ a potem **zawsze** `php artisan config:clear && php artisan config:cache` (Larav
 nie plik `.env`). Wyczyść ciasteczka obu subdomen w przeglądarce i zaloguj się ponownie. Podgląd aktualnych
 wartości: `php artisan config:show session` i `php artisan config:show sanctum`.
 
-Aktualizacje: w SSH `git pull`, potem w `backend/` `composer install --no-dev --optimize-autoloader`,
-`php artisan migrate --force` i `php artisan config:cache && php artisan route:cache`. Panel admina zbuduj
-u siebie i wgraj ponownie.
+**Aktualizacje (SSH):**
+
+```bash
+cd ~/domains/domena.pl/gastroflowx
+git status                       # musi być „working tree clean”; zmienione pliki przywróć: git checkout -- <plik>
+git pull
+cd backend
+composer install --no-dev --optimize-autoloader   # tylko gdy zmienił się composer.lock
+php artisan migrate --force
+php artisan config:cache && php artisan route:cache
+cd ..
+# strona informacyjna i instrukcja PDF
+cp -r site/. ~/domains/domena.pl/public_html/
+cp docs/GastroFlowx-instrukcja.pdf ~/domains/domena.pl/public_html/
+# panel admina i polityka prywatności (public_html/app to zwykły folder z kopią panelu)
+cp frontend/public-admin/polityka-prywatnosci.html frontend/dist-admin/
+cp -r frontend/dist-admin/. ~/domains/domena.pl/public_html/app/
+```
+
+Nie edytuj plików w katalogu repozytorium na serwerze – blokują `git pull`. Nie usuwaj z `public_html`
+dowiązania `api` ani folderu `app` (subdomeny zwrócą 404). Gdy zmienił się kod panelu, przebuduj go
+(`npm run build:admin`) przed ostatnią komendą `cp`.
 
 ## Strona informacyjna i instrukcja PDF
 
