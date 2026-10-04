@@ -40,7 +40,7 @@
 <!-- ======================================================================= PL -->
 <section id="pl" lang="pl">
 <h1>Polityka prywatności GastroFlowx</h1>
-<p class="meta">Obowiązuje od: 2 października 2026 r. · Dotyczy rozszerzenia Chrome „GastroFlowx” oraz panelu
+<p class="meta">Obowiązuje od: 2 października 2026 r. · Ostatnia aktualizacja: 4 października 2026 r. · Dotyczy rozszerzenia Chrome „GastroFlowx” oraz panelu
 administracyjnego dostępnego pod adresem app.gastroflowx.pl.</p>
 
 <p>GastroFlowx to system CRM dla restauracji działający w Gmailu. Pozwala zespołowi restauracji prowadzić bazę
@@ -64,7 +64,8 @@ jej zrealizować Twoje żądanie.</p>
 kryptograficzny), rola, restauracja, przydział licencji, preferencje (język, domyślne godziny przypomnień,
 ustawienia kalendarza)</td><td>od administratora systemu lub od Ciebie</td></tr>
 <tr><td>Dane CRM restauracji</td><td>dane kontaktów i klientów (imię i nazwisko, e-mail, telefon, firma, kategoria,
-status, pola dodatkowe np. alergie lub NIP), notatki, rezerwacje, zadania, przypomnienia, historia zmian</td>
+status, pola dodatkowe np. alergie lub NIP), notatki, rezerwacje, zadania, przypomnienia, historia zmian,
+informacja o opiekunie kontaktu, udostępnieniach w zespole i prośbach o dostęp</td>
 <td>wpisywane przez zespół restauracji</td></tr>
 <tr><td>Metadane wiadomości e-mail</td><td>temat, nadawca, data, kierunek (przychodząca/wysłana),
 identyfikatory wiadomości i wątku oraz krótki fragment treści (maks. 2000 znaków) – <strong>tylko</strong> dla
@@ -80,8 +81,8 @@ analitycznych.</p>
 <h2>3. Dostęp do Gmaila i Kalendarza Google</h2>
 <h3>3.1. Działanie w Gmailu</h3>
 <p>Rozszerzenie działa wyłącznie na stronie mail.google.com. Gdy otworzysz wiadomość, odczytuje jej nadawcę i temat,
-aby pokazać kartę klienta. Wiadomość zapisywana jest na osi czasu klienta tylko wtedy, gdy nadawca jest w CRM albo
-gdy sam dodasz go do CRM.</p>
+aby pokazać kartę klienta. Wiadomość zapisywana jest na osi czasu klienta tylko wtedy, gdy nadawca jest w CRM i masz
+dostęp do jego karty albo gdy sam dodasz go do CRM.</p>
 <h3>3.2. Opcjonalna integracja z kontem Google</h3>
 <p>Po kliknięciu „Połącz z Google” w ustawieniach rozszerzenie prosi o zgodę na dwa zakresy:</p>
 <ul>
@@ -143,8 +144,11 @@ Komisji Europejskiej (EU-U.S. Data Privacy Framework).</p>
 
 <h2>7. Bezpieczeństwo</h2>
 <p>Połączenia są szyfrowane (HTTPS). Hasła i tokeny przechowujemy wyłącznie w postaci skrótów kryptograficznych.
-Dane każdej restauracji są od siebie odizolowane – użytkownik widzi wyłącznie dane swojej restauracji. Dostęp do
-panelu administracyjnego mają tylko uprawnieni administratorzy.</p>
+Dane każdej restauracji są od siebie odizolowane – użytkownik widzi wyłącznie dane swojej restauracji. Również
+w obrębie restauracji karta kontaktu jest domyślnie widoczna tylko dla jej opiekuna (osoby, która ją dodała);
+pozostali członkowie zespołu widzą ją dopiero po udostępnieniu – w zakresie wybranym przez opiekuna. Karty
+z kategorii prywatnych (korespondencja firmowa) widzi wyłącznie ich właściciel, a zespołowi pokazywane są tylko maile,
+które sam dodał do wspólnej puli. Dostęp do panelu administracyjnego mają tylko uprawnieni administratorzy.</p>
 
 <h2>8. Twoje prawa</h2>
 <p>Masz prawo do dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia przetwarzania, przenoszenia
@@ -155,7 +159,9 @@ momencie (bez wpływu na zgodność z prawem wcześniejszego przetwarzania). Aby
 00-193 Warszawa, <a href="https://uodo.gov.pl">uodo.gov.pl</a>).</p>
 
 <h2>9. Dane w przeglądarce</h2>
-<p>Rozszerzenie zapisuje lokalnie w przeglądarce (chrome.storage) token logowania i wybrany język. Panel
+<p>Rozszerzenie zapisuje lokalnie w przeglądarce (chrome.storage) token logowania, wybrany język, a jeśli korzystasz
+z integracji z Google – adresy połączonych kont Google oraz tymczasowe tokeny dostępu Google (usuwane po zamknięciu
+przeglądarki). Panel
 administracyjny używa wyłącznie niezbędnych plików cookie: sesji i ochrony przed atakami CSRF. Dane te usuwasz,
 wylogowując się, odinstalowując rozszerzenie lub czyszcząc dane przeglądarki.</p>
 
@@ -172,7 +178,7 @@ wersja jest zawsze dostępna pod tym adresem.</p>
 <!-- ======================================================================= EN -->
 <section id="en" lang="en">
 <h1>GastroFlowx Privacy Policy</h1>
-<p class="meta">Effective: 2 October 2026 · Applies to the “GastroFlowx” Chrome extension and the administration panel
+<p class="meta">Effective: 2 October 2026 · Last updated: 4 October 2026 · Applies to the “GastroFlowx” Chrome extension and the administration panel
 at app.gastroflowx.pl. The Polish version above prevails in case of discrepancies.</p>
 
 <p>GastroFlowx is a CRM for restaurants that works inside Gmail. It lets a restaurant team keep client records, notes,
@@ -191,7 +197,8 @@ fulfil your request.</p>
 <li><strong>Account data:</strong> name, e-mail address, password (stored only as a cryptographic hash), role,
 restaurant, licence assignment and preferences (language, reminder defaults, calendar settings).</li>
 <li><strong>Restaurant CRM data:</strong> contact and client details (name, e-mail, phone, company, category,
-status, custom fields such as allergies or VAT ID), notes, reservations, tasks, reminders and change history.</li>
+status, custom fields such as allergies or VAT ID), notes, reservations, tasks, reminders and change history,
+as well as the contact’s owner, sharing within the team and access requests.</li>
 <li><strong>E-mail metadata:</strong> subject, sender, date, direction (received/sent), message and thread IDs and a
 short snippet (max. 2,000 characters) – <strong>only</strong> for correspondence with contacts saved in the CRM.</li>
 <li><strong>Technical data:</strong> sign-in tokens (stored server-side only as hashes), session cookies of the
@@ -202,7 +209,8 @@ the CRM. We do not collect browsing history and use no advertising or analytics 
 
 <h2>3. Access to Gmail and Google Calendar</h2>
 <p>The extension runs only on mail.google.com. When you open a message it reads the sender and subject to show the
-client card; the message is saved to the client’s timeline only if the sender is in the CRM or you add them.</p>
+client card; the message is saved to the client’s timeline only if the sender is in the CRM and you have access to
+their card, or if you add them.</p>
 <p>If you click “Connect Google” in the settings, the extension requests two scopes:</p>
 <ul>
 <li><strong>gmail.readonly</strong> – solely to import past correspondence with contacts saved in the CRM; only the
@@ -255,8 +263,11 @@ Streak in the USA) rely on Standard Contractual Clauses or the EU-U.S. Data Priv
 
 <h2>7. Security</h2>
 <p>All connections are encrypted (HTTPS). Passwords and tokens are stored only as cryptographic hashes. Each
-restaurant’s data is isolated – users can only see data of their own restaurant. Only authorised administrators can
-access the administration panel.</p>
+restaurant’s data is isolated – users can only see data of their own restaurant. Within a restaurant, a contact card
+is by default visible only to its owner (the person who added it); colleagues see it only once it is shared, in the
+scope chosen by the owner. Cards in private categories (business correspondence) are visible only to their owner;
+the team sees only the e-mails the owner has added to the shared pool. Only authorised administrators can access the
+administration panel.</p>
 
 <h2>8. Your rights</h2>
 <p>You have the right to access, rectify and erase your data, to restrict processing, to data portability, to object
@@ -266,7 +277,9 @@ within 30 days. You may also lodge a complaint with the Polish supervisory autho
 Data Protection Office (UODO, ul. Stawki 2, 00-193 Warsaw, <a href="https://uodo.gov.pl">uodo.gov.pl</a>).</p>
 
 <h2>9. Data stored in your browser</h2>
-<p>The extension stores your sign-in token and chosen language locally (chrome.storage). The administration panel
+<p>The extension stores your sign-in token and chosen language locally (chrome.storage) and, if you use the Google
+integration, the addresses of connected Google accounts and short-lived Google access tokens (cleared when the
+browser closes). The administration panel
 uses only strictly necessary cookies (session and CSRF protection). You can remove them by signing out, uninstalling
 the extension or clearing browser data.</p>
 

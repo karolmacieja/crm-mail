@@ -81,7 +81,7 @@
   <div class="brand"><img src="img/logo.png" alt="">GastroFlowx</div>
   <div>
     <h1>Opis systemu<br>i <span>instrukcja obsługi</span></h1>
-    <p>CRM dla restauracji działający w Gmailu: karta klienta przy każdym mailu, rezerwacje, zadania, przypomnienia i notatki zespołu.</p>
+    <p>CRM dla restauracji działający w Gmailu: karta klienta przy każdym mailu, rezerwacje, zadania, przypomnienia i notatki.</p>
     <div class="roles-pill"><span>Pracownik</span><span>Kierownik</span><span>Master Admin</span></div>
   </div>
   <div class="meta"><span>Wersja dokumentu 1.0 · październik 2026</span><span>© 2026 <a href="https://kmenterprises.pl">KM ENTERPRISES</a> Karol Macieja · GastroFlowx: <a href="mailto:kontakt@gastroflowx.pl">kontakt@gastroflowx.pl</a></span><span>Projekt i realizacja: <a href="https://codeandreach.pl">Code and Reach Studio</a> · <a href="mailto:kontakt@codeandreach.pl">kontakt@codeandreach.pl</a></span></div>
@@ -123,7 +123,7 @@
 
   <h2>Najważniejsze możliwości</h2>
   <div class="grid2">
-    <div class="card"><h3>Karta klienta przy mailu</h3>Dane kontaktowe, kategoria (np. VIP, B2B), status relacji, pola dodatkowe (np. alergie, NIP), notatki zespołu, rezerwacje, zadania i pełna oś czasu.</div>
+    <div class="card"><h3>Karta klienta przy mailu</h3>Dane kontaktowe, kategoria (np. VIP, B2B), status relacji, pola dodatkowe (np. alergie, NIP), notatki, rezerwacje, zadania i pełna oś czasu.</div>
     <div class="card"><h3>Rezerwacje</h3>Data, godzina, liczba gości, sala, okazja i status (nadchodząca, potwierdzona, zakończona, anulowana, nie przyszli).</div>
     <div class="card"><h3>Zadania i przypomnienia</h3>Terminy, priorytety, kategorie, przypisanie do osoby z zespołu. Pulpit dnia pokazuje, co jest zaległe, co na dziś, a co w ciągu 7 dni.</div>
     <div class="card"><h3>Własni klienci i udostępnianie</h3>Każdy ma swoich klientów. Kartę możesz udostępnić całemu zespołowi lub wybranym osobom – w całości albo tylko wybrane części. Dane różnych restauracji są od siebie całkowicie odseparowane.</div>
@@ -140,6 +140,8 @@
     <tr><td>Licencja</td><td>Uprawnienie restauracji do korzystania z systemu na określony czas, z określoną liczbą miejsc (kont).</td></tr>
     <tr><td>Miejsce w licencji</td><td>Przydział licencji konkretnej osobie. Bez przydzielonego miejsca konto nie może pracować w CRM.</td></tr>
     <tr><td>Oś czasu</td><td>Chronologiczna historia klienta: maile, notatki i zdarzenia (np. utworzenie rezerwacji, wykonanie zadania).</td></tr>
+    <tr><td>Opiekun klienta</td><td>Osoba, która dodała klienta (albo przejęła opiekę). Tylko ona widzi kartę, dopóki jej nie udostępni zespołowi lub wybranym osobom.</td></tr>
+    <tr><td>Prywatne karty i wspólna pula</td><td>Kategoria do korespondencji firmowej: każdy ma własną kartę kontaktu, a zespół widzi tylko maile dodane do wspólnej puli.</td></tr>
   </table>
 </section>
 
@@ -153,6 +155,7 @@
     <tr><td>Praca w Gmailu: karta klienta, pulpit, oś czasu</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
     <tr><td>Dodawanie i edycja klientów, kontaktów, notatek</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
     <tr><td>Rezerwacje, zadania, przypomnienia</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
+    <tr><td>Udostępnianie własnych klientów, prośby o dostęp, wspólna pula maili</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
     <tr><td>Przypisywanie zadań innym osobom z restauracji</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
     <tr><td>Ustawienia restauracji (kategorie, statusy, kategorie zadań, pola)</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
     <tr><td>Własne preferencje, link kalendarza, połączenie z Google</td><td class="c yes">tak</td><td class="c yes">tak</td><td class="c no">nie</td></tr>
@@ -309,7 +312,7 @@
 
   <h2>4.11 Klienci, kontakty i wyszukiwanie</h2>
   <ul>
-    <li><span class="ui">Klienci</span> – baza klientów pogrupowana według kategorii, z ostatnią aktywnością. <span class="ui">Nowy Klient</span> dodaje klienta ręcznie. Kliknięcie wiersza otwiera <b>pełną kartę klienta</b>.</li>
+    <li><span class="ui">Klienci</span> – Twoi klienci i klienci udostępnieni Ci przez zespół, pogrupowani według kategorii, z ostatnią aktywnością. <span class="ui">Nowy Klient</span> dodaje klienta ręcznie. Kliknięcie wiersza otwiera <b>pełną kartę klienta</b>.</li>
     <li><span class="ui">Kontakty</span> – książka adresowa. <span class="ui">Utwórz profil klienta</span> zamienia kontakt w klienta.</li>
     <li><b>Globalne szukanie</b> (pole na górze) przeszukuje klientów i kontakty po nazwie, firmie i e-mailu.</li>
   </ul>
@@ -372,6 +375,7 @@
     <li><b>Zmiana nazwy:</b> popraw tekst w polu i naciśnij Enter. <b>Kolor/ikona:</b> wybierz z listy.</li>
     <li><b>Kolejność:</b> strzałki ↑ ↓ po lewej. Kolejność obowiązuje na listach i na tablicy zadań.</li>
     <li><b>Usuwanie:</b> ikona kosza. Jeśli status lub kategoria zadań jest w użyciu, system poprosi o wskazanie, dokąd przenieść powiązane kontakty lub zadania (<span class="ui">Przenieś i usuń</span>). Ostatniej pozycji nie da się usunąć.</li>
+    <li><b>Prywatne karty:</b> pole przy kategorii klientów włącza korespondencję firmową (rozdział 4.15). Kontakty tej kategorii stają się prywatnymi kartami opiekunów, a ich udostępnienia są cofane. Wyłączenie jest możliwe tylko, gdy nikt inny nie ma karty tych samych kontaktów.</li>
   </ul>
   <figure><img src="img/c11-settings.jpg" alt=""><figcaption>Ustawienia – statusy kontaktów z licznikiem użyć</figcaption></figure>
 
@@ -386,7 +390,7 @@
 
   <h2>5.3 Konta i licencje zespołu</h2>
   <p>Nowe konto, reset hasła, zmiana roli, przydział lub zwolnienie miejsca w licencji oraz wylogowanie zgubionego komputera wykonuje <b>Master Admin</b>. Zgłoś mu: imię i nazwisko, adres e-mail pracownika i jego rolę.</p>
-  <div class="tip"><b>Odejście pracownika</b>Poproś administratora o usunięcie konta lub zwolnienie miejsca. Wcześniej ta osoba powinna użyć <span class="ui">Przekaż opiekę</span> u swoich klientów – inaczej staną się wspólni dla zespołu.</div>
+  <div class="tip"><b>Odejście pracownika</b>Poproś administratora o usunięcie konta lub zwolnienie miejsca. Wcześniej ta osoba powinna użyć <span class="ui">Przekaż opiekę</span> u swoich klientów – inaczej staną się wspólni dla zespołu. Jej prywatne karty korespondencji firmowej przestaną być widoczne (maile ze wspólnej puli zostają).</div>
 </section>
 
 <!-- ============================================================== 6 -->
@@ -477,7 +481,7 @@
   <ul>
     <li><b>Szyfrowane połączenia.</b> Cała komunikacja między rozszerzeniem, panelem a serwerem odbywa się przez HTTPS.</li>
     <li><b>Hasła i tokeny</b> przechowywane są wyłącznie w postaci skrótów kryptograficznych. Logowanie rozszerzenia wygasa po 30 dniach.</li>
-    <li><b>Separacja restauracji.</b> Każdy użytkownik widzi wyłącznie dane swojej restauracji.</li>
+    <li><b>Separacja restauracji.</b> Każdy użytkownik widzi wyłącznie dane swojej restauracji, a w niej – swoich klientów i tych, których mu udostępniono.</li>
     <li><b>Dane z Gmaila.</b> System zapisuje tylko metadane maili klientów zapisanych w CRM: temat, nadawcę, datę i krótki fragment. Nie zapisuje pełnej treści ani załączników.</li>
     <li><b>Konto Google (opcjonalne).</b> Token dostępu Google pozostaje w przeglądarce użytkownika i nie trafia na serwer GastroFlowx. Dostęp można cofnąć przyciskiem <span class="ui">Rozłącz</span> lub na myaccount.google.com/permissions.</li>
     <li><b>Serwery w Polsce (UE).</b> Szczegóły przetwarzania danych osobowych opisuje polityka prywatności: <b>app.gastroflowx.pl/polityka-prywatnosci.html</b>.</li>
