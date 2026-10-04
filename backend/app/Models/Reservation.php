@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ReservationStatus;
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
+use App\Models\Concerns\SharedThroughContact;
 use Database\Factories\ReservationFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,10 +23,13 @@ use Illuminate\Support\Carbon;
  */
 class Reservation extends Model
 {
-    use BelongsToGroup, HasActivities;
+    use BelongsToGroup, HasActivities, SharedThroughContact;
 
     /** @use HasFactory<ReservationFactory> */
     use HasFactory;
+
+    /** Contact share section that reveals these records. */
+    public const SHARE_SCOPE = 'reservations';
 
     protected $fillable = [
         'contact_id',

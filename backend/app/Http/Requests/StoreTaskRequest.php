@@ -14,7 +14,7 @@ class StoreTaskRequest extends TenantRequest
     {
         return [
             // Optional: internal tasks ("Rozesłać grafik kelnerów") have no contact.
-            'contact_id' => ['nullable', 'integer', $this->existsInGroup('contacts')],
+            'contact_id' => ['nullable', 'integer', $this->visibleContact()],
             'assigned_to' => ['nullable', 'integer', $this->existsInGroup('users')],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],

@@ -19,6 +19,13 @@
           <option v-for="c in contacts.categories" :key="c.id" :value="c.slug">{{ c.name }}</option>
         </select>
       </div>
+      <div class="w-48">
+        <select v-model="owner" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+          <option value="">{{ t('crm.sharing.filter.all') }}</option>
+          <option value="mine">{{ t('crm.sharing.filter.mine') }}</option>
+          <option value="shared">{{ t('crm.sharing.filter.shared') }}</option>
+        </select>
+      </div>
     </div>
 
     <AlertMessage v-if="list.error" class="mb-6" :message="list.error.message" retryable @retry="contacts.loadClients()" />
@@ -48,7 +55,12 @@
             <tr v-for="contact in group.items" :key="contact.id" class="group cursor-pointer transition-colors hover:bg-gray-50" @click="open(contact)">
               <td class="w-1/3 px-6 py-4">
                 <p class="truncate font-bold text-gray-900 group-hover:text-primary">{{ contact.name || contact.email }}</p>
-                <p class="truncate text-xs text-gray-500">{{ contact.company || t('crm.client.individual') }}</p>
+                <p class="truncate text-xs text-gray-500">
+                  <template v-if="contact.access && !contact.access.is_owner && contact.owner">
+                    <Icon icon="share-nodes" class="mr-1 text-gray-400" />{{ t('crm.sharing.ownerShort', { name: contact.owner.name }) }}
+                  </template>
+                  <template v-else>{{ contact.company || t('crm.client.individual') }}</template>
+                </p>
               </td>
               <td class="w-1/4 px-6 py-4">
                 <p class="truncate text-gray-700">
@@ -74,7 +86,7 @@
       </div>
     </div>
 
-    <EmptyState v-if="list.loaded && !list.items.length" icon="users" :text="search || category ? t('crm.clients.noMatches') : t('crm.clients.empty')" />
+    <EmptyState v-if="list.loaded && !list.items.length" icon="users" :text="search || category || owner ? t('crm.clients.noMatches') : t('crm.clients.empty')" />
 
     <NewClientModal v-if="showCreate" @close="showCreate = false" @created="open" />
   </div>
@@ -100,6 +112,7 @@ const list = contacts.clients
 
 const search = ref(list.filters.search)
 const category = ref(list.filters.category)
+const owner = ref(list.filters.owner)
 const showCreate = ref(false)
 
 onMounted(async () => {
@@ -113,6 +126,7 @@ watch(search, (value) => {
   timer = setTimeout(() => contacts.loadClients({ filters: { search: value.trim() } }), 300)
 })
 watch(category, (value) => contacts.loadClients({ filters: { category: value } }))
+watch(owner, (value) => contacts.loadClients({ filters: { owner: value } }))
 
 const categoryIcon = (category) => category?.icon?.replace(/^fa-/, '') || 'user'
 

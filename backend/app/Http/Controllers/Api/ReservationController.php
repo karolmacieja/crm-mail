@@ -28,7 +28,8 @@ class ReservationController extends Controller
         ]);
 
         $reservations = Reservation::query()
-            ->with('contact:id,email,name')
+            ->visibleTo($request->user())
+            ->with('contact:id,email,name,user_id')
             ->when($request->boolean('upcoming'), fn (Builder $q) => $q->upcoming($this->timezone($request)))
             ->when($validated['from'] ?? null, fn (Builder $q, $from) => $q->where('reservation_date', '>=', $from))
             ->when($validated['to'] ?? null, fn (Builder $q, $to) => $q->where('reservation_date', '<=', $to))
@@ -48,25 +49,29 @@ class ReservationController extends Controller
         $reservation->user_id = $request->user()->id;
         $reservation->save();
 
-        return (new ReservationResource($reservation->load('contact:id,email,name')))
+        return (new ReservationResource($reservation->load('contact:id,email,name,user_id')))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function show(Reservation $reservation): ReservationResource
+    public function show(Request $request, Reservation $reservation): ReservationResource
     {
-        return new ReservationResource($reservation->load('contact:id,email,name'));
+        $this->authorizeItem($request, $reservation, view: true);
+
+        return new ReservationResource($reservation->load('contact:id,email,name,user_id'));
     }
 
     public function update(UpdateReservationRequest $request, Reservation $reservation): ReservationResource
     {
+        $this->authorizeItem($request, $reservation);
         $reservation->update($request->validated());
 
-        return new ReservationResource($reservation->load('contact:id,email,name'));
+        return new ReservationResource($reservation->load('contact:id,email,name,user_id'));
     }
 
-    public function destroy(Reservation $reservation): JsonResponse
+    public function destroy(Request $request, Reservation $reservation): JsonResponse
     {
+        $this->authorizeItem($request, $reservation);
         $reservation->delete();
 
         return response()->json(null, 204);

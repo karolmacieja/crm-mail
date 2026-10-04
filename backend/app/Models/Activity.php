@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ActivityType;
 use App\Models\Concerns\BelongsToGroup;
+use App\Support\Sharing\ContactAccess;
 use Database\Factories\ActivityFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -120,6 +121,39 @@ class Activity extends Model
         $activity->save();
 
         return $activity;
+    }
+
+    /**
+     * Timeline entries of one contact that a person with $access sees:
+     * their own entries plus the shared sections (and individually shared emails).
+     */
+    public function scopeVisibleWith(Builder $query, ContactAccess $access, User $user): Builder
+    {
+        if ($access->isFull()) {
+            return $query;
+        }
+
+        $system = array_merge(
+            $access->has('details') ? ['contact'] : [],
+            $access->has('reservations') ? ['reservation'] : [],
+            $access->has('work') ? ['task', 'reminder'] : [],
+        );
+
+        return $query->where(function (Builder $q) use ($access, $user, $system) {
+            $q->where($this->qualifyColumn('user_id'), $user->id);
+
+            if ($access->has('notes')) {
+                $q->orWhere($this->qualifyColumn('type'), ActivityType::Note);
+            }
+            if ($access->has('emails')) {
+                $q->orWhere($this->qualifyColumn('type'), ActivityType::Email);
+            } elseif ($access->activityIds !== []) {
+                $q->orWhere(fn (Builder $q) => $q->where($this->qualifyColumn('type'), ActivityType::Email)->whereIn($this->qualifyColumn('id'), $access->activityIds));
+            }
+            if ($system !== []) {
+                $q->orWhere(fn (Builder $q) => $q->where($this->qualifyColumn('type'), ActivityType::System)->whereIn($this->qualifyColumn('subject_type'), $system));
+            }
+        });
     }
 
     public function scopeOfType(Builder $query, ActivityType|string|null $type): Builder

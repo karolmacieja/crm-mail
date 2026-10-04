@@ -9,6 +9,7 @@ use App\Http\Resources\ContactCustomFieldResource;
 use App\Models\Contact;
 use App\Models\ContactCustomField;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +20,7 @@ class ContactCustomFieldController extends Controller
 {
     public function store(CustomFieldRequest $request, Contact $contact): JsonResponse
     {
+        ContactController::authorizeManage($request->user(), $contact);
         $data = $this->normalize($request->validated());
         $key = Str::slug($data['label'], '_');
 
@@ -36,6 +38,7 @@ class ContactCustomFieldController extends Controller
 
     public function update(CustomFieldRequest $request, Contact $contact, ContactCustomField $field): ContactCustomFieldResource
     {
+        ContactController::authorizeManage($request->user(), $contact);
         abort_unless($field->contact_id === $contact->id, 404);
 
         $field->update($this->normalize($request->validated()));
@@ -43,8 +46,9 @@ class ContactCustomFieldController extends Controller
         return new ContactCustomFieldResource($field);
     }
 
-    public function destroy(Contact $contact, ContactCustomField $field): JsonResponse
+    public function destroy(Request $request, Contact $contact, ContactCustomField $field): JsonResponse
     {
+        ContactController::authorizeManage($request->user(), $contact);
         abort_unless($field->contact_id === $contact->id, 404);
 
         $field->delete();

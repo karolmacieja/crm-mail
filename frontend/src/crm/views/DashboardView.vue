@@ -2,6 +2,19 @@
   <div>
     <AlertMessage v-if="dashboard.error" class="mb-6" :message="dashboard.error.message" retryable @retry="dashboard.fetch()" />
 
+    <!-- Colleagues asking to see my clients ("Poproś o dostęp") -->
+    <div v-if="accessRequests.length" class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+      <p class="mb-2 text-sm font-bold text-gray-800"><Icon icon="user-lock" class="mr-2 text-amber-500" />{{ t('crm.sharing.pendingTitle') }}</p>
+      <ul class="space-y-1.5 text-sm">
+        <li v-for="request in accessRequests" :key="request.id" class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-gray-700">{{ t('crm.sharing.requestAbout', { name: request.user.name, client: request.contact.name || request.contact.email }) }}</span>
+          <button type="button" class="text-xs font-medium text-primary hover:underline" @click="client.openContact(request.contact.id, { sidebar: true })">
+            {{ t('crm.sharing.review') }} <Icon icon="chevron-right" />
+          </button>
+        </li>
+      </ul>
+    </div>
+
     <!-- KPI row -->
     <div class="mb-8 grid grid-cols-2 gap-6 md:grid-cols-4">
       <div class="flex flex-col justify-center rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -111,7 +124,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/shared/components/AlertMessage.vue'
 import CategoryBadge from '@/shared/components/CategoryBadge.vue'
@@ -123,6 +136,7 @@ import { t } from '@/shared/lib/i18n.js'
 import ReminderFormModal from '@/crm/components/ReminderFormModal.vue'
 import TaskFormModal from '@/crm/components/TaskFormModal.vue'
 import TaskItem from '@/crm/components/TaskItem.vue'
+import { api } from '@/crm/api.js'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useDashboardStore } from '@/crm/stores/dashboard.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
@@ -139,7 +153,24 @@ const showTaskModal = ref(false)
 const showReminderModal = ref(false)
 const summary = computed(() => dashboard.summary)
 
-onMounted(() => dashboard.fetch())
+const accessRequests = ref([])
+async function loadAccessRequests() {
+  try {
+    const { data } = await api.get('/access-requests')
+    accessRequests.value = data.data.incoming
+  } catch {
+    accessRequests.value = []
+  }
+}
+
+onMounted(() => {
+  dashboard.fetch()
+  loadAccessRequests()
+})
+// Answered from the client card: refresh the list when its requests change.
+watch(() => client.contact?.access_requests?.length, (now, before) => {
+  if (before !== undefined && now !== before) loadAccessRequests()
+})
 
 const windowTabs = (section) => [
   { key: 'overdue', label: t('crm.windows.overdue'), count: section?.overdue ?? 0, tone: 'danger' },

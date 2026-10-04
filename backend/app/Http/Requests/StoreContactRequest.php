@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\CustomFieldType;
+use App\Models\Contact;
 use Illuminate\Validation\Rule;
 
 class StoreContactRequest extends TenantRequest
@@ -47,8 +48,18 @@ class StoreContactRequest extends TenantRequest
     public function messages(): array
     {
         return [
-            'email.unique' => __('crm.contact_email_taken'),
+            'email.unique' => $this->emailTakenMessage(),
             'phone.regex' => __('crm.phone_format'),
         ];
+    }
+
+    /** One card per e-mail: if a colleague looks after this client, say who. */
+    private function emailTakenMessage(): string
+    {
+        $owner = Contact::query()->with('owner:id,name')->where('email', (string) $this->input('email'))->first()?->owner;
+
+        return $owner !== null && $owner->id !== $this->user()->id
+            ? __('crm.sharing.email_owned_by', ['name' => $owner->name])
+            : __('crm.contact_email_taken');
     }
 }

@@ -72,7 +72,7 @@ class CalendarFeedController extends Controller
         $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'gastroflowx';
 
         // Tasks assigned to me, or created by me and not assigned to anyone.
-        Task::query()->pending()->with('contact:id,name,email')
+        Task::query()->pending()->with('contact:id,name,email,user_id')
             ->whereNotNull('due_date')->where('due_date', '>=', $from)
             ->where(fn ($q) => $q->where('assigned_to', $user->id)->orWhere(fn ($q) => $q->whereNull('assigned_to')->where('user_id', $user->id)))
             ->orderBy('due_date')->limit(1000)->get()
@@ -87,7 +87,7 @@ class CalendarFeedController extends Controller
                 'updated' => $task->updated_at,
             ]));
 
-        Reminder::query()->pending()->with('contact:id,name,email')
+        Reminder::query()->pending()->with('contact:id,name,email,user_id')
             ->where('user_id', $user->id)->where('remind_at', '>=', $from)
             ->orderBy('remind_at')->limit(1000)->get()
             ->each(fn (Reminder $reminder) => $calendar->addEvent([
@@ -102,7 +102,7 @@ class CalendarFeedController extends Controller
             ]));
 
         if ($prefs['calendar']['include_reservations']) {
-            Reservation::query()->with('contact:id,name,email')
+            Reservation::query()->visibleTo($user)->with('contact:id,name,email,user_id')
                 ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
                 ->where('reservation_date', '>=', Carbon::now($timezone)->subDays(7)->toDateString())
                 ->orderBy('reservation_date')->limit(1000)->get()

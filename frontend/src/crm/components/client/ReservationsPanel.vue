@@ -41,7 +41,7 @@
               <template v-if="reservation.occasion"> · {{ reservation.occasion }}</template>
             </p>
           </div>
-          <div class="flex shrink-0 flex-col items-end gap-1 text-xs">
+          <div v-if="reservation.can_edit !== false" class="flex shrink-0 flex-col items-end gap-1 text-xs">
             <button v-if="reservation.status === 'pending'" type="button" class="font-medium text-green-700 hover:underline" @click="setStatus(reservation, 'confirmed')">
               {{ t('crm.reservations.confirm') }}
             </button>

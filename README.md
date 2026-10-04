@@ -558,13 +558,33 @@ Master Admin (`role = master_admin`, bez grupy) widzi wszystkie grupy.
 | `groups` | Restauracje (tenanci), strefa czasowa |
 | `users` | `group_id`, `role`: `master_admin` / `manager` / `staff` |
 | `licenses`, `license_user` | Licencja grupy z liczbą miejsc i przydziały miejsc użytkownikom |
-| `contacts` | Kontakty i klienci (`is_client`), `category_id`, firma, ostatnia aktywność |
+| `contacts` | Kontakty i klienci (`is_client`), `category_id`, firma, ostatnia aktywność; `user_id` = opiekun |
+| `contact_shares` | Udostępnienia klienta: zespołowi (`user_id = null`) lub osobie; zakresy `details`, `notes`, `emails`, `reservations`, `work` + wybrane maile (`activity_ids`) |
+| `contact_access_requests` | Prośby „Poproś o dostęp” (`pending` / `approved` / `declined`) |
 | `contact_categories` | Kategorie grupy (domyślnie B2B, VIP, Indywidualni) |
 | `contact_custom_fields` | Własne pola kontaktu, np. „Alergie” (typy: tekst, liczba, data, tak/nie) |
 | `tasks` | Zadania: typ (follow-up / oferta / wewnętrzne), priorytet, osoba przypisana, mail źródłowy |
 | `reservations` | Data, godzina, liczba gości, status, stolik, okazja, `source_email_id` |
 | `reminders` | Przypomnienia (z maila / rezerwacji / ogólne) |
 | `activities` | Oś czasu (polimorficzna): maile, notatki, zdarzenia systemowe |
+
+### Prywatni klienci i udostępnianie
+
+W obrębie restauracji każdy kontakt ma **opiekuna** (`contacts.user_id`, domyślnie osoba, która go dodała).
+Inni członkowie zespołu nie widzą go (lista, wyszukiwanie, plakietki w skrzynce, pulpit, kalendarz ICS,
+bezpośredni adres → 404), dopóki opiekun go nie udostępni. Reguły są w `App\Support\Sharing\ContactAccess`:
+
+* opiekun widzi i zmienia wszystko, zarządza udostępnianiem, może **przekazać opiekę** (`POST /contacts/{id}/transfer`);
+* udostępnienie (dla całego zespołu lub wybranej osoby) obejmuje wybrane sekcje: dane kontaktowe,
+  notatki, całą korespondencję, rezerwacje, zadania i przypomnienia – albo tylko wybrane maile; udostępnienia się sumują;
+* osoba z dostępem dodaje **własne** notatki, zadania, przypomnienia i rezerwacje i widzi je zawsze; nie zmienia danych
+  klienta ani cudzych wpisów (API zwraca `can_edit` przy zadaniach, przypomnieniach i rezerwacjach);
+* jeden adres e-mail = jedna karta w restauracji. Gdy kolega otworzy maila od cudzego klienta, `lookup` zwraca
+  `data: null` i `meta.owned_by_colleague` (opiekun), a karta pokazuje „Klient ma opiekuna: X” i **Poproś o dostęp**;
+* zadania przypisane do osoby są dla niej widoczne nawet bez dostępu do klienta; zadania bez klienta widzi cały zespół;
+* kontakty, których opiekun został usunięty, stają się wspólne dla zespołu.
+
+Po aktualizacji (migracja `2026_10_05_000100`) istniejący klienci stają się prywatni dla osób, które ich dodały.
 
 Statusy czasowe zadań i przypomnień (zaległe / dziś / 7 dni) nie są zapisywane w bazie. Liczą je scope'y
 `overdue()`, `dueToday($tz)` i `upcoming($tz)` w strefie czasowej restauracji, więc nigdy się nie
@@ -585,7 +605,7 @@ php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje si�
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 70 testów
+php artisan test                      # 95 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
@@ -611,8 +631,13 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 | POST | `/auth/login` | `{email, password, device_name?}` → `{token, expires_at, user}` (limit 5/min) |
 | GET / POST | `/auth/me`, `/auth/logout` | Działa także bez ważnej licencji |
 | GET | `/dashboard/summary` | Osobne liczniki i listy dla **zadań** i **przypomnień**: `overdue`, `due_today`, `upcoming_week`; do tego kontakty, rezerwacje, maile |
-| GET | `/contacts` | `search, status, category (id/slug), is_client, sort, direction, page, per_page` |
-| GET | `/contacts/lookup?email=` | Pełna karta albo `{"data": null}` |
+| GET | `/contacts` | `search, status, category (id/slug), is_client, owner=mine\|shared, sort, direction, page, per_page` |
+| GET | `/contacts/lookup?email=` | Pełna karta albo `{"data": null}` (+ `meta.owned_by_colleague`, gdy to prywatny klient kolegi) |
+| GET / POST / DELETE | `/contacts/{id}/shares[/{share}]` | Udostępnienia (tylko opiekun): `{user_id: null\|id, scopes: [...], email_ids: [...]}` |
+| POST | `/contacts/{id}/transfer` | Przekazanie opieki `{user_id, keep_access=true}` |
+| POST | `/contacts/{id}/access-requests` | „Poproś o dostęp” `{message?}` |
+| GET | `/access-requests` | Prośby do moich klientów (`incoming`) i moje (`outgoing`) |
+| POST | `/access-requests/{id}/approve`, `/decline` | Akceptacja z wyborem zakresu `{scopes, email_ids}` lub odrzucenie |
 | CRUD | `/contacts/{id}` | Karta: kategoria, własne pola, zadania, przypomnienia, nadchodzące rezerwacje |
 | POST / PATCH / DELETE | `/contacts/{id}/custom-fields[/{field}]` | „Dodaj pole”, np. Alergie (typy: text, number, date, boolean) |
 | GET | `/contacts/{id}/activities` | Oś czasu, `type=email\|note\|system`, stronicowana |

@@ -33,7 +33,7 @@ class ReminderController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = Reminder::query()->with($this->relations($request));
+        $query = Reminder::query()->visibleTo($request->user())->with($this->relations($request));
         $this->applyWindow($query, $validated['window'] ?? 'open', $this->timezone($request));
 
         $reminders = $query
@@ -65,11 +65,14 @@ class ReminderController extends Controller
 
     public function show(Request $request, Reminder $reminder): ReminderResource
     {
+        $this->authorizeItem($request, $reminder, view: true);
+
         return new ReminderResource($reminder->load($this->relations($request)));
     }
 
     public function update(UpdateReminderRequest $request, Reminder $reminder): ReminderResource
     {
+        $this->authorizeItem($request, $reminder);
         $reminder->update($request->validated());
 
         return new ReminderResource($reminder->load($this->relations($request)));
@@ -79,14 +82,15 @@ class ReminderController extends Controller
     private function relations(Request $request): array
     {
         return [
-            'contact:id,email,name',
+            'contact:id,email,name,user_id',
             'reservation',
             'calendarEvents' => fn ($q) => $q->where('user_id', $request->user()->id),
         ];
     }
 
-    public function destroy(Reminder $reminder): JsonResponse
+    public function destroy(Request $request, Reminder $reminder): JsonResponse
     {
+        $this->authorizeItem($request, $reminder);
         $reminder->delete();
 
         return response()->json(null, 204);

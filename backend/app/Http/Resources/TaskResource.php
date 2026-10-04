@@ -20,6 +20,8 @@ class TaskResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id, // created by
             'contact_id' => $this->contact_id,
+            // Author or the contact's owner; colleagues with access only view it.
+            'can_edit' => $request->user() === null || $this->canBeChangedBy($request->user()),
             'title' => $this->title,
             'description' => $this->description,
             'type' => $this->type,

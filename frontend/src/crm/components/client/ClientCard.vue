@@ -31,7 +31,10 @@
 
       <div v-else-if="client.status === 'not_found'" :class="pad"><NewContactForm /></div>
 
+      <div v-else-if="client.status === 'owned_elsewhere'" :class="pad"><OwnedByColleague /></div>
+
       <template v-else-if="client.contact">
+        <SharingPanel class="border-b border-gray-100" :class="dense ? 'px-4 py-3' : 'px-6 py-3'" />
         <ContactDetails class="border-b border-gray-100" :class="pad" />
         <NotesPanel class="border-b border-gray-100" :class="pad" />
         <QuickNote class="border-b border-gray-100 bg-blue-50/20" :class="pad" />
@@ -42,7 +45,7 @@
           <button v-if="showProfileLink" type="button" class="font-medium text-primary hover:underline" @click="$emit('open-profile', client.contact.id)">
             {{ t('crm.client.openProfile') }} <Icon icon="chevron-right" />
           </button>
-          <button type="button" class="text-gray-400 hover:text-red-600" @click="remove">{{ t('crm.client.delete') }}</button>
+          <button v-if="client.canManage" type="button" class="text-gray-400 hover:text-red-600" @click="remove">{{ t('crm.client.delete') }}</button>
         </div>
       </template>
     </div>
@@ -60,8 +63,10 @@ import ClientWork from './ClientWork.vue'
 import ContactDetails from './ContactDetails.vue'
 import NewContactForm from './NewContactForm.vue'
 import NotesPanel from './NotesPanel.vue'
+import OwnedByColleague from './OwnedByColleague.vue'
 import QuickNote from './QuickNote.vue'
 import ReservationsPanel from './ReservationsPanel.vue'
+import SharingPanel from './SharingPanel.vue'
 import Timeline from './Timeline.vue'
 
 const props = defineProps({

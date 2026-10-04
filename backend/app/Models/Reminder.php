@@ -6,6 +6,7 @@ use App\Enums\ReminderType;
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
 use App\Models\Concerns\HasDueWindows;
+use App\Models\Concerns\SharedThroughContact;
 use Database\Factories\ReminderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,10 +19,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Reminder extends Model
 {
-    use BelongsToGroup, HasActivities, HasDueWindows;
+    use BelongsToGroup, HasActivities, HasDueWindows, SharedThroughContact;
 
     /** @use HasFactory<ReminderFactory> */
     use HasFactory;
+
+    /** Contact share section that reveals these records. */
+    public const SHARE_SCOPE = 'work';
 
     public const DUE_COLUMN = 'remind_at';
 

@@ -2,7 +2,7 @@
   <section>
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-sm font-bold uppercase tracking-wide text-gray-800">{{ t('crm.client.details') }}</h3>
-      <div class="flex gap-3">
+      <div v-if="client.canManage" class="flex gap-3">
         <button v-if="!editing" type="button" class="text-xs font-medium text-gray-500 hover:text-primary" @click="startEdit">
           <Icon icon="pen" /> {{ t('common.edit') }}
         </button>
@@ -44,6 +44,9 @@
 
     <!-- Read mode -->
     <dl v-else class="space-y-3">
+      <p v-if="!client.canSee('details')" class="rounded bg-gray-50 px-2 py-1.5 text-xs text-gray-500">
+        <Icon icon="lock" class="mr-1" />{{ t('crm.sharing.detailsHidden') }}
+      </p>
       <Row icon="envelope" far :label="t('contact.email')">
         <a :href="`mailto:${contact.email}`" class="text-sm font-medium text-gray-900 hover:text-primary">{{ contact.email }}</a>
       </Row>
@@ -59,10 +62,10 @@
         <dt class="shrink-0 text-sm text-gray-500"><Icon icon="star" class="mr-1 w-4 text-gray-300" /> {{ field.label }}</dt>
         <dd v-if="editingField !== field.id" class="flex items-center gap-2 text-right">
           <span class="text-sm font-medium text-gray-900">{{ displayValue(field) }}</span>
-          <button type="button" class="hidden text-gray-300 hover:text-primary group-hover:block" :aria-label="t('common.edit')" @click="editField(field)">
+          <button v-if="client.canManage" type="button" class="hidden text-gray-300 hover:text-primary group-hover:block" :aria-label="t('common.edit')" @click="editField(field)">
             <Icon icon="pen" class="text-xs" />
           </button>
-          <button type="button" class="hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click="removeField(field)">
+          <button v-if="client.canManage" type="button" class="hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click="removeField(field)">
             <Icon icon="trash" class="text-xs" />
           </button>
         </dd>

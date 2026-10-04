@@ -30,4 +30,15 @@ return [
         'reservation_summary' => 'Reservation: :name, :count guests',
         'from_email' => 'From email: :subject',
     ],
+
+    // Private contacts and sharing.
+    'sharing' => [
+        'owner_only' => 'Only the client\'s owner can change their details and sharing.',
+        'read_only' => 'This entry belongs to someone else – you can only view it.',
+        'email_owned_by' => 'This client is already in the CRM, looked after by :name. Request access from the client card in Gmail.',
+        'already_owner' => 'This person already owns the client.',
+        'nothing_selected' => 'Choose what to share.',
+        'already_has_access' => 'You already have full access to this client.',
+        'request_closed' => 'This request has already been handled.',
+    ],
 ];

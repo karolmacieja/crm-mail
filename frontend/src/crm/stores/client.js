@@ -22,8 +22,13 @@ export const useClientStore = defineStore('client', () => {
   const context = ref(null)
   /** Contact profile as returned by GET /contacts/{id} (null = not in CRM yet). */
   const contact = ref(null)
-  /** idle | loading | ready | not_found | error */
+  /** idle | loading | ready | not_found | owned_elsewhere | error */
   const status = ref('idle')
+  /**
+   * The sender is a colleague's private client:
+   * { contact_id, owner: { id, name }, access_requested }.
+   */
+  const ownership = ref(null)
   const error = ref(null)
   const isSidebarOpen = ref(false)
 
@@ -38,6 +43,10 @@ export const useClientStore = defineStore('client', () => {
   const nextReservation = computed(() => contact.value?.upcoming_reservations?.[0] ?? null)
   const openTasks = computed(() => (contact.value?.tasks ?? []).filter((task) => !task.is_completed))
   const pendingReminders = computed(() => contact.value?.reminders ?? [])
+  /** What I may do on this card (older API responses: full access). */
+  const access = computed(() => contact.value?.access ?? { is_owner: true, can_manage: true, scopes: SHARE_SCOPES, email_ids: [] })
+  const canManage = computed(() => access.value.can_manage)
+  const canSee = (scope) => access.value.can_manage || access.value.scopes.includes(scope)
 
   // ------------------------------------------------------------------ focus
 
@@ -50,6 +59,7 @@ export const useClientStore = defineStore('client', () => {
     context.value = { source: 'email', ...message, email: String(message.email).trim().toLowerCase() }
     isSidebarOpen.value = sidebar
     contact.value = null
+    ownership.value = null
     status.value = 'loading'
     error.value = null
     resetTimeline()
@@ -59,7 +69,8 @@ export const useClientStore = defineStore('client', () => {
       if (id !== focusId) return
 
       contact.value = data.data
-      status.value = data.data ? 'ready' : 'not_found'
+      ownership.value = data.meta?.owned_by_colleague ?? null
+      status.value = data.data ? 'ready' : ownership.value ? 'owned_elsewhere' : 'not_found'
 
       if (data.data) {
         await logContextEmail(id)
@@ -77,6 +88,7 @@ export const useClientStore = defineStore('client', () => {
     context.value = { source: 'list', contactId }
     isSidebarOpen.value = sidebar
     if (contact.value?.id !== contactId) contact.value = null
+    ownership.value = null
     status.value = 'loading'
     error.value = null
     resetTimeline()
@@ -119,6 +131,7 @@ export const useClientStore = defineStore('client', () => {
     focusId++
     context.value = null
     contact.value = null
+    ownership.value = null
     status.value = 'idle'
     error.value = null
     isSidebarOpen.value = false
@@ -167,6 +180,40 @@ export const useClientStore = defineStore('client', () => {
     contact.value = null
     status.value = context.value?.source === 'email' ? 'not_found' : 'idle'
     resetTimeline()
+  }
+
+  // ---------------------------------------------------------------- sharing
+
+  /** "Poproś o dostęp" to a colleague's client. */
+  async function requestAccess(message = null) {
+    const contactId = ownership.value?.contact_id ?? contact.value?.id
+    await call(() => api.post(`/contacts/${contactId}/access-requests`, { message }))
+    if (ownership.value) ownership.value = { ...ownership.value, access_requested: true }
+  }
+
+  /** Share with the team (userId null) or one colleague: { user_id, scopes, email_ids }. */
+  async function share(payload) {
+    const { data } = await call(() => api.post(`/contacts/${contact.value.id}/shares`, payload))
+    const others = (contact.value.shares ?? []).filter((s) => s.id !== data.data.id)
+    contact.value.shares = [...others, data.data].sort((a, b) => (a.user ? 1 : 0) - (b.user ? 1 : 0))
+    contact.value.access_requests = (contact.value.access_requests ?? []).filter((r) => payload.user_id != null && r.user.id !== payload.user_id)
+    return data.data
+  }
+
+  async function unshare(shareId) {
+    await call(() => api.delete(`/contacts/${contact.value.id}/shares/${shareId}`))
+    contact.value.shares = (contact.value.shares ?? []).filter((s) => s.id !== shareId)
+  }
+
+  /** "Przekaż opiekę": a colleague becomes the owner; I keep full access. */
+  async function transfer(userId) {
+    await call(() => api.post(`/contacts/${contact.value.id}/transfer`, { user_id: userId }))
+    await reload()
+  }
+
+  async function declineRequest(requestId) {
+    await call(() => api.post(`/access-requests/${requestId}/decline`))
+    if (contact.value) contact.value.access_requests = (contact.value.access_requests ?? []).filter((r) => r.id !== requestId)
   }
 
   // ---------------------------------------------------------- custom fields
@@ -347,6 +394,7 @@ export const useClientStore = defineStore('client', () => {
     context,
     contact,
     status,
+    ownership,
     error,
     isSidebarOpen,
     timeline,
@@ -357,6 +405,14 @@ export const useClientStore = defineStore('client', () => {
     openTasks,
     pendingReminders,
     hasMoreTimeline,
+    access,
+    canManage,
+    canSee,
+    requestAccess,
+    share,
+    unshare,
+    transfer,
+    declineRequest,
     openEmail,
     openContact,
     closeSidebar,
@@ -379,6 +435,9 @@ export const useClientStore = defineStore('client', () => {
     syncReminder,
   }
 })
+
+/** Sections a share can cover (see the backend's ContactAccess::SCOPES). */
+export const SHARE_SCOPES = ['details', 'notes', 'emails', 'reservations', 'work']
 
 function sortBy(items, key) {
   return [...items].sort((a, b) => {

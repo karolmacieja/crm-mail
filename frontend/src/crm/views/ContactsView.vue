@@ -8,10 +8,17 @@
       </button>
     </div>
 
-    <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div class="relative">
+    <div class="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div class="relative min-w-[250px] flex-1">
         <Icon icon="magnifying-glass" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input v-model="search" type="search" :placeholder="t('crm.contacts.search')" class="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+      </div>
+      <div class="w-48">
+        <select v-model="owner" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+          <option value="">{{ t('crm.sharing.filter.all') }}</option>
+          <option value="mine">{{ t('crm.sharing.filter.mine') }}</option>
+          <option value="shared">{{ t('crm.sharing.filter.shared') }}</option>
+        </select>
       </div>
     </div>
 
@@ -29,11 +36,16 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="contact in list.items" :key="contact.id" class="group cursor-pointer hover:bg-gray-50" @click="client.openContact(contact.id, { sidebar: true })">
-            <td class="px-6 py-3 font-medium text-gray-900 group-hover:text-primary">{{ contact.name || '—' }}</td>
+            <td class="px-6 py-3 font-medium text-gray-900 group-hover:text-primary">
+              {{ contact.name || '—' }}
+              <span v-if="contact.access && !contact.access.is_owner && contact.owner" class="block text-xs font-normal text-gray-500">
+                <Icon icon="share-nodes" class="mr-1 text-gray-400" />{{ t('crm.sharing.ownerShort', { name: contact.owner.name }) }}
+              </span>
+            </td>
             <td class="px-6 py-3 text-gray-700">{{ contact.email }}</td>
             <td class="px-6 py-3 text-gray-500">{{ contact.last_activity ? formatCalendar(contact.last_activity.occurred_at) : '—' }}</td>
             <td class="px-6 py-3 text-right">
-              <button type="button" class="text-xs font-medium text-primary hover:underline" :disabled="busy[contact.id]" @click.stop="promote(contact)">
+              <button v-if="contact.access?.can_manage !== false" type="button" class="text-xs font-medium text-primary hover:underline" :disabled="busy[contact.id]" @click.stop="promote(contact)">
                 {{ t('crm.contacts.makeClient') }}
               </button>
             </td>
@@ -49,7 +61,7 @@
       </footer>
     </div>
 
-    <EmptyState v-else-if="list.loaded" icon="address-book" :text="search ? t('crm.clients.noMatches') : t('crm.contacts.empty')" />
+    <EmptyState v-else-if="list.loaded" icon="address-book" :text="search || owner ? t('crm.clients.noMatches') : t('crm.contacts.empty')" />
 
     <NewClientModal v-if="showCreate" :is-client="false" @close="showCreate = false" />
   </div>
@@ -72,6 +84,7 @@ const contacts = useContactsStore()
 const client = useClientStore()
 const list = contacts.addressBook
 const search = ref(list.filters.search)
+const owner = ref(list.filters.owner)
 const showCreate = ref(false)
 const busy = reactive({})
 
@@ -82,6 +95,7 @@ watch(search, (value) => {
   clearTimeout(timer)
   timer = setTimeout(() => contacts.loadAddressBook({ filters: { search: value.trim() } }), 300)
 })
+watch(owner, (value) => contacts.loadAddressBook({ filters: { owner: value } }))
 
 /** Turn an address-book entry into a client profile. */
 async function promote(contact) {

@@ -8,7 +8,7 @@
       class="mr-3 mt-1 h-4 w-4 shrink-0 rounded border-gray-300"
       :class="urgent ? 'accent-red-500' : 'accent-primary'"
       :checked="task.is_completed"
-      :disabled="busy"
+      :disabled="busy || task.can_edit === false"
       @change="toggle"
     />
     <div class="min-w-0 flex-1">
@@ -36,7 +36,7 @@
       </p>
     </div>
     <CalendarLink v-if="task.due_date && !task.is_completed" kind="task" :item="task" class="ml-2" />
-    <button type="button" class="ml-2 hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click.prevent="remove">
+    <button v-if="task.can_edit !== false" type="button" class="ml-2 hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click.prevent="remove">
       <Icon icon="trash" class="text-xs" />
     </button>
   </label>

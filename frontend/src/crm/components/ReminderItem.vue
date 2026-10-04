@@ -22,7 +22,7 @@
     <div class="flex shrink-0 items-center gap-2 text-right">
       <span v-if="!compact" class="inline-block rounded border px-2 py-1 text-xs font-bold" :class="badge">{{ when }}</span>
       <CalendarLink kind="reminder" :item="reminder" />
-      <button type="button" class="rounded p-1 text-gray-300 hover:bg-green-50 hover:text-green-600" :title="t('crm.reminders.markDone')" :disabled="busy" @click="done">
+      <button v-if="reminder.can_edit !== false" type="button" class="rounded p-1 text-gray-300 hover:bg-green-50 hover:text-green-600" :title="t('crm.reminders.markDone')" :disabled="busy" @click="done">
         <Icon icon="check" />
       </button>
     </div>

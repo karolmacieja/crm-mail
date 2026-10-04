@@ -126,7 +126,7 @@
     <div class="card"><h3>Karta klienta przy mailu</h3>Dane kontaktowe, kategoria (np. VIP, B2B), status relacji, pola dodatkowe (np. alergie, NIP), notatki zespołu, rezerwacje, zadania i pełna oś czasu.</div>
     <div class="card"><h3>Rezerwacje</h3>Data, godzina, liczba gości, sala, okazja i status (nadchodząca, potwierdzona, zakończona, anulowana, nie przyszli).</div>
     <div class="card"><h3>Zadania i przypomnienia</h3>Terminy, priorytety, kategorie, przypisanie do osoby z zespołu. Pulpit dnia pokazuje, co jest zaległe, co na dziś, a co w ciągu 7 dni.</div>
-    <div class="card"><h3>Wspólna baza restauracji</h3>Każdy członek zespołu widzi tych samych klientów i notatki. Dane różnych restauracji są od siebie całkowicie odseparowane.</div>
+    <div class="card"><h3>Własni klienci i udostępnianie</h3>Każdy ma swoich klientów. Kartę możesz udostępnić całemu zespołowi lub wybranym osobom – w całości albo tylko wybrane części. Dane różnych restauracji są od siebie całkowicie odseparowane.</div>
     <div class="card"><h3>Gmail pod ręką</h3>Z osi czasu otworzysz mail w Gmailu lub od razu na niego odpowiesz; przy kliencie napiszesz nową wiadomość jednym kliknięciem.</div>
     <div class="card"><h3>Kalendarz</h3>Zadania i przypomnienia w Twoim kalendarzu (Google Calendar, Outlook, Apple) przez prywatny link lub – opcjonalnie – bezpośrednio w Kalendarzu Google.</div>
   </div>
@@ -233,7 +233,8 @@
   <ul>
     <li><b>nagłówek</b> – imię i nazwisko, firma, kategoria i status, przyciski <span class="ui">Napisz e-mail</span> i <span class="ui">Maile w Gmailu</span>,</li>
     <li><b>Dane kontaktowe</b> – e-mail, telefon, firma i pola dodatkowe,</li>
-    <li><b>Notatki</b> – trzy ostatnie notatki zespołu,</li>
+    <li><b>opiekun i udostępnianie</b> – kto opiekuje się klientem i komu karta jest udostępniona (rozdział 4.14),</li>
+    <li><b>Notatki</b> – trzy ostatnie notatki,</li>
     <li><b>Dodaj notatkę</b>, <b>Rezerwacje</b>, <b>Zadania</b>, <b>Przypomnienia</b>,</li>
     <li><b>Oś czasu / Historia</b> – wszystkie maile, notatki i zdarzenia.</li>
   </ul>
@@ -249,7 +250,7 @@
         <li>Zostaw zaznaczone <span class="ui">Klient (pełny profil)</span> albo odznacz, jeśli to tylko kontakt.</li>
         <li>Kliknij <span class="ui">Dodaj do CRM</span>.</li>
       </ol>
-      <p>Mail, przy którym dodałeś osobę, od razu trafi na jej oś czasu.</p>
+      <p>Mail, przy którym dodałeś osobę, od razu trafi na jej oś czasu. Zostajesz <b>opiekunem</b> tego klienta – na początku widzisz go tylko Ty.</p>
     </div>
     <figure class="narrow" style="margin-top:0"><img src="img/c13-thread.jpg" alt=""><figcaption>Panel przy wiadomości od nowego nadawcy</figcaption></figure>
   </div>
@@ -324,6 +325,23 @@
 
   <h2>4.13 Moje preferencje</h2>
   <p><span class="ui">Ustawienia → Preferencje</span>: domyślna godzina przypomnienia, domyślny termin zadania i język. Te ustawienia dotyczą tylko Twojego konta.</p>
+
+  <h2>4.14 Moi klienci i udostępnianie</h2>
+  <p>Każdy klient ma jednego <b>opiekuna</b> – osobę, która dodała go do CRM. Inne osoby z restauracji nie widzą Twoich klientów, dopóki ich nie udostępnisz. Pod nagłówkiem karty widać, czy klient jest prywatny, czy udostępniony.</p>
+  <ol class="steps">
+    <li>W karcie klienta kliknij <span class="ui">Udostępnij</span>.</li>
+    <li>W polu <span class="ui">Komu udostępnić</span> wybierz <b>Cały zespół restauracji</b> albo konkretną osobę.</li>
+    <li>Zaznacz, co udostępnić: <span class="ui">Dane kontaktowe</span>, <span class="ui">Notatki</span>, <span class="ui">Cała korespondencja</span>, <span class="ui">Rezerwacje</span>, <span class="ui">Zadania i przypomnienia</span>. Zamiast całej korespondencji możesz zaznaczyć <b>tylko wybrane maile</b>.</li>
+    <li>Kliknij <span class="ui">Zapisz udostępnienie</span>. Na liście <span class="ui">Obecnie udostępniono</span> zmienisz zakres lub klikniesz <span class="ui">Cofnij</span>.</li>
+  </ol>
+  <ul>
+    <li><b>Co może osoba, której udostępniono klienta:</b> przegląda udostępnione części i dodaje <b>własne</b> notatki, zadania, przypomnienia i rezerwacje. Nie zmienia danych klienta ani Twoich wpisów. Ty widzisz wszystko, co doda.</li>
+    <li><b>Klient ma opiekuna:</b> jeśli otworzysz maila od klienta, którym opiekuje się ktoś inny, karta pokaże <b>„Klient ma opiekuna: …”</b>. Kliknij <span class="ui">Poproś o dostęp</span> (możesz dopisać krótką wiadomość). Tego samego klienta nie da się dodać drugi raz.</li>
+    <li><b>Prośby o dostęp</b> do Twoich klientów zobaczysz na pulpicie i w karcie klienta. Kliknij <span class="ui">Wybierz zakres i udostępnij</span> albo <span class="ui">Odrzuć</span>.</li>
+    <li><b>Przekaż opiekę</b> (w oknie udostępniania) – np. gdy klienta przejmuje inna osoba. Ty zachowujesz pełny podgląd.</li>
+    <li>Na listach <span class="ui">Klienci</span> i <span class="ui">Kontakty</span> filtr <span class="ui">Moi klienci</span> / <span class="ui">Udostępnieni mi</span> pokazuje odpowiednią grupę.</li>
+  </ul>
+  <div class="tip"><b>Zadania przypisane do Ciebie</b>Jeśli ktoś przypisze Ci zadanie dotyczące swojego klienta, zobaczysz je na swoim pulpicie i w kalendarzu, nawet bez dostępu do karty klienta. Zadania niezwiązane z klientem widzi cały zespół.</div>
 </section>
 
 <!-- ============================================================== 5 -->
@@ -353,13 +371,14 @@
   <ul>
     <li><b>Przydzielaj zadania</b> polem <span class="ui">Przypisz do</span> – osoba zobaczy je na swoim pulpicie i (jeśli tak ustawi) w swoim kalendarzu.</li>
     <li><b>Przeglądaj tablicę</b> <span class="ui">Zadania</span> – kolumna <b>Pilne (Dziś/Zaległe)</b> pokazuje, co wymaga reakcji. Przełącz filtr na wykonane, aby sprawdzić, co zespół zamknął.</li>
-    <li><b>Ustal zasady notatek</b> – np. każda rozmowa telefoniczna z klientem kończy się krótką notatką. Notatki widzi cały zespół.</li>
+    <li><b>Ustal zasady notatek</b> – np. każda rozmowa telefoniczna z klientem kończy się krótką notatką. Notatki widzą osoby, którym udostępniono klienta.</li>
+    <li><b>Ustal zasady udostępniania</b> – np. klientów weselnych udostępniajcie całemu zespołowi.</li>
     <li><b>Dbaj o statusy</b> – aktualny status klienta ułatwia planowanie działań (np. przypomnienie do wszystkich „Potencjalnych klientów”).</li>
   </ul>
 
   <h2>5.3 Konta i licencje zespołu</h2>
   <p>Nowe konto, reset hasła, zmiana roli, przydział lub zwolnienie miejsca w licencji oraz wylogowanie zgubionego komputera wykonuje <b>Master Admin</b>. Zgłoś mu: imię i nazwisko, adres e-mail pracownika i jego rolę.</p>
-  <div class="tip"><b>Odejście pracownika</b>Poproś administratora o usunięcie konta lub zwolnienie miejsca. Klienci, notatki i zadania utworzone przez tę osobę zostają w restauracji.</div>
+  <div class="tip"><b>Odejście pracownika</b>Poproś administratora o usunięcie konta lub zwolnienie miejsca. Wcześniej ta osoba powinna użyć <span class="ui">Przekaż opiekę</span> u swoich klientów – inaczej staną się wspólni dla zespołu.</div>
 </section>
 
 <!-- ============================================================== 6 -->

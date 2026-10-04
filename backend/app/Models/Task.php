@@ -6,6 +6,7 @@ use App\Enums\TaskPriority;
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
 use App\Models\Concerns\HasDueWindows;
+use App\Models\Concerns\SharedThroughContact;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,10 +19,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Task extends Model
 {
-    use BelongsToGroup, HasActivities, HasDueWindows;
+    use BelongsToGroup, HasActivities, HasDueWindows, SharedThroughContact;
 
     /** @use HasFactory<TaskFactory> */
     use HasFactory;
+
+    /** Contact share section that reveals these records. */
+    public const SHARE_SCOPE = 'work';
 
     public const DUE_COLUMN = 'due_date';
 
@@ -102,6 +106,17 @@ class Task extends Model
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /** The assignee sees and completes the task even without access to the contact. */
+    protected function alsoVisibleTo(Builder $query, User $user): void
+    {
+        $query->orWhere($this->qualifyColumn('assigned_to'), $user->id);
+    }
+
+    protected function alsoChangeableBy(User $user): bool
+    {
+        return $this->assigned_to === $user->id;
     }
 
     public function scopeOpen(Builder $query): Builder

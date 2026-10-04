@@ -38,41 +38,48 @@ class DashboardController extends Controller
         $startOfToday = Carbon::now($tz)->startOfDay()->utc();
         $today = Carbon::now($tz)->toDateString();
 
-        $byCategory = ContactCategory::query()->withCount('contacts')->orderBy('sort_order')->get()
+        $user = $request->user();
+        $contacts = fn () => Contact::query()->visibleTo($user);
+
+        $byCategory = ContactCategory::query()->withCount(['contacts' => fn ($q) => $q->visibleTo($user)])->orderBy('sort_order')->get()
             ->map(fn (ContactCategory $c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug, 'color' => $c->color, 'count' => $c->contacts_count]);
 
-        $statusCounts = Contact::query()->selectRaw('status, COUNT(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status');
+        $statusCounts = $contacts()->selectRaw('status, COUNT(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status');
 
         return response()->json([
             'data' => [
                 'contacts' => [
-                    'total' => Contact::count(),
-                    'clients' => Contact::clients()->count(),
+                    'total' => $contacts()->count(),
+                    'clients' => $contacts()->clients()->count(),
                     'by_category' => $byCategory,
                     'by_status' => $statusCounts->map(fn ($n) => (int) $n),
                 ],
                 'tasks' => $this->windowSummary(
-                    fn () => Task::query()->with(['contact:id,email,name', 'assignee:id,name']),
+                    fn () => Task::query()->visibleTo($user)->with(['contact:id,email,name,user_id', 'assignee:id,name']),
                     fn ($items) => TaskResource::collection($items),
                     $tz,
                 ) + [
-                    'open' => Task::query()->pending()->count(),
-                    'urgent' => Task::query()->urgent($tz)->count(),
-                    'completed_this_week' => Task::query()->where('is_completed', true)->where('completed_at', '>=', now()->subDays(7))->count(),
+                    'open' => Task::query()->visibleTo($user)->pending()->count(),
+                    'urgent' => Task::query()->visibleTo($user)->urgent($tz)->count(),
+                    'completed_this_week' => Task::query()->visibleTo($user)->where('is_completed', true)->where('completed_at', '>=', now()->subDays(7))->count(),
                 ],
                 'reminders' => $this->windowSummary(
-                    fn () => Reminder::query()->with(['contact:id,email,name', 'reservation']),
+                    fn () => Reminder::query()->visibleTo($user)->with(['contact:id,email,name,user_id', 'reservation']),
                     fn ($items) => ReminderResource::collection($items),
                     $tz,
                 ),
                 'reservations' => [
-                    'today' => Reservation::query()->upcoming($tz)->onDate($today)->count(),
-                    'today_guests' => (int) Reservation::query()->upcoming($tz)->onDate($today)->sum('guests_count'),
-                    'upcoming' => Reservation::query()->upcoming($tz)->count(),
+                    'today' => Reservation::query()->visibleTo($user)->upcoming($tz)->onDate($today)->count(),
+                    'today_guests' => (int) Reservation::query()->visibleTo($user)->upcoming($tz)->onDate($today)->sum('guests_count'),
+                    'upcoming' => Reservation::query()->visibleTo($user)->upcoming($tz)->count(),
                 ],
                 'emails' => [
                     // Emails logged to timelines today ("Nowych maili").
-                    'today' => Activity::query()->where('type', ActivityType::Email)->where('occurred_at', '>=', $startOfToday)->count(),
+                    // Own logged emails plus those of contacts whose correspondence is shared with me.
+                    'today' => Activity::query()->where('type', ActivityType::Email)->where('occurred_at', '>=', $startOfToday)
+                        ->where(fn (Builder $q) => $q->where('user_id', $user->id)
+                            ->orWhereIn('contact_id', Contact::query()->select('contacts.id')->visibleTo($user, 'emails')))
+                        ->count(),
                 ],
                 'timezone' => $tz,
             ],

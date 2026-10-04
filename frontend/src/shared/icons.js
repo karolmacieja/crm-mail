@@ -48,6 +48,10 @@ import {
   faCloudArrowDown,
   faLink,
   faNoteSticky,
+  faShareNodes,
+  faLock,
+  faUserLock,
+  faHandshake,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
@@ -61,6 +65,7 @@ library.add(
   faListCheck, faMagnifyingGlass, faPen, faPhone, faPhoneVolume, faPlus, faRightFromBracket, faReply, faStar,
   faTrash, faUser, faUsers, faUserTie, faUtensils, faXmark, faFileInvoice, faArrowUpRightFromSquare,
   faGear, faCalendarPlus, faCopy, faArrowUp, faArrowDown, faRotate, faCloudArrowDown, faLink, faNoteSticky,
+  faShareNodes, faLock, faUserLock, faHandshake,
 )
 
 /**

@@ -18,8 +18,8 @@ class StoreReminderRequest extends TenantRequest
             'notes' => ['nullable', 'string', 'max:5000'],
             'remind_at' => ['required', 'date'],
             'is_done' => ['boolean'],
-            'contact_id' => ['nullable', 'integer', $this->existsInGroup('contacts')],
-            'reservation_id' => ['nullable', 'integer', $this->existsInGroup('reservations')],
+            'contact_id' => ['nullable', 'integer', $this->visibleContact()],
+            'reservation_id' => ['nullable', 'integer', $this->existsInGroup('reservations'), $this->visibleReservation()],
             'source_email_id' => ['nullable', 'string', 'max:255'],
             'source_email_subject' => ['nullable', 'string', 'max:255'],
         ];

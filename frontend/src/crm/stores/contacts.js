@@ -13,11 +13,11 @@ export const useContactsStore = defineStore('contacts', () => {
 
   const clients = createPaginatedList(
     (params) => fetchContacts({ ...params, is_client: 1 }),
-    { search: '', category: '', sort: 'last_activity_at', direction: 'desc' },
+    { search: '', category: '', owner: '', sort: 'last_activity_at', direction: 'desc' },
   )
   const addressBook = createPaginatedList(
     (params) => fetchContacts({ ...params, is_client: 0 }),
-    { search: '', sort: 'name', direction: 'asc' },
+    { search: '', owner: '', sort: 'name', direction: 'asc' },
   )
   clients.state.meta.per_page = 100
 

@@ -30,4 +30,15 @@ return [
         'reservation_summary' => 'Rezerwacja: :name, gości: :count',
         'from_email' => 'Z maila: :subject',
     ],
+
+    // Private contacts and sharing.
+    'sharing' => [
+        'owner_only' => 'Tylko opiekun klienta może zmieniać jego dane i udostępnianie.',
+        'read_only' => 'To wpis innej osoby – możesz go tylko przeglądać.',
+        'email_owned_by' => 'Ten klient jest już w CRM – jego opiekunem jest :name. Poproś o dostęp z karty klienta w Gmailu.',
+        'already_owner' => 'Ta osoba jest już opiekunem klienta.',
+        'nothing_selected' => 'Zaznacz, co chcesz udostępnić.',
+        'already_has_access' => 'Masz już pełny dostęp do tego klienta.',
+        'request_closed' => 'Ta prośba została już rozpatrzona.',
+    ],
 ];

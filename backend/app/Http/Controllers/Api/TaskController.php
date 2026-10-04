@@ -41,7 +41,7 @@ class TaskController extends Controller
         $timezone = $this->timezone($request);
         $assignee = ($validated['assigned_to'] ?? null) === 'me' ? $request->user()->id : ($validated['assigned_to'] ?? null);
 
-        $query = Task::query()->with($this->relations($request));
+        $query = Task::query()->visibleTo($request->user())->with($this->relations($request));
         $this->applyWindow($query, $validated['window'] ?? $validated['status'] ?? 'open', $timezone);
 
         $tasks = $query
@@ -72,11 +72,14 @@ class TaskController extends Controller
 
     public function show(Request $request, Task $task): TaskResource
     {
+        $this->authorizeItem($request, $task, view: true);
+
         return new TaskResource($task->load($this->relations($request)));
     }
 
     public function update(UpdateTaskRequest $request, Task $task): TaskResource
     {
+        $this->authorizeItem($request, $task);
         $task->update($request->validated());
 
         return new TaskResource($task->load($this->relations($request)));
@@ -86,14 +89,15 @@ class TaskController extends Controller
     private function relations(Request $request): array
     {
         return [
-            'contact:id,email,name',
+            'contact:id,email,name,user_id',
             'assignee:id,name',
             'calendarEvents' => fn ($q) => $q->where('user_id', $request->user()->id),
         ];
     }
 
-    public function destroy(Task $task): JsonResponse
+    public function destroy(Request $request, Task $task): JsonResponse
     {
+        $this->authorizeItem($request, $task);
         $task->delete();
 
         return response()->json(null, 204);

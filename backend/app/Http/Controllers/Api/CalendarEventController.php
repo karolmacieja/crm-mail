@@ -20,7 +20,7 @@ class CalendarEventController extends Controller
     public function upsert(Request $request, string $type, int $id): JsonResponse
     {
         $data = $request->validate(['external_id' => ['required', 'string', 'max:1024']]);
-        $item = $this->find($type, $id);
+        $item = $this->find($request, $type, $id);
 
         $item->calendarEvents()->updateOrCreate(
             ['user_id' => $request->user()->id, 'provider' => 'google'],
@@ -32,17 +32,17 @@ class CalendarEventController extends Controller
 
     public function destroy(Request $request, string $type, int $id): JsonResponse
     {
-        $this->find($type, $id)->calendarEvents()->where('user_id', $request->user()->id)->delete();
+        $this->find($request, $type, $id)->calendarEvents()->where('user_id', $request->user()->id)->delete();
 
         return response()->json(null, 204);
     }
 
     /** GroupScope keeps other restaurants' records out of reach (404). */
-    private function find(string $type, int $id): Model
+    private function find(Request $request, string $type, int $id): Model
     {
         return match ($type) {
-            'task' => Task::findOrFail($id),
-            'reminder' => Reminder::findOrFail($id),
+            'task' => Task::query()->visibleTo($request->user())->findOrFail($id),
+            'reminder' => Reminder::query()->visibleTo($request->user())->findOrFail($id),
             default => abort(404),
         };
     }

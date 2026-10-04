@@ -24,6 +24,7 @@ class ActivityController extends Controller
 
     public function index(Request $request, Contact $contact): AnonymousResourceCollection
     {
+        $access = ContactController::authorizeView($request->user(), $contact);
         $validated = $request->validate([
             'type' => ['nullable', Rule::enum(ActivityType::class)],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -31,6 +32,7 @@ class ActivityController extends Controller
 
         return ActivityResource::collection(
             $contact->timeline()
+                ->visibleWith($access, $request->user())
                 ->with('author:id,name')
                 ->ofType($validated['type'] ?? null)
                 ->paginate($validated['per_page'] ?? 20)
@@ -41,6 +43,7 @@ class ActivityController extends Controller
     /** "Zapisz do osi czasu" – a manual note. */
     public function storeNote(Request $request, Contact $contact): JsonResponse
     {
+        ContactController::authorizeView($request->user(), $contact);
         $validated = $request->validate([
             'body' => ['required', 'string', 'max:10000'],
         ]);
@@ -56,6 +59,7 @@ class ActivityController extends Controller
      */
     public function storeEmail(StoreEmailActivityRequest $request, Contact $contact): JsonResponse
     {
+        ContactController::authorizeView($request->user(), $contact);
         $messageId = $request->validated('message_id');
         $threadId = $request->validated('thread_id');
         $emails = fn () => $contact->timeline()->where('type', ActivityType::Email);
@@ -104,6 +108,7 @@ class ActivityController extends Controller
      */
     public function importEmails(Request $request, Contact $contact): JsonResponse
     {
+        ContactController::authorizeView($request->user(), $contact);
         $data = $request->validate([
             'emails' => ['present', 'array', 'max:500'],
             'emails.*.message_id' => ['required', 'string', 'max:255'],
@@ -185,6 +190,7 @@ class ActivityController extends Controller
     /** Only your own notes can be changed; emails and system events are history. */
     private function authorizeOwnNote(Request $request, Contact $contact, Activity $activity): void
     {
+        ContactController::authorizeView($request->user(), $contact);
         abort_unless(
             $activity->contact_id === $contact->id
                 && $activity->type === ActivityType::Note

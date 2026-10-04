@@ -14,15 +14,33 @@ class ContactResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $access = $request->user() ? $this->accessFor($request->user()) : null;
+        // Without the "details" section a colleague sees who the client is, not their data.
+        $details = $access?->has('details') ?? true;
+
         return [
             'id' => $this->id,
             'email' => $this->email,
             'name' => $this->name,
-            'company' => $this->company,
-            'phone' => $this->phone,
+            'company' => $this->when($details, $this->company),
+            'phone' => $this->when($details, $this->phone),
             'status' => $this->status,
             'is_client' => $this->is_client,
-            'notes' => $this->notes,
+            'notes' => $this->when($details, $this->notes),
+            'owner' => $this->whenLoaded('owner', fn () => $this->owner ? ['id' => $this->owner->id, 'name' => $this->owner->name] : null),
+            'access' => $this->when($access !== null, fn () => [
+                'is_owner' => $this->user_id !== null && $this->user_id === $request->user()->id,
+                'can_manage' => $access->canManage,
+                'scopes' => $access->scopes,
+                'email_ids' => $access->activityIds,
+            ]),
+            'shares' => ContactShareResource::collection($this->whenLoaded('shares')),
+            'access_requests' => $this->whenLoaded('accessRequests', fn () => $this->accessRequests->map(fn ($r) => [
+                'id' => $r->id,
+                'user' => ['id' => $r->requester->id, 'name' => $r->requester->name],
+                'message' => $r->message,
+                'created_at' => $r->created_at?->toIso8601String(),
+            ])),
             'category_id' => $this->category_id,
             'category' => new ContactCategoryResource($this->whenLoaded('category')),
             'last_activity_at' => $this->last_activity_at?->toIso8601String(),
@@ -36,7 +54,7 @@ class ContactResource extends JsonResource
             'notes_count' => $this->whenCounted('notes'),
             'recent_notes' => ActivityResource::collection($this->whenLoaded('recentNotes')),
             'email_history_synced_at' => $this->email_history_synced_at?->toIso8601String(),
-            'custom_fields' => ContactCustomFieldResource::collection($this->whenLoaded('customFields')),
+            'custom_fields' => $this->when($details, fn () => ContactCustomFieldResource::collection($this->whenLoaded('customFields'))),
             'tasks' => TaskResource::collection($this->whenLoaded('tasks')),
             'reminders' => ReminderResource::collection($this->whenLoaded('reminders')),
             'upcoming_reservations' => ReservationResource::collection($this->whenLoaded('upcomingReservations')),

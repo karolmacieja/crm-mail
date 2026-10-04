@@ -13,7 +13,7 @@ class StoreReservationRequest extends TenantRequest
     public function rules(): array
     {
         return [
-            'contact_id' => ['nullable', 'integer', $this->existsInGroup('contacts')],
+            'contact_id' => ['nullable', 'integer', $this->visibleContact()],
             // Restaurant-local date and time, exactly as the guest asked.
             'reservation_date' => ['required', 'date_format:Y-m-d'],
             'reservation_time' => ['required', 'date_format:H:i'],

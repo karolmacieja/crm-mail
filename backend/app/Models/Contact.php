@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToGroup;
 use App\Models\Concerns\HasActivities;
+use App\Support\Sharing\ContactAccess;
 use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -78,10 +79,50 @@ class Contact extends Model
         );
     }
 
+    /** @var array<int, ContactAccess> */
+    private array $accessCache = [];
+
+    /**
+     * The contact's owner ("opiekun"): its creator, unless handed over.
+     * Null when that user was removed – such contacts are shared with the team.
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     /** Who created the contact (null if that user was removed). */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->owner();
+    }
+
+    public function shares(): HasMany
+    {
+        return $this->hasMany(ContactShare::class);
+    }
+
+    /** Eager-load with a forViewer() constraint to resolve access without extra queries. */
+    public function viewerShares(): HasMany
+    {
+        return $this->hasMany(ContactShare::class);
+    }
+
+    public function accessRequests(): HasMany
+    {
+        return $this->hasMany(ContactAccessRequest::class);
+    }
+
+    /** What $user may see and do on this card (memoized per instance). */
+    public function accessFor(User $user): ContactAccess
+    {
+        return $this->accessCache[$user->id] ??= ContactAccess::resolve($user, $this);
+    }
+
+    public function forgetAccess(): void
+    {
+        $this->accessCache = [];
+        $this->unsetRelation('viewerShares');
     }
 
     /** @deprecated use creator(); kept for existing API code until step 2. */
@@ -144,6 +185,45 @@ class Contact extends Model
     public function addNote(string $body, ?User $author = null): Activity
     {
         return Activity::recordNote($this, $body, $author);
+    }
+
+    /**
+     * Contacts $user can open: own, ownerless, or shared with them / the team.
+     * With $scope, only those whose share covers that section (owners always do).
+     */
+    public function scopeVisibleTo(Builder $query, User $user, ?string $scope = null): Builder
+    {
+        static::constrainVisible($query, $user->id, $scope, $this->getTable());
+
+        return $query;
+    }
+
+    /** Contacts owned by $user ("Moje"). */
+    public function scopeOwnedBy(Builder $query, User $user): Builder
+    {
+        return $query->where($this->qualifyColumn('user_id'), $user->id);
+    }
+
+    /**
+     * The visibility condition on a plain query builder as well (used by the
+     * Exists validation rules), so both stay identical.
+     *
+     * @param  \Illuminate\Database\Query\Builder|Builder  $query
+     */
+    public static function constrainVisible($query, int $userId, ?string $scope = null, string $table = 'contacts'): void
+    {
+        $query->where(function ($q) use ($userId, $scope, $table) {
+            $q->whereNull("{$table}.user_id")
+                ->orWhere("{$table}.user_id", $userId)
+                ->orWhereExists(function ($shares) use ($userId, $scope, $table) {
+                    $shares->selectRaw('1')->from('contact_shares')
+                        ->whereColumn('contact_shares.contact_id', "{$table}.id")
+                        ->where(fn ($w) => $w->whereNull('contact_shares.user_id')->orWhere('contact_shares.user_id', $userId));
+                    if ($scope !== null) {
+                        $shares->where("contact_shares.{$scope}", true);
+                    }
+                });
+        });
     }
 
     public function scopeClients(Builder $query): Builder

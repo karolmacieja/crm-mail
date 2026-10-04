@@ -26,6 +26,8 @@ class ReminderResource extends JsonResource
             // overdue | today | upcoming | later | done  (restaurant timezone)
             'time_status' => $this->timeStatus($request->user()?->group?->timezone),
             'contact_id' => $this->contact_id,
+            // Author or the contact's owner; colleagues with access only view it.
+            'can_edit' => $request->user() === null || $this->canBeChangedBy($request->user()),
             'reservation_id' => $this->reservation_id,
             'source_email_id' => $this->source_email_id,
             'source_email_subject' => $this->source_email_subject,

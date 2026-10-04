@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Contact;
+use App\Models\Reservation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Exists;
 
@@ -23,6 +25,23 @@ abstract class TenantRequest extends FormRequest
     protected function existsInGroup(string $table, string $column = 'id'): Exists
     {
         return (new Exists($table, $column))->where('group_id', $this->groupId());
+    }
+
+    /** A contact of the restaurant that this person can open (own or shared). */
+    protected function visibleContact(): Exists
+    {
+        return $this->existsInGroup('contacts')
+            ->where(fn ($query) => Contact::constrainVisible($query, (int) $this->user()->id));
+    }
+
+    /** A reservation of the restaurant that this person can see. */
+    protected function visibleReservation(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if ($value !== null && ! Reservation::query()->whereKey($value)->visibleTo($this->user())->exists()) {
+                $fail(__('validation.exists', ['attribute' => $attribute]));
+            }
+        };
     }
 
     /**

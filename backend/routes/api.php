@@ -9,9 +9,11 @@ use App\Http\Controllers\Api\Auth\SessionAuthController;
 use App\Http\Controllers\Api\Auth\TokenAuthController;
 use App\Http\Controllers\Api\CalendarEventController;
 use App\Http\Controllers\Api\CalendarFeedController;
+use App\Http\Controllers\Api\ContactAccessRequestController;
 use App\Http\Controllers\Api\ContactCategoryController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ContactCustomFieldController;
+use App\Http\Controllers\Api\ContactShareController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PreferencesController;
 use App\Http\Controllers\Api\ReminderController;
@@ -74,7 +76,18 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
             Route::post('/emails/import', [ActivityController::class, 'importEmails'])->name('emails.import');
             Route::patch('/activities/{activity}', [ActivityController::class, 'update'])->whereNumber('activity')->name('activities.update');
             Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])->whereNumber('activity')->name('activities.destroy');
+
+            // Sharing (owner only) and "Poproś o dostęp".
+            Route::get('/shares', [ContactShareController::class, 'index'])->name('shares.index');
+            Route::post('/shares', [ContactShareController::class, 'store'])->name('shares.store');
+            Route::delete('/shares/{share}', [ContactShareController::class, 'destroy'])->whereNumber('share')->name('shares.destroy');
+            Route::post('/transfer', [ContactShareController::class, 'transfer'])->name('transfer');
+            Route::post('/access-requests', [ContactAccessRequestController::class, 'store'])->name('access-requests.store');
         });
+
+        Route::get('/access-requests', [ContactAccessRequestController::class, 'index'])->name('access-requests.index');
+        Route::post('/access-requests/{accessRequest}/approve', [ContactAccessRequestController::class, 'approve'])->whereNumber('accessRequest')->name('access-requests.approve');
+        Route::post('/access-requests/{accessRequest}/decline', [ContactAccessRequestController::class, 'decline'])->whereNumber('accessRequest')->name('access-requests.decline');
 
         Route::apiResource('tasks', TaskController::class)->whereNumber('task');
         Route::apiResource('reminders', ReminderController::class)->whereNumber('reminder');

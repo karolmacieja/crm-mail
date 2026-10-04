@@ -20,6 +20,8 @@ class ReservationResource extends JsonResource
         return [
             'id' => $this->id,
             'contact_id' => $this->contact_id,
+            // Author or the contact's owner; colleagues with access only view it.
+            'can_edit' => $request->user() === null || $this->canBeChangedBy($request->user()),
             // Restaurant-local date/time as entered, plus an absolute ISO timestamp.
             'reservation_date' => $this->reservation_date->format('Y-m-d'),
             'reservation_time' => substr((string) $this->reservation_time, 0, 5),
