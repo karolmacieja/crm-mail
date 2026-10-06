@@ -480,6 +480,12 @@ dowiązania `api` ani folderu `app` (subdomeny zwrócą 404). Gdy zmienił się 
   Źródło: `docs/instrukcja/index.html`; ponowne wygenerowanie: `node docs/instrukcja/build-pdf.cjs`
   (Playwright + `pdfunite`).
 
+* `docs/umowy/` – wzory dokumentów w formacie Word (do uzupełnienia pól zaznaczonych na żółto):
+  `GastroFlowx-umowa-powierzenia.docx` (umowa powierzenia przetwarzania danych, art. 28 RODO – Ty ↔ restauracja)
+  i `GastroFlowx-porozumienie-z-pracownikiem.docx` (restauracja ↔ pracownik: zasady korzystania, upoważnienie
+  do przetwarzania danych, opiekun klienta i korespondencja firmowa). Ponowne wygenerowanie:
+  `node docs/umowy/build-docx.cjs`. To wzory – nie zastępują porady prawnej.
+
 **Wgranie strony (DirectAdmin):** do `~/domains/gastroflowx.pl/public_html/` (katalog główny domeny, obok
 dowiązań `api` i `app`) wgraj zawartość folderu `site/` (`index.html` i `img/`) oraz plik
 `docs/GastroFlowx-instrukcja.pdf`. Usuń domyślny `index.html` DirectAdmina, jeśli tam jest. Polityka prywatności
