@@ -95,11 +95,11 @@
     <li><span class="n">2</span>Role i uprawnienia</li>
     <li><span class="n">3</span>Pierwsze kroki – instalacja i logowanie</li>
     <li><span class="n">4</span>Instrukcja dla pracownika i kierownika</li>
-    <li class="sub">Pulpit dnia · karta klienta przy mailu · notatki · rezerwacje · zadania · przypomnienia · oś czasu · pisanie maili · klienci i kontakty · kalendarz</li>
+    <li class="sub">Pulpit dnia · karta klienta przy mailu · notatki · rezerwacje · zadania · przypomnienia · oś czasu · pisanie maili · klienci i kontakty · kalendarz · udostępnianie · korespondencja firmowa · usuwanie klienta</li>
     <li><span class="n">5</span>Ustawienia restauracji i praca w zespole</li>
     <li class="sub">Kategorie, statusy, kategorie zadań i pola · zasady pracy zespołu · konta i licencje</li>
     <li><span class="n">6</span>Instrukcja dla Master Admina</li>
-    <li class="sub">Panel administratora · restauracje · użytkownicy · licencje · wdrożenie nowej restauracji</li>
+    <li class="sub">Panel administratora · restauracje · użytkownicy · licencje · wdrożenie nowej restauracji · prośby o dane (RODO)</li>
     <li><span class="n">7</span>Najczęstsze pytania i rozwiązywanie problemów</li>
     <li><span class="n">8</span>Bezpieczeństwo i dane</li>
   </ol>
@@ -353,6 +353,14 @@
     <li>Gdy otworzysz maila od kontaktu, którego inni mają już na prywatnych kartach, formularz dodania pokaże tę informację i utworzy <b>Twoją własną</b> kartę w tej samej kategorii.</li>
     <li><b>Wspólna pula:</b> przy mailu na osi czasu kliknij <span class="ui">Dodaj do wspólnej puli</span>. Ten mail pojawi się na kartach tego kontaktu u pozostałych osób z dopiskiem <b>„Ze wspólnej puli · udostępnił(a) …”</b>. Kliknięcie <span class="ui">We wspólnej puli</span> zabiera mail z puli.</li>
   </ul>
+
+  <h2>4.16 Usuwanie klienta</h2>
+  <p>Na dole karty klienta kliknij <span class="ui">Usuń kontakt</span> i potwierdź. Przycisk widzi tylko <b>opiekun</b> klienta (a przy kliencie bez opiekuna – każdy). Razem z klientem znikają jego dane, pola dodatkowe, oś czasu (zapisane maile i notatki), zadania, przypomnienia i rezerwacje. <b>Tej operacji nie można cofnąć.</b></p>
+  <ul>
+    <li>Przy korespondencji firmowej każdy usuwa wyłącznie <b>swoją</b> prywatną kartę – karty innych osób zostają.</li>
+    <li>Maile w Gmailu nie są usuwane – system przechowuje tylko ich temat i krótki fragment.</li>
+    <li>Jeśli klient prosi o usunięcie lub kopię swoich danych, przekaż prośbę osobie zarządzającej restauracją (rozdział 8).</li>
+  </ul>
 </section>
 
 <!-- ============================================================== 5 -->
@@ -451,6 +459,22 @@
     <li>Jeśli restauracja korzysta z integracji Google w trybie testowym, dopisz adresy Gmail pracowników jako <b>użytkowników testowych</b> w Google Cloud (Google Auth Platform → Odbiorcy).</li>
     <li>Poproś restaurację o przejrzenie <span class="ui">Ustawień</span> (kategorie, statusy, pola) przed startem pracy zespołu.</li>
   </ol>
+
+  <h2 style="break-before:page">6.6 Prośby o dane osobowe (RODO)</h2>
+  <p>Administratorem danych klientów jest restauracja – to ona przyjmuje prośby gości i pracowników. GastroFlowx, jako podmiot przetwarzający, przygotowuje dane na jej polecenie (umowa powierzenia, § 4 i § 8).</p>
+  <table>
+    <tr><th style="width:30%">Prośba</th><th>Co zrobić</th></tr>
+    <tr><td>Kopia danych klienta (art. 15 i 20)</td><td>Restauracja przysyła e-mailem adres klienta. Eksport obejmuje wszystkie jego karty w restauracji: dane, pola, maile (metadane), notatki, zadania, przypomnienia i rezerwacje.</td></tr>
+    <tr><td>Kopia danych pracownika</td><td>Eksport konta: dane, logowania, notatki, zadania, przypomnienia, opiekowani klienci.</td></tr>
+    <tr><td>Wszystkie dane restauracji (koniec umowy)</td><td>Pełny eksport (plik danych i arkusz kontaktów do Excela), potem <span class="ui">Usuń grupę</span> w ciągu 30 dni od zakończenia umowy.</td></tr>
+    <tr><td>Usunięcie danych klienta (art. 17)</td><td>Klienta usuwa jego opiekun w CRM (<span class="ui">Usuń kontakt</span>, rozdział 4.16). Konto pracownika usuwasz w zakładce <span class="ui">Użytkownicy</span>.</td></tr>
+  </table>
+  <ol class="steps">
+    <li>Potwierdź, że prośba pochodzi od restauracji (osoby uprawnionej) i zapisz ją w rejestrze żądań – termin odpowiedzi to <b>30 dni</b>.</li>
+    <li>Przygotuj eksport na serwerze (komenda <b>crm:export</b>, opis techniczny w README, sekcja „Gdzie są dane i eksport na żądanie”). Eksport nie zawiera haseł ani tokenów.</li>
+    <li>Wyślij plik restauracji w archiwum ZIP z hasłem; hasło podaj inną drogą (np. SMS).</li>
+    <li>Usuń plik eksportu z serwera i ze swojego komputera, a w rejestrze zapisz datę wysłania.</li>
+  </ol>
 </section>
 
 <!-- ============================================================== 7 -->
@@ -485,6 +509,7 @@
     <li><b>Dane z Gmaila.</b> System zapisuje tylko metadane maili klientów zapisanych w CRM: temat, nadawcę, datę i krótki fragment. Nie zapisuje pełnej treści ani załączników.</li>
     <li><b>Konto Google (opcjonalne).</b> Token dostępu Google pozostaje w przeglądarce użytkownika i nie trafia na serwer GastroFlowx. Dostęp można cofnąć przyciskiem <span class="ui">Rozłącz</span> lub na myaccount.google.com/permissions.</li>
     <li><b>Serwery w Polsce (UE).</b> Szczegóły przetwarzania danych osobowych opisuje polityka prywatności: <b>app.gastroflowx.pl/polityka-prywatnosci.html</b>.</li>
+    <li><b>Prośby o dane.</b> Gdy klient lub pracownik prosi o kopię albo usunięcie swoich danych, przekaż to osobie zarządzającej restauracją. Restauracja zgłasza prośbę na <b>kontakt@gastroflowx.pl</b>, a dane otrzymuje w ciągu 30 dni (rozdział 6.6).</li>
   </ul>
   <div class="tip"><b>Dobre praktyki zespołu</b>Nie udostępniaj swojego konta innym osobom – każdy pracownik powinien mieć własne konto (notatki i zadania są podpisane). Wylogowuj się na komputerach współdzielonych. Nie zapisuj w notatkach haseł ani danych kart płatniczych.</div>
 
