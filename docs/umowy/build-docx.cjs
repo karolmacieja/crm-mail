@@ -130,7 +130,7 @@ const dpa = doc('Umowa powierzenia przetwarzania danych osobowych', 'dotycząca 
     { letters: [
       'klienci i kontrahenci: imię i nazwisko, adres e-mail, telefon, firma, kategoria i status, pola dodatkowe wprowadzone przez użytkowników (np. alergie, preferencje, NIP), notatki, rezerwacje, zadania i przypomnienia,',
       'metadane korespondencji e-mail z klientami zapisanymi w Systemie: temat, nadawca, data, kierunek, identyfikatory wiadomości i wątku oraz fragment treści do 2000 znaków (bez pełnej treści i załączników),',
-      'użytkownicy: imię i nazwisko, służbowy adres e-mail, rola, przydział licencji, preferencje, informacje o autorstwie wpisów, opiekunie kontaktu i udostępnieniach oraz dane techniczne logowania.',
+      'użytkownicy: imię i nazwisko, służbowy adres e-mail, rola, przydział licencji, preferencje, informacje o autorstwie wpisów, opiekunie kontaktu i udostępnieniach, identyfikatory wydarzeń utworzonych w Kalendarzu Google (przy włączonej synchronizacji) oraz dane techniczne: tokeny logowania (w postaci skrótu), data ostatniego użycia logowania i adres IP w dziennikach serwera.',
     ] },
     'Administrator nie będzie wprowadzał do Systemu szczególnych kategorii danych (art. 9 RODO) w zakresie szerszym niż niezbędny do obsługi klienta (np. informacja o alergii pokarmowej przekazana przez gościa) i odpowiada za istnienie podstawy prawnej ich przetwarzania.',
   ]),
@@ -175,7 +175,7 @@ const dpa = doc('Umowa powierzenia przetwarzania danych osobowych', 'dotycząca 
   ]),
 
   ...section('§ 8. Zakończenie przetwarzania', [
-    'Po zakończeniu Umowy głównej Podmiot przetwarzający, zgodnie z decyzją Administratora, zwraca dane (eksport w formacie CSV lub JSON) albo je usuwa, w terminie **30 dni**, chyba że prawo nakazuje ich dalsze przechowywanie.',
+    'Po zakończeniu Umowy głównej Podmiot przetwarzający, zgodnie z decyzją Administratora, zwraca dane (eksport w powszechnie używanym formacie elektronicznym, np. CSV lub JSON, przygotowany przez Podmiot przetwarzający) albo je usuwa, w terminie **30 dni**, chyba że prawo nakazuje ich dalsze przechowywanie.',
     'Wniosek o eksport Administrator składa przed upływem terminu z ust. 1. Kopie zapasowe są usuwane w cyklu ich rotacji u dostawcy hostingu.',
     'Na żądanie Administratora Podmiot przetwarzający potwierdza usunięcie danych e-mailem.',
   ]),
@@ -204,7 +204,7 @@ const dpa = doc('Umowa powierzenia przetwarzania danych osobowych', 'dotycząca 
     'Indywidualne konta użytkowników, nadawane i odbierane przez administratora systemu; możliwość natychmiastowego wylogowania użytkownika ze wszystkich urządzeń.',
     'Ograniczenie zakresu danych z Gmaila do metadanych korespondencji z klientami zapisanymi w Systemie; token dostępu Google pozostaje w przeglądarce użytkownika.',
     'Ochrona przed atakami: limit prób logowania, ochrona CSRF panelu, walidacja danych wejściowych.',
-    'Serwery w Polsce (UE); dzienniki serwera przechowywane do 14 dni; kopie zapasowe w ramach usługi hostingowej.',
+    'Serwery w Polsce (UE); dzienniki serwera przechowywane do 14 dni; kopie zapasowe w ramach usługi hostingowej {{potwierdź u dostawcy hostingu częstotliwość i okres przechowywania kopii, np. codziennie, 14 dni}}.',
     'Dostęp do serwera i bazy danych wyłącznie dla Podmiotu przetwarzającego, z użyciem uwierzytelnionego połączenia SSH.',
     'Aktualizacje bezpieczeństwa oprogramowania wdrażane niezwłocznie po ich udostępnieniu.',
   ]),
@@ -256,12 +256,12 @@ const employee = doc('Porozumienie w sprawie korzystania z systemu GastroFlowx',
   ]),
 
   ...sectionWithLetters('§ 5. Dane Pracownika w Systemie', [
-    'W związku z korzystaniem z Systemu Pracodawca przetwarza następujące dane Pracownika: imię i nazwisko, służbowy adres e-mail, rolę, informację o przydziale licencji, preferencje (np. język, domyślne godziny przypomnień) oraz informacje o autorstwie wpisów, przypisanych zadaniach i udostępnieniach.',
+    'W związku z korzystaniem z Systemu Pracodawca przetwarza następujące dane Pracownika: imię i nazwisko, służbowy adres e-mail, rolę, informację o przydziale licencji, preferencje (np. język, domyślne godziny przypomnień), informacje o autorstwie wpisów, przypisanych zadaniach i udostępnieniach, identyfikatory wydarzeń w Kalendarzu Google (jeżeli Pracownik włączy synchronizację) oraz dane techniczne: datę ostatniego użycia logowania i adres IP w dziennikach serwera, przechowywanych do 14 dni w celach bezpieczeństwa.',
     'Celem przetwarzania jest organizacja pracy i obsługi klientów (art. 6 ust. 1 lit. b i f RODO). Dane są przetwarzane przez czas zatrudnienia, a po jego zakończeniu konto jest usuwane lub dezaktywowane w ciągu {{np. 30}} dni.',
     'System nie służy do monitorowania Pracownika ani jego poczty elektronicznej w rozumieniu art. 22³ Kodeksu pracy:',
     { letters: [
       'nie zapisuje pełnej treści wiadomości ani załączników – wyłącznie metadane (temat, nadawca, data, krótki fragment) korespondencji z klientami zapisanymi w Systemie,',
-      'nie rejestruje czasu pracy, aktywności przeglądarki ani położenia Pracownika.',
+      'nie rejestruje czasu pracy ani położenia Pracownika i nie analizuje jego aktywności – daty wpisów i dane techniczne z ust. 1 służą wyłącznie działaniu Systemu i jego bezpieczeństwu.',
     ] },
     'Pracownikowi przysługuje prawo dostępu do swoich danych, ich sprostowania, usunięcia lub ograniczenia przetwarzania oraz wniesienia sprzeciwu i skargi do Prezesa UODO. Szczegóły zawiera klauzula informacyjna Pracodawcy {{oraz polityka prywatności GastroFlowx: app.gastroflowx.pl/polityka-prywatnosci.html}}.',
   ]),
