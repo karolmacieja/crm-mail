@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Contact;
+use App\Models\Reservation;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,5 +87,19 @@ class ContactTest extends TestCase
         $this->deleteJson("/api/contacts/{$foreign->id}")->assertNotFound();
         $this->getJson("/api/contacts/lookup?email={$foreign->email}")->assertExactJson(['data' => null]);
         $this->getJson('/api/contacts')->assertJsonCount(0, 'data');
+    }
+
+    public function test_deleting_a_contact_removes_its_history_and_bookings(): void
+    {
+        $contact = Contact::factory()->for($this->user->group)->create(['user_id' => $this->user->id]);
+        $reservation = Reservation::factory()->for($contact)->create(['notes' => 'Alergia na orzechy']);
+        Task::factory()->for($contact)->create(['user_id' => $this->user->id]);
+        $contact->addNote('Notatka', $this->user);
+
+        $this->deleteJson("/api/contacts/{$contact->id}")->assertNoContent();
+
+        $this->assertDatabaseMissing('reservations', ['id' => $reservation->id]);
+        $this->assertDatabaseMissing('tasks', ['contact_id' => $contact->id]);
+        $this->assertDatabaseMissing('activities', ['contact_id' => $contact->id]);
     }
 }

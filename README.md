@@ -472,6 +472,55 @@ Nie edytuj plików w katalogu repozytorium na serwerze – blokują `git pull`. 
 dowiązania `api` ani folderu `app` (subdomeny zwrócą 404). Gdy zmienił się kod panelu, przebuduj go
 (`npm run build:admin`) przed ostatnią komendą `cp`.
 
+## Gdzie są dane i eksport na żądanie (RODO)
+
+**Gdzie system trzyma dane.** Wszystko jest w bazie MySQL na serwerze (SEOHOST.pl, Polska):
+
+| Co | Tabela | Uwagi |
+|---|---|---|
+| Maile | `activities` (`type = email`) | **Tylko metadane:** temat (`title`), fragment do 2000 znaków (`body`), w `meta`: nadawca, kierunek, id wiadomości i wątku Gmaila. Pełna treść i załączniki zostają w Gmailu – system ich nie pobiera. |
+| Notatki, zdarzenia | `activities` (`type = note / system`) | Oś czasu klienta |
+| Klienci i kontakty | `contacts`, `contact_custom_fields` | `user_id` = opiekun, `personal_key` ≠ 0 = prywatna karta |
+| Udostępnienia, prośby | `contact_shares`, `contact_access_requests` | |
+| Zadania, przypomnienia, rezerwacje | `tasks`, `reminders`, `reservations` | |
+| Konta | `users`, `licenses`, `license_user`, `personal_access_tokens`, `calendar_events` | Hasła i tokeny tylko jako skróty |
+
+W przeglądarce pracownika (`chrome.storage`) są tylko token logowania, język i adresy połączonych kont Google.
+Dzienniki serwera (`backend/storage/logs`) – do 14 dni.
+
+**Eksport** – komenda `crm:export` (w SSH, w katalogu `backend`). Pliki trafiają do
+`backend/storage/app/exports/<data>-<nazwa>/` (poza `public_html`, pomijane przez git):
+
+```bash
+cd ~/domains/gastroflowx.pl/gastroflowx/backend
+php artisan crm:export --group=<slug|id|nazwa>                       # cała restauracja: export.json + kontakty.csv (Excel)
+php artisan crm:export --group=<slug|id|nazwa> --email=gosc@firma.pl  # wszystko o jednym kliencie (każda jego karta)
+php artisan crm:export --user=kelner@restauracja.pl                  # dane konta jednego pracownika
+php artisan crm:export                                                # bez opcji: lista restauracji (id, slug, nazwa)
+```
+
+Eksport nigdy nie zawiera haseł, tokenów ani linku kalendarza. Procedura:
+
+1. **Sprawdź, kto pyta.** Klient restauracji (gość, firma) kieruje żądanie do restauracji – to ona jest
+   administratorem danych. Wykonaj eksport na **polecenie restauracji** (e-mail od osoby uprawnionej). Pracownik
+   pytający o swoje konto – również przez restaurację albo bezpośrednio, po potwierdzeniu tożsamości z jego
+   służbowego adresu.
+2. **Uruchom właściwą komendę** (powyżej). Gdy klienta nie ma w CRM, `--email` i tak zapisze pusty eksport –
+   to potwierdzenie, że danych nie ma.
+3. **Pobierz pliki** menedżerem plików DirectAdmin (`domains/…/gastroflowx/backend/storage/app/exports/`)
+   albo `scp` na swój komputer.
+4. **Przekaż bezpiecznie** – archiwum ZIP z hasłem (hasło inną drogą, np. SMS) do restauracji, a nie
+   bezpośrednio osobie trzeciej. Na żądanie z art. 15 RODO restauracja może dołączyć `export.json` albo jego
+   czytelne streszczenie.
+5. **Usuń pliki z serwera** po wysłaniu: `rm -r storage/app/exports/<folder>` – i z własnego komputera, gdy
+   nie są już potrzebne.
+6. **Zapisz w rejestrze żądań:** data, kto pytał, zakres, data wysłania (termin: 30 dni od żądania).
+
+**Usunięcie danych** (gdy ktoś żąda usunięcia, art. 17 RODO): klienta usuwa jego opiekun w CRM (karta →
+„Usuń kontakt” – znika z historią, zadaniami i rezerwacjami; przy korespondencji firmowej każdą prywatną kartę
+usuwa jej właściciel). Pracownika usuwasz w panelu Master Admina (Użytkownicy). Całą restaurację po
+zakończeniu umowy – w panelu (Grupy → usuń, z potwierdzeniem); najpierw zrób eksport, jeśli restauracja go chce.
+
 ## Strona informacyjna i instrukcja PDF
 
 * `site/` – jednostronicowa strona produktu (PL) dla `https://gastroflowx.pl`. Strona nie linkuje do Chrome Web Store
@@ -646,7 +695,7 @@ php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje si�
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 101 testów
+php artisan test                      # 105 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.

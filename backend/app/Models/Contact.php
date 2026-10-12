@@ -58,6 +58,12 @@ class Contact extends Model
             $contact->status ??= ContactStatus::defaultKeyFor($contact->group_id);
         });
 
+        // "Usuń kontakt" removes the client's bookings too (the FK only detaches them),
+        // so a GDPR erasure leaves no reservation notes behind; their reminders cascade.
+        static::deleting(function (Contact $contact) {
+            Reservation::withoutGlobalScopes()->where('contact_id', $contact->id)->delete();
+        });
+
         // A private category ("korespondencja firmowa") makes the card personal to its owner.
         static::saving(function (Contact $contact) {
             if (! $contact->exists || $contact->isDirty(['category_id', 'user_id'])) {
