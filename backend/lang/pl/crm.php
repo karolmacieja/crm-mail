@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'reservation_reminder_title' => 'Rezerwacja: :name, :when, gości: :count',
     'contact_email_taken' => 'Kontakt z tym adresem e-mail już istnieje w Twoim CRM.',
     'phone_format' => 'Numer telefonu może zawierać tylko cyfry, spacje oraz znaki + ( ) . - / x.',
     'license_expired' => 'Twoja licencja wygasła :date. Odnów ją, aby kontynuować.',

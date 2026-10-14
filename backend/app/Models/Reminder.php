@@ -54,6 +54,7 @@ class Reminder extends Model
             'type' => ReminderType::class,
             'remind_at' => 'datetime',
             'is_done' => 'boolean',
+            'auto_reservation' => 'boolean',
             'done_at' => 'datetime',
         ];
     }

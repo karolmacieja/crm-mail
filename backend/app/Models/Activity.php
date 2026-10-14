@@ -53,6 +53,15 @@ class Activity extends Model
             $activity->occurred_at ??= now();
         });
 
+        // A corrected date (e.g. the real send time from Gmail) or a removed
+        // entry can lower the contact's last activity, so recompute it.
+        static::updated(function (Activity $activity) {
+            if ($activity->wasChanged('occurred_at')) {
+                static::refreshLastActivity($activity->contact_id);
+            }
+        });
+        static::deleted(fn (Activity $activity) => static::refreshLastActivity($activity->contact_id));
+
         // Feeds the "Ostatnia aktywność" column of the client list.
         static::created(function (Activity $activity) {
             if ($activity->contact_id === null) {
@@ -64,6 +73,17 @@ class Activity extends Model
                 ->where(fn (Builder $q) => $q->whereNull('last_activity_at')->orWhere('last_activity_at', '<', $activity->occurred_at))
                 ->update(['last_activity_at' => $activity->occurred_at]);
         });
+    }
+
+    public static function refreshLastActivity(?int $contactId): void
+    {
+        if ($contactId === null) {
+            return;
+        }
+
+        Contact::withoutGlobalScopes()->whereKey($contactId)->update([
+            'last_activity_at' => static::withoutGlobalScopes()->where('contact_id', $contactId)->max('occurred_at'),
+        ]);
     }
 
     public function subject(): MorphTo

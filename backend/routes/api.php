@@ -107,9 +107,9 @@ Route::middleware(['auth:sanctum', 'client:extension'])->group(function () {
             });
 
         Route::put('/calendar-events/{type}/{id}', [CalendarEventController::class, 'upsert'])
-            ->where(['type' => 'task|reminder'])->whereNumber('id')->name('calendar-events.upsert');
+            ->where(['type' => 'task|reminder|reservation'])->whereNumber('id')->name('calendar-events.upsert');
         Route::delete('/calendar-events/{type}/{id}', [CalendarEventController::class, 'destroy'])
-            ->where(['type' => 'task|reminder'])->whereNumber('id')->name('calendar-events.destroy');
+            ->where(['type' => 'task|reminder|reservation'])->whereNumber('id')->name('calendar-events.destroy');
     });
 });
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reminder;
+use App\Models\Reservation;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,7 @@ class CalendarEventController extends Controller
         return match ($type) {
             'task' => Task::query()->visibleTo($request->user())->findOrFail($id),
             'reminder' => Reminder::query()->visibleTo($request->user())->findOrFail($id),
+            'reservation' => Reservation::query()->visibleTo($request->user())->findOrFail($id),
             default => abort(404),
         };
     }

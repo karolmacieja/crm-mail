@@ -20,6 +20,9 @@ class ReservationResource extends JsonResource
         return [
             'id' => $this->id,
             'contact_id' => $this->contact_id,
+            'user_id' => $this->user_id,
+            // overdue | today | upcoming | later | closed (group-local date)
+            'time_status' => $this->timeStatus($request->user()?->group?->timezone),
             // Author or the contact's owner; colleagues with access only view it.
             'can_edit' => $request->user() === null || $this->canBeChangedBy($request->user()),
             // Restaurant-local date/time as entered, plus an absolute ISO timestamp.
@@ -39,6 +42,9 @@ class ReservationResource extends JsonResource
                 'email' => $this->contact->email,
                 'name' => $this->contact->name,
             ] : null),
+            'calendar_event_id' => $this->whenLoaded('calendarEvents', fn () => $this->calendarEvents->first()?->external_id),
+            // Reminder added automatically for this booking (preference), so the UI can sync it.
+            'auto_reminder' => $this->whenLoaded('autoReminder', fn () => $this->autoReminder ? new ReminderResource($this->autoReminder) : null),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

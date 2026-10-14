@@ -50,14 +50,27 @@ class User extends Authenticatable
      * Personal settings with their defaults (merged with users.preferences).
      */
     public const DEFAULT_PREFERENCES = [
-        'default_reminder_time' => '09:00',   // used for "tomorrow at …" defaults
-        'default_task_due_days' => 1,
+        'default_reminder_time' => '09:00',   // new reminders: "in N days at …"
+        'default_reminder_days' => 1,
+        'default_task_due_days' => 1,         // new tasks: "in N days at …"
+        'default_task_time' => '09:00',
+        'default_task_priority' => 'normal',
+        'reservations' => [
+            'default_time' => '19:00',        // new booking form
+            'default_guests' => 2,
+            'duration_minutes' => 120,        // length of the booking in calendars
+            'auto_reminder' => true,          // reminder for bookings I add …
+            'reminder_hours_before' => 24,    // … this many hours before
+        ],
         'calendar' => [
-            'alarm_minutes' => 15,            // VALARM in the iCalendar feed
-            'include_reservations' => true,   // restaurant bookings in the feed
+            'alarm_minutes' => 15,            // VALARM in the iCalendar feed / Google events
+            'include_tasks' => true,          // what the iCalendar feed contains
+            'include_reminders' => true,
+            'include_reservations' => true,   // restaurant bookings I can see
         ],
         'google' => [
-            'calendar_sync' => false,         // create events in Google Calendar directly
+            'calendar_sync' => false,         // tasks and reminders as Google Calendar events
+            'calendar_sync_reservations' => false, // bookings I add as Google Calendar events
             'email_history' => true,          // import past Gmail correspondence of contacts
         ],
     ];

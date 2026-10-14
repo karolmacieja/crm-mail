@@ -67,8 +67,10 @@ class ActivityController extends Controller
         $threadId = $request->validated('thread_id');
         $emails = fn () => $contact->timeline()->where('type', ActivityType::Email);
 
-        // 1. Same Gmail message already logged.
+        // 1. Same Gmail message already logged (fix its date if we now know the real one).
         if ($existing = $emails()->where('meta->message_id', $messageId)->first()) {
+            $this->correctDate($existing, $request->validated('sent_at'));
+
             return (new ActivityResource($existing))->response()->setStatusCode(200);
         }
 
@@ -88,6 +90,7 @@ class ActivityController extends Controller
                 $placeholder->update([
                     'title' => $request->validated('subject') ?? $placeholder->title,
                     'body' => $request->validated('snippet') ?? $placeholder->body,
+                    'occurred_at' => $request->validated('sent_at') ? Carbon::parse($request->validated('sent_at')) : $placeholder->occurred_at,
                     'meta' => array_merge($placeholder->meta ?? [], array_filter([
                         'message_id' => $messageId,
                         'from' => $request->validated('from'),
@@ -124,8 +127,8 @@ class ActivityController extends Controller
             'complete' => ['sometimes', 'boolean'],
         ]);
 
-        $existing = $contact->timeline()->where('type', ActivityType::Email)->get(['id', 'meta']);
-        $known = $existing->map(fn (Activity $a) => $a->meta['message_id'] ?? null)->filter()->flip();
+        $existing = $contact->timeline()->where('type', ActivityType::Email)->get(['id', 'contact_id', 'meta', 'occurred_at', 'title', 'body']);
+        $known = $existing->filter(fn (Activity $a) => isset($a->meta['message_id']))->keyBy(fn (Activity $a) => $a->meta['message_id']);
         $placeholders = $existing->filter(fn (Activity $a) => str_starts_with($a->meta['message_id'] ?? '', self::THREAD_PLACEHOLDER))
             ->keyBy(fn (Activity $a) => substr($a->meta['message_id'], strlen(self::THREAD_PLACEHOLDER)));
 
@@ -134,7 +137,8 @@ class ActivityController extends Controller
         DB::transaction(function () use ($data, $contact, $request, $known, $placeholders, &$imported, &$upgraded, &$skipped) {
             foreach ($data['emails'] as $email) {
                 if ($known->has($email['message_id'])) {
-                    $skipped++;
+                    // Logged earlier when the email was opened: Gmail knows the real send time.
+                    $this->correctDate($known->get($email['message_id']), $email['sent_at'] ?? null) ? $upgraded++ : $skipped++;
 
                     continue;
                 }
@@ -156,7 +160,7 @@ class ActivityController extends Controller
                     Activity::recordEmail($contact, $email, $request->user());
                     $imported++;
                 }
-                $known->put($email['message_id'], true);
+                $known->put($email['message_id'], $placeholder ?? new Activity);
             }
 
             // The extension sends the history in chunks; the last one marks it complete.
@@ -171,6 +175,23 @@ class ActivityController extends Controller
             'skipped' => $skipped,
             'email_history_synced_at' => $contact->fresh()->email_history_synced_at?->toIso8601String(),
         ]]);
+    }
+
+    /** Use Gmail's real send time instead of the moment the email was opened. */
+    private function correctDate(Activity $activity, ?string $sentAt): bool
+    {
+        if ($sentAt === null || ! $activity->exists) {
+            return false;
+        }
+
+        $date = Carbon::parse($sentAt);
+        if ($activity->occurred_at !== null && abs($activity->occurred_at->diffInSeconds($date)) < 60) {
+            return false;
+        }
+
+        $activity->update(['occurred_at' => $date]);
+
+        return true;
     }
 
     /** Edit your own note (shown under "Dane kontaktowe" and on the timeline). */

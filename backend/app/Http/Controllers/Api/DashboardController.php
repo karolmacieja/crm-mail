@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\ActivityType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ReminderResource;
+use App\Http\Resources\ReservationResource;
 use App\Http\Resources\TaskResource;
 use App\Models\Activity;
 use App\Models\Contact;
@@ -68,7 +69,7 @@ class DashboardController extends Controller
                     fn ($items) => ReminderResource::collection($items),
                     $tz,
                 ),
-                'reservations' => [
+                'reservations' => $this->reservationSummary($user, $tz) + [
                     'today' => Reservation::query()->visibleTo($user)->upcoming($tz)->onDate($today)->count(),
                     'today_guests' => (int) Reservation::query()->visibleTo($user)->upcoming($tz)->onDate($today)->sum('guests_count'),
                     'upcoming' => Reservation::query()->visibleTo($user)->upcoming($tz)->count(),
@@ -84,6 +85,31 @@ class DashboardController extends Controller
                 'timezone' => $tz,
             ],
         ]);
+    }
+
+    /**
+     * Bookings in the same three windows as tasks and reminders:
+     * overdue = open bookings from past days (to be marked completed / no-show).
+     *
+     * @return array<string, mixed>
+     */
+    private function reservationSummary($user, string $tz): array
+    {
+        $query = fn () => Reservation::query()->visibleTo($user)->with('contact:id,email,name,user_id');
+        $list = fn (Builder $q) => ReservationResource::collection(
+            $q->orderBy('reservation_date')->orderBy('reservation_time')->limit(self::LIST_LIMIT)->get()
+        );
+
+        return [
+            'overdue' => $query()->overdue($tz)->count(),
+            'due_today' => $query()->dueToday($tz)->count(),
+            'upcoming_week' => $query()->upcomingWeek($tz)->count(),
+            'lists' => [
+                'overdue' => $list($query()->overdue($tz)),
+                'today' => $list($query()->dueToday($tz)),
+                'upcoming' => $list($query()->upcomingWeek($tz)),
+            ],
+        ];
     }
 
     /**

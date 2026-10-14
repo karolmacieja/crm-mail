@@ -72,52 +72,57 @@ class CalendarFeedController extends Controller
         $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'gastroflowx';
 
         // Tasks assigned to me, or created by me and not assigned to anyone.
-        Task::query()->pending()->with('contact:id,name,email,user_id')
-            ->whereNotNull('due_date')->where('due_date', '>=', $from)
-            ->where(fn ($q) => $q->where('assigned_to', $user->id)->orWhere(fn ($q) => $q->whereNull('assigned_to')->where('user_id', $user->id)))
-            ->orderBy('due_date')->limit(1000)->get()
-            ->each(fn (Task $task) => $calendar->addEvent([
-                'uid' => "task-{$task->id}@{$host}",
-                'start' => $task->due_date,
-                'end' => $task->due_date->copy()->addMinutes(30),
-                'summary' => '✔ '.$task->title,
-                'description' => $this->describe($task->contact, $task->description, $task->source_email_subject),
-                'categories' => __('crm.calendar.task'),
-                'alarm_minutes' => $alarm,
-                'updated' => $task->updated_at,
-            ]));
+        if ($prefs['calendar']['include_tasks'] ?? true) {
+            Task::query()->pending()->with('contact:id,name,email,user_id')
+                ->whereNotNull('due_date')->where('due_date', '>=', $from)
+                ->where(fn ($q) => $q->where('assigned_to', $user->id)->orWhere(fn ($q) => $q->whereNull('assigned_to')->where('user_id', $user->id)))
+                ->orderBy('due_date')->limit(1000)->get()
+                ->each(fn (Task $task) => $calendar->addEvent([
+                    'uid' => "task-{$task->id}@{$host}",
+                    'start' => $task->due_date,
+                    'end' => $task->due_date->copy()->addMinutes(30),
+                    'summary' => '✔ '.$task->title,
+                    'description' => $this->describe($task->contact, $task->description, $task->source_email_subject),
+                    'categories' => __('crm.calendar.task'),
+                    'alarm_minutes' => $alarm,
+                    'updated' => $task->updated_at,
+                ]));
+        }
 
-        Reminder::query()->pending()->with('contact:id,name,email,user_id')
-            ->where('user_id', $user->id)->where('remind_at', '>=', $from)
-            ->orderBy('remind_at')->limit(1000)->get()
-            ->each(fn (Reminder $reminder) => $calendar->addEvent([
-                'uid' => "reminder-{$reminder->id}@{$host}",
-                'start' => $reminder->remind_at,
-                'end' => $reminder->remind_at->copy()->addMinutes(15),
-                'summary' => '🔔 '.$reminder->title,
-                'description' => $this->describe($reminder->contact, $reminder->notes, $reminder->source_email_subject),
-                'categories' => __('crm.calendar.reminder'),
-                'alarm_minutes' => $alarm,
-                'updated' => $reminder->updated_at,
-            ]));
+        if ($prefs['calendar']['include_reminders'] ?? true) {
+            Reminder::query()->pending()->with('contact:id,name,email,user_id')
+                ->where('user_id', $user->id)->where('remind_at', '>=', $from)
+                ->orderBy('remind_at')->limit(1000)->get()
+                ->each(fn (Reminder $reminder) => $calendar->addEvent([
+                    'uid' => "reminder-{$reminder->id}@{$host}",
+                    'start' => $reminder->remind_at,
+                    'end' => $reminder->remind_at->copy()->addMinutes(15),
+                    'summary' => '🔔 '.$reminder->title,
+                    'description' => $this->describe($reminder->contact, $reminder->notes, $reminder->source_email_subject),
+                    'categories' => __('crm.calendar.reminder'),
+                    'alarm_minutes' => $alarm,
+                    'updated' => $reminder->updated_at,
+                ]));
+        }
 
         if ($prefs['calendar']['include_reservations']) {
             Reservation::query()->visibleTo($user)->with('contact:id,name,email,user_id')
                 ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
                 ->where('reservation_date', '>=', Carbon::now($timezone)->subDays(7)->toDateString())
                 ->orderBy('reservation_date')->limit(1000)->get()
-                ->each(function (Reservation $reservation) use ($calendar, $host, $timezone) {
+                ->each(function (Reservation $reservation) use ($calendar, $host, $timezone, $prefs, $alarm) {
                     $start = $reservation->startsAt($timezone);
                     $calendar->addEvent([
                         'uid' => "reservation-{$reservation->id}@{$host}",
                         'start' => $start,
-                        'end' => $start->copy()->addHours(2),
+                        'end' => $start->copy()->addMinutes((int) ($prefs['reservations']['duration_minutes'] ?? 120)),
                         'summary' => '🍽 '.__('crm.calendar.reservation_summary', [
                             'name' => $reservation->contact?->name ?? $reservation->contact?->email ?? '—',
                             'count' => $reservation->guests_count,
                         ]),
                         'description' => collect([$reservation->occasion, $reservation->table_label, $reservation->notes])->filter()->implode("\n"),
                         'categories' => __('crm.calendar.reservation'),
+                        'alarm_minutes' => $alarm,
                         'updated' => $reservation->updated_at,
                     ]);
                 });
