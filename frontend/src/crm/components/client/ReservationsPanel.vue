@@ -60,6 +60,7 @@ import { Icon } from '@/shared/icons.js'
 import { formatReservation, todayInputValue } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import { useClientStore } from '@/crm/stores/client.js'
+import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const client = useClientStore()
 const reservations = computed(() => client.contact?.upcoming_reservations ?? [])
@@ -67,7 +68,8 @@ const reservations = computed(() => client.contact?.upcoming_reservations ?? [])
 const adding = ref(false)
 const saving = ref(false)
 const errorMessages = ref([])
-const emptyForm = () => ({ reservation_date: todayInputValue(1), reservation_time: '19:00', guests_count: 2, table_label: '', occasion: '', notes: '' })
+const prefs = () => useSettingsStore().preferences?.reservations ?? {}
+const emptyForm = () => ({ reservation_date: todayInputValue(1), reservation_time: prefs().default_time ?? '19:00', guests_count: prefs().default_guests ?? 2, table_label: '', occasion: '', notes: '' })
 const form = reactive(emptyForm())
 
 async function create() {

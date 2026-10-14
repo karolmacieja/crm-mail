@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { api, toApiError } from '@/crm/api.js'
 import { useGoogleStore } from './google.js'
 import { useInboxStore } from './inbox.js'
+import { useReservationsStore } from './reservations.js'
 
 /**
  * The client / email currently in focus.
@@ -120,7 +121,7 @@ export const useClientStore = defineStore('client', () => {
     const google = useGoogleStore()
     const target = contact.value
     if (!target || !google.enabled) return
-    const result = manual ? await google.importHistory(target) : await google.maybeAutoImport(target)
+    const result = manual ? await google.importHistory(target, { manual: true }) : await google.maybeAutoImport(target)
     if (!result || id !== focusId || contact.value?.id !== target.id) return
     contact.value.email_history_synced_at = result.synced_at
     if (result.imported || result.updated) await loadTimeline({ reset: true })
@@ -292,23 +293,30 @@ export const useClientStore = defineStore('client', () => {
 
   /** New reservation for the focused client; linked to the focused email if any. */
   async function addReservation(payload) {
-    const { data } = await call(() =>
-      api.post('/reservations', {
-        contact_id: contact.value.id,
-        source_email_id: context.value?.messageId ?? null,
-        ...payload,
-      }),
-    )
-    upsertReservation(data.data)
+    const messageId = context.value?.messageId
+    const reservation = await useReservationsStore().create({
+      contact_id: contact.value.id,
+      source_email_id: messageId && !messageId.startsWith('thread:') ? messageId : null,
+      ...payload,
+    })
+    if (contact.value) upsertReservation(reservation)
     await loadTimeline({ reset: true }) // "reservation.created" system entry
-    return data.data
+    return reservation
   }
 
   async function updateReservation(reservationId, patch) {
-    const { data } = await call(() => api.patch(`/reservations/${reservationId}`, patch))
-    upsertReservation(data.data)
+    const reservation = await useReservationsStore().update({ id: reservationId }, patch)
+    if (contact.value) upsertReservation(reservation)
     await loadTimeline({ reset: true })
-    return data.data
+    return reservation
+  }
+
+  /** Called by the reservations store after any change so the open card stays current. */
+  function syncReservation(reservation, { removed = false } = {}) {
+    if (!contact.value || reservation.contact_id !== contact.value.id) return
+    if (removed) contact.value.upcoming_reservations = (contact.value.upcoming_reservations ?? []).filter((r) => r.id !== reservation.id)
+    else upsertReservation(reservation)
+    if (reservation.auto_reminder) syncReminder(reservation.auto_reminder)
   }
 
   // ------------------------------------------------------ tasks & reminders
@@ -334,6 +342,9 @@ export const useClientStore = defineStore('client', () => {
   async function logContextEmail(id) {
     const ctx = context.value
     if (!ctx?.messageId || !contact.value || id !== focusId) return
+    // Gmail's thread view has no machine-readable date: ask the Gmail API when connected.
+    const sentAt = ctx.receivedAt ?? (await useGoogleStore().sentAt(ctx.messageId))
+    if (id !== focusId) return
     try {
       await api.post(`/contacts/${contact.value.id}/emails`, {
         message_id: ctx.messageId,
@@ -342,7 +353,7 @@ export const useClientStore = defineStore('client', () => {
         snippet: ctx.snippet ?? null,
         from: ctx.email,
         direction: ctx.direction ?? 'in',
-        sent_at: ctx.receivedAt ?? null,
+        sent_at: sentAt ?? null,
       })
     } catch {
       // Non-critical: the timeline simply won't show this email.
@@ -450,6 +461,7 @@ export const useClientStore = defineStore('client', () => {
     updateReservation,
     syncTask,
     syncReminder,
+    syncReservation,
   }
 })
 

@@ -28,11 +28,15 @@
       <div class="col-span-2 flex flex-col justify-center rounded-xl bg-gradient-to-r from-primary to-blue-500 p-5 text-white shadow-sm">
         <p class="mb-2 text-xs font-bold uppercase tracking-wider text-white/80">{{ t('crm.dashboard.today') }}</p>
         <div class="flex flex-wrap items-center gap-6">
-          <div><span class="text-3xl font-bold">{{ summary?.emails.today ?? 0 }}</span> <span class="text-sm opacity-90">{{ t('crm.dashboard.newEmails', { count: summary?.emails.today ?? 0 }) }}</span></div>
+          <div :title="unread.fromGmail ? t('crm.dashboard.unreadHintGmail') : t('crm.dashboard.unreadHintInbox')">
+            <span class="text-3xl font-bold">{{ unread.count ?? '–' }}</span> <span class="text-sm opacity-90">{{ t('crm.dashboard.unread', { count: unread.count ?? 0 }) }}</span>
+          </div>
           <div class="h-8 border-r border-white/30" />
           <div><span class="text-3xl font-bold">{{ summary?.tasks.due_today ?? 0 }}</span> <span class="text-sm opacity-90">{{ t('crm.dashboard.tasksCount', { count: summary?.tasks.due_today ?? 0 }) }}</span></div>
           <div class="h-8 border-r border-white/30" />
           <div><span class="text-3xl font-bold">{{ summary?.reminders.due_today ?? 0 }}</span> <span class="text-sm opacity-90">{{ t('crm.dashboard.remindersCount', { count: summary?.reminders.due_today ?? 0 }) }}</span></div>
+          <div class="h-8 border-r border-white/30" />
+          <div><span class="text-3xl font-bold">{{ summary?.reservations?.due_today ?? 0 }}</span> <span class="text-sm opacity-90">{{ t('crm.dashboard.reservationsCount', { count: summary?.reservations?.due_today ?? 0 }) }}</span></div>
         </div>
       </div>
     </div>
@@ -85,6 +89,34 @@
       </div>
     </div>
 
+    <div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <!-- Reservations -->
+      <div class="flex h-[350px] flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-gray-50/50 px-5 py-4">
+          <h3 class="font-bold text-gray-800">
+            <RouterLink :to="{ name: 'crm.reservations' }" class="hover:text-primary">{{ t('nav.reservations') }}</RouterLink>
+          </h3>
+          <button type="button" class="text-sm font-medium text-orange-600 hover:underline" @click="reservationForm = { open: true, reservation: null }"><Icon icon="plus" /> {{ t('common.add') }}</button>
+        </div>
+        <div class="flex min-h-0 flex-1 flex-col p-5">
+          <SegmentedTabs v-model="dashboard.tabs.reservations" class="mb-4" :tabs="windowTabs(summary?.reservations)" />
+          <div class="space-y-3 overflow-y-auto pr-2">
+            <ReservationItem
+              v-for="item in reservationList"
+              :key="item.id"
+              :reservation="item"
+              @open-contact="openProfile"
+              @edit="(r) => (reservationForm = { open: true, reservation: r })"
+            />
+            <EmptyState v-if="summary && !reservationList.length" icon="calendar-check" :text="t(`crm.reservations.empty.${dashboard.tabs.reservations}`)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Mailbox statistics (Gmail API) -->
+      <MailStatsPanel class="h-[350px]" />
+    </div>
+
     <!-- Recent emails (Gmail inbox) -->
     <div class="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
       <div class="flex items-center justify-between rounded-t-xl border-b border-gray-200 bg-gray-50/50 px-5 py-4">
@@ -120,6 +152,7 @@
 
     <TaskFormModal v-if="showTaskModal" @close="showTaskModal = false" />
     <ReminderFormModal v-if="showReminderModal" @close="showReminderModal = false" />
+    <ReservationFormModal v-if="reservationForm.open" :reservation="reservationForm.reservation" @close="reservationForm = { open: false, reservation: null }" />
   </div>
 </template>
 
@@ -133,12 +166,16 @@ import SegmentedTabs from '@/shared/components/SegmentedTabs.vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
+import MailStatsPanel from '@/crm/components/MailStatsPanel.vue'
 import ReminderFormModal from '@/crm/components/ReminderFormModal.vue'
+import ReservationFormModal from '@/crm/components/ReservationFormModal.vue'
+import ReservationItem from '@/crm/components/ReservationItem.vue'
 import TaskFormModal from '@/crm/components/TaskFormModal.vue'
 import TaskItem from '@/crm/components/TaskItem.vue'
 import { api } from '@/crm/api.js'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useDashboardStore } from '@/crm/stores/dashboard.js'
+import { useGoogleStore } from '@/crm/stores/google.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
 
@@ -166,6 +203,7 @@ async function loadAccessRequests() {
 onMounted(() => {
   dashboard.fetch()
   loadAccessRequests()
+  google.refreshMail()
 })
 // Answered from the client card: refresh the list when its requests change.
 watch(() => client.contact?.access_requests?.length, (now, before) => {
@@ -180,6 +218,20 @@ const windowTabs = (section) => [
 
 const taskList = computed(() => summary.value?.tasks.lists[dashboard.tabs.tasks] ?? [])
 const reminderList = computed(() => summary.value?.reminders.lists[dashboard.tabs.reminders] ?? [])
+const reservationList = computed(() => summary.value?.reservations?.lists?.[dashboard.tabs.reservations] ?? [])
+const reservationForm = ref({ open: false, reservation: null })
+
+/**
+ * "Nieodczytane": unread conversations of the whole inbox (clients, contacts
+ * and first-time senders) from the Gmail API; without the Google integration,
+ * the unread rows Gmail has shown in the inbox list.
+ */
+const google = useGoogleStore()
+const unread = computed(() =>
+  google.mail.unread !== null
+    ? { count: google.mail.unread, fromGmail: true }
+    : { count: inbox.recent.length ? inbox.recent.filter((thread) => thread.unread).length : null, fromGmail: false },
+)
 
 const isActive = (thread) => client.isSidebarOpen && client.context?.threadId === thread.threadId
 

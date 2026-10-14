@@ -52,7 +52,7 @@ const fromFocusedEmail = Boolean(props.contact && client.context?.messageId && c
 const form = reactive({
   title: '',
   type: fromFocusedEmail ? 'email' : 'general',
-  when: defaultDueInputValue(useSettingsStore().preferences),
+  when: defaultDueInputValue(useSettingsStore().preferences, 'reminder'),
   contact_id: props.contact?.id ?? null,
   reservation_id: null,
   notes: '',

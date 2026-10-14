@@ -95,6 +95,7 @@ const nav = [
   { name: 'crm.clients', label: 'nav.clients', icon: 'users' },
   { name: 'crm.contacts', label: 'nav.contacts', icon: 'address-book' },
   { name: 'crm.tasks', label: 'nav.tasks', icon: 'list-check', badge: () => dashboard.summary?.tasks.overdue || null },
+  { name: 'crm.reservations', label: 'nav.reservations', icon: 'calendar-check', badge: () => dashboard.summary?.reservations?.overdue || null },
   { name: 'crm.reminders', label: 'nav.reminders', icon: ['far', 'bell'], badge: () => dashboard.summary?.reminders.overdue || null },
   { name: 'crm.settings', label: 'nav.settings', icon: 'gear' },
 ]

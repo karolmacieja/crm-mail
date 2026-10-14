@@ -225,8 +225,9 @@
   <h2>4.1 Pulpit dnia</h2>
   <p>Kliknij <b>GastroFlowx</b> w lewym menu Gmaila. <span class="ui">Dashboard</span> pokazuje:</p>
   <ul>
-    <li>liczbę kontaktów i klientów oraz <b>Podsumowanie na dziś</b> – nowe maile, zadania i przypomnienia,</li>
-    <li><b>Przypomnienia</b> i <b>Zadania</b> w zakładkach <span class="ui">Zaległe</span>, <span class="ui">Dziś</span> i <span class="ui">7 dni</span> – zaznacz pole lub ✓, aby oznaczyć jako wykonane,</li>
+    <li>liczbę kontaktów i klientów oraz <b>Podsumowanie na dziś</b> – <b>nieodczytane maile</b> w skrzynce (od klientów, kontaktów i nowych nadawców), zadania, przypomnienia i rezerwacje na dziś,</li>
+    <li><b>Przypomnienia</b>, <b>Zadania</b> i <b>Rezerwacje</b> w zakładkach <span class="ui">Zaległe</span>, <span class="ui">Dziś</span> i <span class="ui">7 dni</span> – zaznacz pole lub ✓, aby oznaczyć jako wykonane; rezerwację dodasz tu przyciskiem <span class="ui">Dodaj</span>, wybierając klienta,</li>
+    <li><b>Statystyki poczty</b> – dziś i w tym miesiącu: odebrane, nieotwarte, otwarte bez odpowiedzi, z odpowiedzią i wysłane (wymaga połączenia z kontem Google; liczone w przeglądarce, nic nie trafia na serwer),</li>
     <li><b>Ostatnie maile</b> ze skrzynki odbiorczej z kategorią nadawcy – kliknięcie otwiera kartę klienta.</li>
   </ul>
   <figure><img src="img/c1-dashboard.jpg" alt=""><figcaption>Pulpit dnia</figcaption></figure>
@@ -278,6 +279,11 @@
     <li>Gdy gość potwierdzi, kliknij <span class="ui">Potwierdź</span>; rezygnację oznacz <span class="ui">Anuluj rezerwację</span>.</li>
   </ol>
   <p>Każda zmiana zapisuje się na osi czasu jako zdarzenie systemowe.</p>
+  <ul>
+    <li><b>Zakładka Rezerwacje</b> (w menu pod Zadaniami) pokazuje rezerwacje wszystkich klientów, których widzisz, pogrupowane po dniach z liczbą gości: <span class="ui">Zaległe</span> (z poprzednich dni, jeszcze niezamknięte), <span class="ui">Dziś</span>, <span class="ui">7 dni</span>, <span class="ui">Wszystkie nadchodzące</span> i <span class="ui">Zamknięte</span>. Po wizycie oznacz rezerwację <span class="ui">Odbyła się</span> albo <span class="ui">Nie przyszli</span>.</li>
+    <li><b>Przypomnienie o rezerwacji</b> – do każdej dodanej przez Ciebie rezerwacji system tworzy przypomnienie (domyślnie 24 h wcześniej). Przesuwa się razem z rezerwacją, a po jej anulowaniu znika. Czas lub wyłączenie ustawisz w Preferencjach.</li>
+    <li><b>Kalendarz</b> – rezerwacje są w subskrypcji kalendarza, a po połączeniu z Google mogą od razu trafiać do Kalendarza Google (rozdział 4.12).</li>
+  </ul>
   <figure><img src="img/c3-client-work.jpg" alt=""><figcaption>Rezerwacje, zadania i przypomnienia w karcie klienta</figcaption></figure>
 
   <h2>4.7 Zadania</h2>
@@ -321,13 +327,19 @@
   <h2>4.12 Kalendarz</h2>
   <p>W <span class="ui">Ustawienia → Kalendarz</span>:</p>
   <ul>
-    <li><b>Subskrypcja kalendarza (ICS)</b> – kliknij <span class="ui">Utwórz link kalendarza</span>, a potem <span class="ui">Dodaj do Google</span>, <span class="ui">Dodaj do Outlooka</span> lub skopiuj link do kalendarza Apple. W kalendarzu pojawią się Twoje zadania i przypomnienia (opcjonalnie także rezerwacje), z powiadomieniem przed terminem. Kalendarze odświeżają subskrypcje z opóźnieniem – Google nawet do kilku godzin.</li>
-    <li><b>Konto Google</b> (jeśli włączone w Twojej restauracji) – <span class="ui">Połącz z Google</span> łączy konto z bieżącej karty Gmaila. Zadania trafiają wtedy natychmiast do Kalendarza Google, a historia maili wczytuje się automatycznie. Przy pierwszym łączeniu Google może wyświetlić ostrzeżenie o niezweryfikowanej aplikacji – kliknij <span class="ui">Zaawansowane</span> → <span class="ui">Przejdź do GastroFlowx</span>.</li>
+    <li><b>Subskrypcja kalendarza (ICS)</b> – kliknij <span class="ui">Utwórz link kalendarza</span>, a potem <span class="ui">Dodaj do Google</span>, <span class="ui">Dodaj do Outlooka</span> lub skopiuj link do kalendarza Apple. Pod linkiem wybierasz, co ma się w nim pojawiać: Twoje zadania, Twoje przypomnienia i rezerwacje (wszystkie, które widzisz), z powiadomieniem przed terminem. Kalendarze odświeżają subskrypcje z opóźnieniem – Google nawet do kilku godzin.</li>
+    <li><b>Konto Google</b> (jeśli włączone w Twojej restauracji) – <span class="ui">Połącz z Google</span> łączy konto z bieżącej karty Gmaila. Zadania i przypomnienia (oraz – po zaznaczeniu – Twoje rezerwacje) trafiają wtedy natychmiast do Kalendarza Google, a historia maili wczytuje się automatycznie. Przycisk <span class="ui">Wczytaj historię z Gmaila</span> sprawdza też ostatnie 30 dni i poprawia daty maili zapisanych przy otwieraniu. Przy pierwszym łączeniu Google może wyświetlić ostrzeżenie o niezweryfikowanej aplikacji – kliknij <span class="ui">Zaawansowane</span> → <span class="ui">Przejdź do GastroFlowx</span>.</li>
   </ul>
   <div class="warn"><b>Link kalendarza jest prywatny</b>Kto ma link, widzi Twoje zadania. Nie udostępniaj go. Jeśli wyciekł, kliknij <span class="ui">Wygeneruj nowy link</span> – stary przestanie działać.</div>
 
-  <h2>4.13 Moje preferencje</h2>
-  <p><span class="ui">Ustawienia → Preferencje</span>: domyślna godzina przypomnienia, domyślny termin zadania i język. Te ustawienia dotyczą tylko Twojego konta.</p>
+  <h2 style="break-before:page">4.13 Moje preferencje</h2>
+  <p><span class="ui">Ustawienia → Preferencje</span> – dotyczą tylko Twojego konta:</p>
+  <ul>
+    <li><b>Zadania:</b> domyślny termin (dziś, za 1–14 dni), godzina i priorytet nowego zadania.</li>
+    <li><b>Przypomnienia:</b> domyślny dzień i godzina.</li>
+    <li><b>Rezerwacje:</b> domyślna godzina i liczba gości, czas trwania (w kalendarzu) oraz przypomnienie o rezerwacji – włączone/wyłączone i ile wcześniej (od 1 godziny do tygodnia).</li>
+    <li><b>Język</b> interfejsu.</li>
+  </ul>
 
   <h2>4.14 Moi klienci i udostępnianie</h2>
   <p>Każdy klient ma jednego <b>opiekuna</b> – osobę, która dodała go do CRM. Inne osoby z restauracji nie widzą Twoich klientów, dopóki ich nie udostępnisz. Pod nagłówkiem karty widać, czy klient jest prywatny, czy udostępniony.</p>

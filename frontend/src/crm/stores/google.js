@@ -5,6 +5,7 @@ import { t } from '@/shared/lib/i18n.js'
 import { googleConnect, googleDisconnect, googleStatus } from '@/crm/google/client.js'
 import { syncCalendarItem } from '@/crm/google/calendarSync.js'
 import { importEmailHistory } from '@/crm/google/emailHistory.js'
+import { mailStats, messageDate, unreadInboxCount } from '@/crm/google/mail.js'
 import { useAuthStore } from './auth.js'
 import { useSettingsStore } from './settings.js'
 
@@ -21,6 +22,9 @@ export const useGoogleStore = defineStore('google', () => {
   /** contactId -> { status: 'running'|'done'|'error', progress, result, error } */
   const history = reactive({})
   const autoImported = new Set()
+  /** Mailbox numbers for the dashboard: { unread, stats: { today, month }, loading, error, at }. */
+  const mail = reactive({ unread: null, stats: null, loading: false, error: null, at: 0 })
+  const MAIL_TTL = 2 * 60_000
 
   async function checkStatus() {
     if (!enabled) return false
@@ -53,14 +57,19 @@ export const useGoogleStore = defineStore('google', () => {
   const prefs = () => useSettingsStore().preferences
   const ready = async () => enabled && (connected.value ?? (await checkStatus()))
 
-  /** Manual "Wczytaj historię z Gmaila" or the automatic first import. */
-  async function importHistory(contact) {
+  /**
+   * Manual "Wczytaj historię z Gmaila" or the automatic first import.
+   * The manual one looks 30 days further back than the last import, so a
+   * message missed earlier (or logged with a wrong date) is picked up again.
+   */
+  async function importHistory(contact, { manual = false } = {}) {
     if (!(await ready())) return null
     if (history[contact.id]?.status === 'running') return null
 
     history[contact.id] = { status: 'running', progress: null, result: null, error: null }
     try {
       const result = await importEmailHistory(contact, {
+        lookBackDays: manual ? 30 : 0,
         onProgress: (progress) => {
           history[contact.id].progress = progress
         },
@@ -83,9 +92,10 @@ export const useGoogleStore = defineStore('google', () => {
     return importHistory(contact)
   }
 
-  /** Mirror a task/reminder change into the person's Google Calendar. */
+  /** Mirror a task/reminder/booking change into the person's Google Calendar. */
   async function syncCalendar(kind, item, { removed = false } = {}) {
-    if (!prefs()?.google?.calendar_sync || !(await ready())) return
+    const wanted = kind === 'reservation' ? prefs()?.google?.calendar_sync_reservations : prefs()?.google?.calendar_sync
+    if (!item || !wanted || !(await ready())) return
     try {
       const eventId = await syncCalendarItem(kind, item, { meId: useAuthStore().user?.id, preferences: prefs(), removed })
       if (!removed) item.calendar_event_id = eventId
@@ -95,11 +105,35 @@ export const useGoogleStore = defineStore('google', () => {
     }
   }
 
+  /** Unread count and today / month statistics (cached for two minutes). */
+  async function refreshMail({ force = false } = {}) {
+    if (!(await ready())) return null
+    if (mail.loading || (!force && Date.now() - mail.at < MAIL_TTL)) return mail
+    mail.loading = true
+    mail.error = null
+    try {
+      const [unread, stats] = await Promise.all([unreadInboxCount(), mailStats()])
+      Object.assign(mail, { unread, stats, at: Date.now() })
+    } catch (error) {
+      mail.error = error.message
+    } finally {
+      mail.loading = false
+    }
+    return mail
+  }
+
+  /** Real send time of an opened Gmail message (null without the integration). */
+  async function sentAt(messageId) {
+    if (!(await ready())) return null
+    return messageDate(messageId).catch(() => null)
+  }
+
   function clear() {
+    Object.assign(mail, { unread: null, stats: null, loading: false, error: null, at: 0 })
     Object.keys(history).forEach((key) => delete history[key])
     autoImported.clear()
     lastError.value = null
   }
 
-  return { enabled, connected, lastError, history, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, clear }
+  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, clear }
 })

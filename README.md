@@ -695,7 +695,7 @@ php artisan crm:license wlasciciel@firma.pl --admin   # Master Admin: loguje si�
 php artisan db:seed                                   # dane demo (tylko poza produkcją)
 
 php artisan serve                     # http://localhost:8000
-php artisan test                      # 105 testów
+php artisan test                      # 109 testów
 ```
 
 Na produkcji uruchom scheduler (`php artisan schedule:work` albo cron), żeby codziennie usuwać wygasłe tokeny.
@@ -720,7 +720,7 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 |---|---|---|
 | POST | `/auth/login` | `{email, password, device_name?}` → `{token, expires_at, user}` (limit 5/min) |
 | GET / POST | `/auth/me`, `/auth/logout` | Działa także bez ważnej licencji |
-| GET | `/dashboard/summary` | Osobne liczniki i listy dla **zadań** i **przypomnień**: `overdue`, `due_today`, `upcoming_week`; do tego kontakty, rezerwacje, maile |
+| GET | `/dashboard/summary` | Osobne liczniki i listy dla **zadań**, **przypomnień** i **rezerwacji**: `overdue`, `due_today`, `upcoming_week`; do tego kontakty i maile. Nieodczytane i statystyki poczty liczy rozszerzenie z Gmail API (nie serwer) |
 | GET | `/contacts` | `search, status, category (id/slug), is_client, owner=mine\|shared, sort, direction, page, per_page` |
 | GET | `/contacts/lookup?email=` | Pełna karta albo `{"data": null}` (+ `meta.owned_by_colleague`, gdy to prywatny klient kolegi) |
 | GET / POST / DELETE | `/contacts/{id}/shares[/{share}]` | Udostępnienia (tylko opiekun): `{user_id: null\|id, scopes: [...], email_ids: [...]}` |
@@ -736,7 +736,7 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 | POST | `/contacts/{id}/emails` | Zapis maila z Gmaila na osi czasu (idempotentny po `message_id`) |
 | CRUD | `/tasks` | `window=overdue\|today\|upcoming\|open\|done\|all`, `type`, `priority`, `urgent=1`, `assigned_to=me\|id`, `search` |
 | CRUD | `/reminders` | `window`, `type=email\|reservation\|general`, `search`, `contact_id`, `reservation_id` |
-| CRUD | `/reservations` | `from, to, status, contact_id, upcoming=1` |
+| CRUD | `/reservations` | `window=overdue\|today\|upcoming\|open\|done\|all`, `search`, `from, to, status, contact_id, upcoming=1`; każda dodana rezerwacja dostaje przypomnienie dla autora (preferencja `reservations.auto_reminder`) |
 | GET | `/categories`, `/team` | Kategorie grupy; współpracownicy (do przypisywania zadań) |
 | GET | `/settings` | Wszystkie słowniki grupy (kategorie, statusy, kategorie zadań, szablony pól) z liczbą użyć |
 | POST / PATCH / DELETE | `/settings/{categories\|statuses\|task-categories\|field-templates}[/{id}]` | Usuwanie używanego statusu/kategorii zadań wymaga `?move_to=<key>` |
@@ -744,7 +744,7 @@ Błędy mają pole `code` (`wrong_client`, `no_group`, `group_inactive`, `licens
 | GET / PATCH | `/me/preferences` | Preferencje użytkownika (działa także bez licencji) |
 | POST / DELETE | `/me/calendar-feed` | Utworzenie nowego / wyłączenie prywatnego linku ICS |
 | GET | `/calendar/{token}.ics` | Publiczny (token w adresie) kanał iCalendar, limit 60/min |
-| PUT / DELETE | `/calendar-events/{task\|reminder}/{id}` | Powiązanie z wydarzeniem w Kalendarzu Google |
+| PUT / DELETE | `/calendar-events/{task\|reminder\|reservation}/{id}` | Powiązanie z wydarzeniem w Kalendarzu Google |
 | PATCH / DELETE | `/activities/{id}` | Edycja / usunięcie własnej notatki |
 | POST | `/contacts/{id}/emails/import` | Import historii (do 500 maili; `complete=true` zapisuje datę synchronizacji) |
 

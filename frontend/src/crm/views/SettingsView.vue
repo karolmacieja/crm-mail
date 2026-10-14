@@ -68,6 +68,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import AlertMessage from '@/shared/components/AlertMessage.vue'
 import { Icon } from '@/shared/icons.js'
 import { t } from '@/shared/lib/i18n.js'
@@ -77,7 +78,7 @@ import PreferencesPanel from '@/crm/components/settings/PreferencesPanel.vue'
 import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const settings = useSettingsStore()
-const active = ref('categories')
+const route = useRoute()
 
 const tabs = [
   { key: 'categories', label: 'settings.tabs.categories', icon: 'briefcase' },
@@ -87,6 +88,9 @@ const tabs = [
   { key: 'preferences', label: 'settings.tabs.preferences', icon: 'user' },
   { key: 'calendar', label: 'settings.tabs.calendar', icon: 'calendar-check' },
 ]
+
+// e.g. "Połącz z Google" on the dashboard opens Settings → Calendar.
+const active = ref(tabs.some((tab) => tab.key === route.query.tab) ? route.query.tab : 'categories')
 
 onMounted(() => settings.load({ force: true }))
 </script>

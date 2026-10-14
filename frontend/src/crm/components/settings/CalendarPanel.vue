@@ -18,10 +18,13 @@
         <p class="mt-3 text-xs text-amber-700">{{ t('settings.calendar.refreshNote') }}</p>
 
         <div class="mt-4 grid max-w-xl gap-4 sm:grid-cols-2">
-          <label class="flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" class="accent-primary" :checked="prefs.calendar?.include_reservations" @change="save({ calendar: { include_reservations: $event.target.checked } })" />
-            {{ t('settings.calendar.includeReservations') }}
-          </label>
+          <div class="space-y-2">
+            <span class="gcrm-label">{{ t('settings.calendar.feedContains') }}</span>
+            <label v-for="kind in ['tasks', 'reminders', 'reservations']" :key="kind" class="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" class="accent-primary" :checked="prefs.calendar?.[`include_${kind}`] !== false" @change="save({ calendar: { [`include_${kind}`]: $event.target.checked } })" />
+              {{ t(`settings.calendar.include.${kind}`) }}
+            </label>
+          </div>
           <label>
             <span class="gcrm-label">{{ t('settings.calendar.alarm') }}</span>
             <select class="gcrm-input" :value="prefs.calendar?.alarm_minutes" @change="save({ calendar: { alarm_minutes: Number($event.target.value) } })">
@@ -57,6 +60,10 @@
         <label class="mb-2 flex items-start gap-2 text-sm text-gray-700">
           <input type="checkbox" class="mt-0.5 accent-primary" :checked="prefs.google?.calendar_sync" @change="save({ google: { calendar_sync: $event.target.checked } })" />
           <span>{{ t('settings.google.calendarSync') }}<span class="block text-xs text-gray-500">{{ t('settings.google.calendarSyncHint') }}</span></span>
+        </label>
+        <label class="mb-2 flex items-start gap-2 text-sm text-gray-700">
+          <input type="checkbox" class="mt-0.5 accent-primary" :checked="prefs.google?.calendar_sync_reservations" @change="save({ google: { calendar_sync_reservations: $event.target.checked } })" />
+          <span>{{ t('settings.google.calendarSyncReservations') }}<span class="block text-xs text-gray-500">{{ t('settings.google.calendarSyncReservationsHint') }}</span></span>
         </label>
         <label class="flex items-start gap-2 text-sm text-gray-700">
           <input type="checkbox" class="mt-0.5 accent-primary" :checked="prefs.google?.email_history" @change="save({ google: { email_history: $event.target.checked } })" />

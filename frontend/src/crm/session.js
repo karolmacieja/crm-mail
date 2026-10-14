@@ -6,6 +6,7 @@ import { useDashboardStore } from '@/crm/stores/dashboard.js'
 import { useGoogleStore } from '@/crm/stores/google.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
+import { useReservationsStore } from '@/crm/stores/reservations.js'
 import { useSettingsStore } from '@/crm/stores/settings.js'
 import { useTasksStore } from '@/crm/stores/tasks.js'
 import { useTeamStore } from '@/crm/stores/team.js'
@@ -21,7 +22,7 @@ export function watchCrmSession(pinia) {
     () => auth.user?.id ?? null,
     (id, previous) => {
       if (id === previous) return
-      for (const useStore of [useClientStore, useDashboardStore, useInboxStore, useTeamStore, useContactsStore, useTasksStore, useRemindersStore, useSettingsStore, useGoogleStore]) {
+      for (const useStore of [useClientStore, useDashboardStore, useInboxStore, useTeamStore, useContactsStore, useTasksStore, useRemindersStore, useReservationsStore, useSettingsStore, useGoogleStore]) {
         useStore(pinia).clear()
       }
     },

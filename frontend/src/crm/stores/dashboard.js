@@ -11,7 +11,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
   const error = ref(null)
   /** Selected tab per panel, as in the mockup ("Zaległe", "Dziś", "7 dni"). */
-  const tabs = ref({ tasks: 'today', reminders: 'overdue' })
+  const tabs = ref({ tasks: 'today', reminders: 'overdue', reservations: 'today' })
 
   let refreshQueued = false
 

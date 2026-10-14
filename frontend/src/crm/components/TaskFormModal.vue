@@ -62,8 +62,8 @@ const settings = useSettingsStore()
 const form = reactive({
   title: '',
   type: settings.taskCategories[0]?.key ?? 'follow_up',
-  priority: 'normal',
-  due: defaultDueInputValue(settings.preferences),
+  priority: settings.preferences?.default_task_priority ?? 'normal',
+  due: defaultDueInputValue(settings.preferences, 'task'),
   contact_id: props.contact?.id ?? null,
   assigned_to: null,
 })

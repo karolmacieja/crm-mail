@@ -19,11 +19,11 @@ function decodeEntities(text) {
   return area.value
 }
 
-/** Gmail search date (YYYY/MM/DD), one day early so nothing on the boundary is missed. */
-function afterQuery(since) {
+/** Gmail search date (YYYY/MM/DD), one day early (or N days) so nothing on the boundary is missed. */
+function afterQuery(since, lookBackDays = 0) {
   if (!since) return ''
   const date = new Date(since)
-  date.setDate(date.getDate() - 1)
+  date.setDate(date.getDate() - 1 - lookBackDays)
   return ` after:${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
 }
 
@@ -46,9 +46,9 @@ async function mapLimit(items, limit, fn) {
  *
  * @returns {Promise<{found: number, imported: number, updated: number, skipped: number, synced_at: string}>}
  */
-export async function importEmailHistory(contact, { onProgress } = {}) {
+export async function importEmailHistory(contact, { onProgress, lookBackDays = 0 } = {}) {
   const email = contact.email.toLowerCase()
-  const query = `(from:${email} OR to:${email} OR cc:${email})${afterQuery(contact.email_history_synced_at)}`
+  const query = `(from:${email} OR to:${email} OR cc:${email})${afterQuery(contact.email_history_synced_at, lookBackDays)}`
 
   const ids = []
   let pageToken = null

@@ -58,10 +58,13 @@ export function fromLocalInputValue(value) {
  * Default due date for new tasks/reminders: in N days at HH:MM, from the
  * person's preferences (Settings → Preferences); "tomorrow at 09:00" otherwise.
  */
-export function defaultDueInputValue(preferences = null) {
-  const [hours, minutes] = String(preferences?.default_reminder_time ?? '09:00').split(':').map(Number)
+/** Default "when" of a new task or reminder: in N days at a set hour (personal preferences). */
+export function defaultDueInputValue(preferences = null, kind = 'task') {
+  const time = kind === 'task' ? preferences?.default_task_time ?? preferences?.default_reminder_time : preferences?.default_reminder_time
+  const days = kind === 'task' ? preferences?.default_task_due_days : preferences?.default_reminder_days ?? preferences?.default_task_due_days
+  const [hours, minutes] = String(time ?? '09:00').split(':').map(Number)
   const date = new Date()
-  date.setDate(date.getDate() + Number(preferences?.default_task_due_days ?? 1))
+  date.setDate(date.getDate() + Number(days ?? 1))
   date.setHours(hours || 0, minutes || 0, 0, 0)
   return toLocalInputValue(date.toISOString())
 }
