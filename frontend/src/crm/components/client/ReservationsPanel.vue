@@ -46,11 +46,15 @@
               {{ t('crm.reservations.confirm') }}
             </button>
             <button type="button" class="text-gray-400 hover:text-red-600" @click="setStatus(reservation, 'cancelled')">{{ t('crm.reservations.cancel') }}</button>
+            <button type="button" class="text-gray-500 hover:text-primary" @click="editing = reservation"><Icon icon="pen" class="mr-1" />{{ t('common.edit') }}</button>
           </div>
         </div>
       </div>
       <p v-if="!reservations.length && !adding" class="text-xs text-gray-500">{{ t('crm.reservations.none') }}</p>
     </div>
+
+    <!-- Same form as on the Reservations tab: date, time, guests, table, occasion, status, notes. -->
+    <ReservationFormModal v-if="editing" :reservation="editing" :contact="client.contact" @saved="client.loadTimeline({ reset: true })" @close="editing = null" />
   </section>
 </template>
 
@@ -59,11 +63,13 @@ import { computed, reactive, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
 import { formatReservation, todayInputValue } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
+import ReservationFormModal from '@/crm/components/ReservationFormModal.vue'
 import { useClientStore } from '@/crm/stores/client.js'
 import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const client = useClientStore()
 const reservations = computed(() => client.contact?.upcoming_reservations ?? [])
+const editing = ref(null)
 
 const adding = ref(false)
 const saving = ref(false)

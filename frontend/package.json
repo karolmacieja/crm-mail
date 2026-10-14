@@ -1,7 +1,7 @@
 {
   "name": "gastroflowx-frontend",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.3.1",
   "type": "module",
   "scripts": {
     "dev:extension": "vite --config vite.config.js",
