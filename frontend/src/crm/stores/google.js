@@ -5,7 +5,8 @@ import { t } from '@/shared/lib/i18n.js'
 import { googleConnect, googleDisconnect, googleStatus } from '@/crm/google/client.js'
 import { syncCalendarItem } from '@/crm/google/calendarSync.js'
 import { importEmailHistory } from '@/crm/google/emailHistory.js'
-import { mailStats, messageDate, unreadInboxCount } from '@/crm/google/mail.js'
+import { mailStats, messageDate, originalSenderHeaders, unreadInboxCount } from '@/crm/google/mail.js'
+import { headerSender } from '@/crm/lib/senders.js'
 import { useAuthStore } from './auth.js'
 import { useSettingsStore } from './settings.js'
 
@@ -128,6 +129,12 @@ export const useGoogleStore = defineStore('google', () => {
     return messageDate(messageId).catch(() => null)
   }
 
+  /** Real sender of a message that came through an internal address (Reply-To / X-Original-*). */
+  async function originalSender(messageId) {
+    if (!(await ready())) return null
+    return headerSender(await originalSenderHeaders(messageId).catch(() => []))
+  }
+
   function clear() {
     Object.assign(mail, { unread: null, stats: null, loading: false, error: null, at: 0 })
     Object.keys(history).forEach((key) => delete history[key])
@@ -135,5 +142,5 @@ export const useGoogleStore = defineStore('google', () => {
     lastError.value = null
   }
 
-  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, clear }
+  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, originalSender, clear }
 })

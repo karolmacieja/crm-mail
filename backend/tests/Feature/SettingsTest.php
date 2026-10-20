@@ -120,4 +120,19 @@ class SettingsTest extends TestCase
         $this->actingAsExtension($other);
         $this->postJson('/api/settings/statuses', ['name' => 'Stały gość'])->assertCreated();
     }
+
+    public function test_internal_mail_addresses_preference(): void
+    {
+        $user = \App\Models\User::factory()->licensed()->create();
+        $this->actingAsExtension($user);
+
+        $this->getJson('/api/me/preferences')->assertJsonPath('data.mail.ignore_own_domain', true);
+        $this->patchJson('/api/me/preferences', ['mail' => ['internal_addresses' => ['Info@Firma.pl', '@firma.com.pl', 'biuro@firma.pl']]])
+            ->assertOk()->assertJsonPath('data.mail.internal_addresses', ['info@firma.pl', '@firma.com.pl', 'biuro@firma.pl']);
+        // Removing an address really removes it (lists are not merged).
+        $this->patchJson('/api/me/preferences', ['mail' => ['internal_addresses' => ['info@firma.pl']]])
+            ->assertOk()->assertJsonPath('data.mail.internal_addresses', ['info@firma.pl'])
+            ->assertJsonPath('data.mail.ignore_own_domain', true);
+        $this->patchJson('/api/me/preferences', ['mail' => ['internal_addresses' => ['not an address']]])->assertStatus(422);
+    }
 }

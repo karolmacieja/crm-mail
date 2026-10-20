@@ -72,6 +72,30 @@
       </fieldset>
     </div>
 
+    <!-- Mail: internal / forwarding addresses never become clients -->
+    <fieldset class="mt-6 max-w-2xl space-y-3 border-t border-gray-100 pt-4">
+      <legend class="mb-2 pt-4 text-sm font-bold text-gray-800"><Icon :icon="['far', 'envelope']" class="mr-1.5 text-primary" />{{ t('settings.preferences.mail.title') }}</legend>
+      <p class="text-xs text-gray-500">{{ t('settings.preferences.mail.description') }}</p>
+      <label v-if="ownDomain" class="flex items-start gap-2 text-sm text-gray-700">
+        <input type="checkbox" class="mt-0.5 accent-primary" :checked="mail.ignore_own_domain !== false" @change="save({ mail: { ignore_own_domain: $event.target.checked } })" />
+        <span>{{ t('settings.preferences.mail.ownDomain', { domain: ownDomain }) }}</span>
+      </label>
+      <div>
+        <span class="gcrm-label">{{ t('settings.preferences.mail.addresses') }}</span>
+        <div class="mb-2 flex flex-wrap gap-1.5">
+          <span v-for="address in addresses" :key="address" class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-700">
+            {{ address }}
+            <button type="button" class="text-gray-400 hover:text-red-600" :aria-label="t('common.delete')" @click="removeAddress(address)"><Icon icon="xmark" /></button>
+          </span>
+          <span v-if="!addresses.length" class="text-xs text-gray-400">{{ t('settings.preferences.mail.none') }}</span>
+        </div>
+        <form class="flex gap-2" @submit.prevent="addAddress">
+          <input v-model.trim="newAddress" class="gcrm-input" :placeholder="t('settings.preferences.mail.placeholder')" maxlength="255" />
+          <button type="submit" class="gcrm-btn-secondary shrink-0" :disabled="!newAddress"><Icon icon="plus" /> {{ t('common.add') }}</button>
+        </form>
+      </div>
+    </fieldset>
+
     <div class="mt-6 max-w-xs border-t border-gray-100 pt-4">
       <span class="gcrm-label">{{ t('common.language') }}</span>
       <LanguageSwitch />
@@ -87,6 +111,8 @@ import { computed, ref } from 'vue'
 import LanguageSwitch from '@/shared/components/LanguageSwitch.vue'
 import { Icon } from '@/shared/icons.js'
 import { t } from '@/shared/lib/i18n.js'
+import { FREE_DOMAINS, domainOf } from '@/crm/lib/senders.js'
+import { useAuthStore } from '@/crm/stores/auth.js'
 import { useSettingsStore } from '@/crm/stores/settings.js'
 
 const DAYS = [0, 1, 2, 3, 7, 14]
@@ -94,6 +120,21 @@ const DAYS = [0, 1, 2, 3, 7, 14]
 const settings = useSettingsStore()
 const prefs = computed(() => settings.preferences ?? {})
 const res = computed(() => prefs.value.reservations ?? {})
+const mail = computed(() => prefs.value.mail ?? {})
+const addresses = computed(() => mail.value.internal_addresses ?? [])
+const ownDomain = computed(() => {
+  const domain = domainOf(useAuthStore().user?.email)
+  return domain && !FREE_DOMAINS.has(domain) ? domain : null
+})
+const newAddress = ref('')
+
+async function addAddress() {
+  const address = newAddress.value.toLowerCase()
+  if (!address || addresses.value.includes(address)) return
+  if (await save({ mail: { internal_addresses: [...addresses.value, address] } })) newAddress.value = ''
+}
+
+const removeAddress = (address) => save({ mail: { internal_addresses: addresses.value.filter((a) => a !== address) } })
 const saved = ref(false)
 const error = ref('')
 
@@ -106,8 +147,10 @@ async function save(patch) {
   try {
     await settings.savePreferences(patch)
     saved.value = true
+    return true
   } catch (e) {
     error.value = Object.values(e.fieldErrors ?? {})[0] ?? e.message
+    return false
   }
 }
 </script>

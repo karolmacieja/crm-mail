@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '@/crm/api.js'
+import { internalMatcher, pickExternal } from '@/crm/lib/senders.js'
+import { useSettingsStore } from './settings.js'
 
 const MAX_THREADS = 30
 
@@ -13,26 +15,43 @@ const MAX_THREADS = 30
  * show B2B / VIP badges.
  */
 export const useInboxStore = defineStore('inbox', () => {
-  /** threadId -> { threadId, subject, email, name, date, unread, receivedOrder } */
+  /** threadId -> { threadId, subject, contacts: [{ email, name }], myEmail, date, unread, receivedOrder } */
   const threads = ref(new Map())
+  const myEmail = ref(null)
+  /** Internal addresses (me, my company domain, Preferences → Poczta) are never "the sender". */
+  const isInternal = computed(() => internalMatcher(myEmail.value, useSettingsStore().preferences?.mail ?? {}))
   /** email -> { id, name, category } for senders already in the CRM */
   const knownSenders = ref(new Map())
   let order = 0
   let lookupTimer = null
   const pendingLookups = new Set()
 
+  /**
+   * Rows with their external sender. A row that only shows internal addresses
+   * (e.g. mail forwarded by info@) has email = null: opening it in Gmail lets
+   * the thread panel find the real sender.
+   */
   const recent = computed(() =>
-    [...threads.value.values()].sort((a, b) => a.receivedOrder - b.receivedOrder).slice(0, MAX_THREADS),
+    [...threads.value.values()]
+      .sort((a, b) => a.receivedOrder - b.receivedOrder)
+      .slice(0, MAX_THREADS)
+      .map((thread) => {
+        const sender = pickExternal(thread.contacts ?? [], isInternal.value)
+        const fallback = thread.contacts?.[0]
+        return { ...thread, email: sender?.email ?? null, name: sender?.name || (sender ? '' : fallback?.name || fallback?.email || ''), viaInternal: !sender }
+      }),
   )
 
-  /** @param {Array<{threadId, subject, email, name, date, unread}>} rows in Gmail's display order */
+  /** @param {Array<{threadId, subject, contacts, myEmail, date, unread}>} rows in Gmail's display order */
   function addThreads(rows) {
     const next = new Map(threads.value)
     for (const row of rows) {
-      if (!row?.threadId || !row.email) continue
-      const email = String(row.email).toLowerCase()
-      next.set(row.threadId, { ...next.get(row.threadId), ...row, email, receivedOrder: next.get(row.threadId)?.receivedOrder ?? order++ })
-      if (!knownSenders.value.has(email)) pendingLookups.add(email)
+      if (!row?.threadId) continue
+      // Older callers pass a single sender.
+      const contacts = row.contacts ?? (row.email ? [{ email: String(row.email).toLowerCase(), name: row.name ?? '' }] : [])
+      if (row.myEmail) myEmail.value = row.myEmail
+      next.set(row.threadId, { ...next.get(row.threadId), ...row, contacts, receivedOrder: next.get(row.threadId)?.receivedOrder ?? order++ })
+      for (const { email } of contacts) if (email && !knownSenders.value.has(email)) pendingLookups.add(email)
     }
     // Keep memory bounded: drop the oldest beyond 3x what we show.
     threads.value = new Map([...next.entries()].sort((a, b) => a[1].receivedOrder - b[1].receivedOrder).slice(0, MAX_THREADS * 3))

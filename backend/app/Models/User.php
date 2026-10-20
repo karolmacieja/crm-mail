@@ -68,6 +68,12 @@ class User extends Authenticatable
             'include_reminders' => true,
             'include_reservations' => true,   // restaurant bookings I can see
         ],
+        'mail' => [
+            // Own / forwarding addresses never become clients; for mail they forward,
+            // the real sender is taken from the forwarded message or its headers.
+            'ignore_own_domain' => true,      // e.g. info@ and colleagues from my company domain
+            'internal_addresses' => [],       // extra: "info@firma.pl", "@firma.com.pl"
+        ],
         'google' => [
             'calendar_sync' => false,         // tasks and reminders as Google Calendar events
             'calendar_sync_reservations' => false, // bookings I add as Google Calendar events

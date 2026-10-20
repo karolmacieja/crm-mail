@@ -136,7 +136,8 @@
           <div class="mb-1 flex items-start justify-between gap-3">
             <p class="truncate text-gray-900" :class="thread.unread ? 'font-bold' : 'font-medium'">
               {{ thread.name || thread.email }}
-              <CategoryBadge class="ml-2" :category="inbox.senderContact(thread.email)?.category" />
+              <CategoryBadge v-if="thread.email" class="ml-2" :category="inbox.senderContact(thread.email)?.category" />
+              <span v-else class="ml-2 text-xs font-normal text-gray-400">{{ t('crm.dashboard.forwarded') }}</span>
             </p>
             <span class="shrink-0 text-xs font-medium text-gray-500">{{ thread.date }}</span>
           </div>
@@ -236,6 +237,11 @@ const unread = computed(() =>
 const isActive = (thread) => client.isSidebarOpen && client.context?.threadId === thread.threadId
 
 function openEmail(thread) {
+  // Only internal addresses (e.g. forwarded by info@): the Gmail thread panel finds the real sender.
+  if (!thread.email) {
+    gmail?.openThread?.(thread.threadId)
+    return
+  }
   client.openEmail({
     email: thread.email,
     name: thread.name,

@@ -83,13 +83,29 @@ describe('importEmailHistory', () => {
 
     const result = await importEmailHistory({ id: 5, email: 'Jan@XYZ.pl', email_history_synced_at: null })
 
-    expect(new URL(googleApi.mock.calls[0][1]).searchParams.get('q')).toContain('(from:jan@xyz.pl OR to:jan@xyz.pl OR cc:jan@xyz.pl)')
+    // The quoted address also finds mail forwarded by an alias (the client is only in the body).
+    expect(new URL(googleApi.mock.calls[0][1]).searchParams.get('q')).toContain('(from:jan@xyz.pl OR to:jan@xyz.pl OR cc:jan@xyz.pl OR "jan@xyz.pl")')
     const [url, payload] = api.post.mock.calls[0]
     expect(url).toBe('/contacts/5/emails/import')
     expect(payload.complete).toBe(true)
     expect(payload.emails.map((e) => [e.message_id, e.direction])).toEqual([['m1', 'in'], ['m2', 'out']])
     expect(payload.emails[0].snippet).toBe('Dzień dobry & witam')
     expect(result).toMatchObject({ found: 2, imported: 2, synced_at: '2026-10-01T10:00:00Z' })
+  })
+
+  it('mail forwarded by an alias counts as incoming, only my own as outgoing', async () => {
+    const { setGoogleAccount } = await import('@/crm/google/account.js')
+    setGoogleAccount('me@roma.test')
+    googleApi.mockImplementation((method, url) => {
+      if (url.includes('?q=')) return Promise.resolve({ messages: [{ id: 'f1' }, { id: 'f2' }] })
+      const id = url.match(/messages\/(\w+)\?/)[1]
+      const from = id === 'f1' ? 'Info <info@roma.test>' : 'Me <me@roma.test>'
+      return Promise.resolve({ id, threadId: 't1', internalDate: '1767225600000', payload: { headers: [{ name: 'From', value: from }] } })
+    })
+    api.post.mockReturnValue(ok({ imported: 2, updated: 0, skipped: 0 }))
+    await importEmailHistory({ id: 5, email: 'jan@xyz.pl', email_history_synced_at: null })
+    expect(api.post.mock.calls[0][1].emails.map((e) => [e.message_id, e.direction])).toEqual([['f1', 'in'], ['f2', 'out']])
+    setGoogleAccount(null)
   })
 
   it('only asks for newer mail after a previous sync', async () => {

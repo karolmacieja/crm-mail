@@ -35,6 +35,11 @@ class PreferencesController extends Controller
             'calendar.include_tasks' => ['sometimes', 'boolean'],
             'calendar.include_reminders' => ['sometimes', 'boolean'],
             'calendar.include_reservations' => ['sometimes', 'boolean'],
+            'mail' => ['sometimes', 'array:ignore_own_domain,internal_addresses'],
+            'mail.ignore_own_domain' => ['sometimes', 'boolean'],
+            'mail.internal_addresses' => ['sometimes', 'array', 'max:50'],
+            // A full address (info@firma.pl) or a whole domain (@firma.pl).
+            'mail.internal_addresses.*' => ['string', 'max:255', 'regex:/^([^@\s]+)?@[^@\s]+\.[^@\s]+$/'],
             'google' => ['sometimes', 'array:calendar_sync,calendar_sync_reservations,email_history'],
             'google.calendar_sync' => ['sometimes', 'boolean'],
             'google.calendar_sync_reservations' => ['sometimes', 'boolean'],
@@ -42,7 +47,15 @@ class PreferencesController extends Controller
         ]);
 
         $user = $request->user();
-        $user->preferences = array_replace_recursive($user->preferences ?? [], $data);
+        $preferences = array_replace_recursive($user->preferences ?? [], $data);
+        // Lists replace the old list instead of merging item by item.
+        if (isset($data['mail']['internal_addresses'])) {
+            $preferences['mail']['internal_addresses'] = array_values(array_unique(array_map(
+                fn (string $address) => mb_strtolower(trim($address)),
+                $data['mail']['internal_addresses'],
+            )));
+        }
+        $user->preferences = $preferences;
         $user->save();
 
         return response()->json(['data' => $this->present($request)]);

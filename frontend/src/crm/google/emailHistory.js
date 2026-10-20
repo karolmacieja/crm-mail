@@ -1,4 +1,5 @@
 import { api, toApiError } from '@/crm/api.js'
+import { googleAccount } from './account.js'
 import { googleApi } from './client.js'
 
 const GMAIL = 'https://www.googleapis.com/gmail/v1/users/me/messages'
@@ -48,7 +49,9 @@ async function mapLimit(items, limit, fn) {
  */
 export async function importEmailHistory(contact, { onProgress, lookBackDays = 0 } = {}) {
   const email = contact.email.toLowerCase()
-  const query = `(from:${email} OR to:${email} OR cc:${email})${afterQuery(contact.email_history_synced_at, lookBackDays)}`
+  // The quoted address also finds mail forwarded to me by an alias (info@): the client is only in the body.
+  const query = `(from:${email} OR to:${email} OR cc:${email} OR "${email}")${afterQuery(contact.email_history_synced_at, lookBackDays)}`
+  const me = googleAccount()
 
   const ids = []
   let pageToken = null
@@ -73,7 +76,8 @@ export async function importEmailHistory(contact, { onProgress, lookBackDays = 0
     subject: header(message, 'Subject')?.slice(0, 255) ?? null,
     snippet: decodeEntities(message.snippet)?.slice(0, 2000) ?? null,
     from: header(message, 'From')?.slice(0, 255) ?? null,
-    direction: addressOf(header(message, 'From')) === email ? 'in' : 'out',
+    // Sent by me = outgoing; everything else (the client, or an alias forwarding their mail) = incoming.
+    direction: me ? (addressOf(header(message, 'From')) === me ? 'out' : 'in') : addressOf(header(message, 'From')) === email ? 'in' : 'out',
     sent_at: message.internalDate ? new Date(Number(message.internalDate)).toISOString() : null,
   }))
 

@@ -67,6 +67,15 @@ export async function mailStats(now = new Date()) {
   return { today, month, at: now.toISOString() }
 }
 
+/** Headers that name the original sender of a forwarded / group message. */
+export async function originalSenderHeaders(messageId) {
+  if (!messageId || String(messageId).startsWith('thread:')) return []
+  const params = new URLSearchParams({ format: 'metadata' })
+  for (const name of ['Reply-To', 'X-Original-From', 'X-Original-Sender']) params.append('metadataHeaders', name)
+  const message = await googleApi('GET', `${GMAIL}/messages/${encodeURIComponent(messageId)}?${params}`)
+  return message?.payload?.headers ?? []
+}
+
 /** Real send time of a Gmail message (internalDate), or null. */
 export async function messageDate(messageId) {
   if (!messageId || String(messageId).startsWith('thread:')) return null

@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import { reactive } from 'vue'
 import { createCrmApp } from '@/crm/createCrmApp.js'
 import { setGoogleAccount } from '@/crm/google/account.js'
+import { forwardedSender } from '@/crm/lib/senders.js'
 import { useInboxStore } from '@/crm/stores/inbox.js'
 import ThreadPanelApp from '@/crm/ThreadPanelApp.vue'
 import { DASHBOARD_ROUTE_ID, INBOXSDK_APP_ID } from '@/shared/lib/config.js'
@@ -47,41 +48,33 @@ function safely(fn, fallback = null) {
 }
 
 /**
- * Who the conversation is with: senders of loaded messages (newest first)
- * that aren't the current user; for outgoing-only threads, the recipients.
- * Each participant carries the newest Gmail message id from them, used to
- * log that exact email on the client's timeline.
+ * Loaded messages of a thread, newest first: sender, Gmail message id, a
+ * snippet and – for forwards – the sender named in the forwarded header
+ * block; recipients of the newest one (for outgoing-only threads).
+ * Who the client is gets decided in ThreadPanelApp (resolveParticipants),
+ * which knows the person's internal addresses.
  */
-async function extractParticipants(threadView, myEmail) {
-  const messages = threadView.getMessageViewsAll().filter((mv) => safely(() => mv.isLoaded(), false))
-  const seen = new Set([myEmail])
-  const participants = []
+async function extractMessages(threadView) {
+  const views = threadView.getMessageViewsAll().filter((mv) => safely(() => mv.isLoaded(), false)).reverse()
+  const messages = []
 
-  for (const messageView of [...messages].reverse()) {
+  for (const [index, messageView] of views.entries()) {
     const sender = safely(() => messageView.getSender())
-    const email = normalize(sender?.emailAddress)
-    if (!email || seen.has(email)) continue
-    seen.add(email)
-    participants.push({
-      email,
-      name: sender.name && normalize(sender.name) !== email ? sender.name : '',
+    const body = safely(() => messageView.getBodyElement().innerText, '') ?? ''
+    messages.push({
+      email: normalize(sender?.emailAddress),
+      name: sender?.name ?? '',
       messageId: await messageView.getMessageIDAsync().catch(() => null),
-      snippet: safely(() => messageView.getBodyElement().innerText.trim().replace(/\s+/g, ' ').slice(0, 300), null),
+      snippet: body.trim().replace(/\s+/g, ' ').slice(0, 300) || null,
+      forwarded: forwardedSender(body),
+      recipients: index === 0
+        ? (await messageView.getRecipientsFull().catch(() => safely(() => messageView.getRecipients(), [])) ?? [])
+          .map((contact) => ({ email: normalize(contact?.emailAddress), name: contact?.name ?? '' }))
+        : [],
     })
   }
 
-  if (!participants.length && messages.length) {
-    const latest = messages.at(-1)
-    const recipients = await latest.getRecipientsFull().catch(() => safely(() => latest.getRecipients(), []))
-    for (const contact of recipients) {
-      const email = normalize(contact?.emailAddress)
-      if (!email || seen.has(email)) continue
-      seen.add(email)
-      participants.push({ email, name: contact.name ?? '', messageId: await latest.getMessageIDAsync().catch(() => null), direction: 'out' })
-    }
-  }
-
-  return participants
+  return messages
 }
 
 function registerThreadPanel(sdk, provide) {
@@ -90,7 +83,7 @@ function registerThreadPanel(sdk, provide) {
   sdk.Conversations.registerThreadViewHandler((threadView) => {
     const host = document.createElement('div')
     host.style.height = '100%'
-    const state = reactive({ participants: [], subject: safely(() => threadView.getSubject(), ''), threadId: null, resolving: true })
+    const state = reactive({ messages: [], myEmail, subject: safely(() => threadView.getSubject(), ''), threadId: null, resolving: true })
 
     const panel = threadView.addSidebarContentPanel({
       id: 'gastroflowx-client',
@@ -106,9 +99,9 @@ function registerThreadPanel(sdk, provide) {
     threadView.on('destroy', cleanup)
     panel.on('destroy', cleanup)
 
-    Promise.all([extractParticipants(threadView, myEmail), threadView.getThreadIDAsync().catch(() => null)])
-      .then(([participants, threadId]) => {
-        Object.assign(state, { participants, threadId })
+    Promise.all([extractMessages(threadView), threadView.getThreadIDAsync().catch(() => null)])
+      .then(([messages, threadId]) => {
+        Object.assign(state, { messages, threadId })
         if (threadId && pendingReplies.delete(threadId)) openReplyBox()
       })
       .catch((error) => console.error(LOG_PREFIX, 'Could not read thread participants', error))
@@ -127,14 +120,17 @@ function registerInboxCapture(sdk) {
 
   sdk.Lists.registerThreadRowViewHandler(async (row) => {
     if (!/^#inbox/.test(window.location.hash || '#inbox')) return
-    const sender = safely(() => row.getContacts(), []).find((c) => normalize(c.emailAddress) !== myEmail)
+    // All people of the row; the inbox store skips internal ones (info@, colleagues).
+    const contacts = (safely(() => row.getContacts(), []) ?? [])
+      .map((c) => ({ email: normalize(c.emailAddress), name: c.name ?? '' }))
+      .filter((c) => c.email && c.email !== myEmail)
     const threadId = await row.getThreadIDAsync().catch(() => null)
-    if (!sender || !threadId) return
+    if (!threadId) return
 
     batch.push({
       threadId,
-      email: normalize(sender.emailAddress),
-      name: sender.name ?? '',
+      contacts,
+      myEmail,
       subject: safely(() => row.getSubject(), ''),
       date: safely(() => row.getDateString(), ''),
       // Best effort: Gmail marks unread rows with the "zE" class.
