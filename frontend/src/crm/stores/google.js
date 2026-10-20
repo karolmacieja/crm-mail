@@ -5,8 +5,8 @@ import { t } from '@/shared/lib/i18n.js'
 import { googleConnect, googleDisconnect, googleStatus } from '@/crm/google/client.js'
 import { syncCalendarItem } from '@/crm/google/calendarSync.js'
 import { importEmailHistory } from '@/crm/google/emailHistory.js'
-import { mailStats, messageDate, originalSenderHeaders, unreadInboxCount } from '@/crm/google/mail.js'
-import { headerSender } from '@/crm/lib/senders.js'
+import { mailStats, messageDate, originalSenderHeaders, threadSenderHeaders, unreadInboxCount } from '@/crm/google/mail.js'
+import { headerSenders, parseAddress } from '@/crm/lib/senders.js'
 import { useAuthStore } from './auth.js'
 import { useSettingsStore } from './settings.js'
 
@@ -129,10 +129,27 @@ export const useGoogleStore = defineStore('google', () => {
     return messageDate(messageId).catch(() => null)
   }
 
-  /** Real sender of a message that came through an internal address (Reply-To / X-Original-*). */
+  /** Candidates for the real sender of a message that came through an internal address (X-Original-From / Reply-To / X-Original-Sender). */
   async function originalSender(messageId) {
-    if (!(await ready())) return null
-    return headerSender(await originalSenderHeaders(messageId).catch(() => []))
+    if (!(await ready())) return []
+    return headerSenders(await originalSenderHeaders(messageId).catch(() => []))
+  }
+
+  /**
+   * Real sender of an inbox row whose "From" is internal (e.g. a Google Group
+   * "X via info@…"): newest message first, its From if external, else the
+   * first external address from its original-sender headers.
+   */
+  async function threadOriginalSender(threadId, isInternal) {
+    if (!(await ready())) return undefined // not connected: ask again later
+    const messages = await threadSenderHeaders(threadId).catch(() => [])
+    for (const message of messages) {
+      const from = parseAddress(message.headers.find((h) => h.name?.toLowerCase() === 'from')?.value)
+      if (from && !isInternal(from.email)) return from
+      const original = headerSenders(message.headers).find((c) => !isInternal(c.email))
+      if (original) return original
+    }
+    return null
   }
 
   function clear() {
@@ -142,5 +159,5 @@ export const useGoogleStore = defineStore('google', () => {
     lastError.value = null
   }
 
-  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, originalSender, clear }
+  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, originalSender, threadOriginalSender, clear }
 })

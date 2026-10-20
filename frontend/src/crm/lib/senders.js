@@ -62,15 +62,35 @@ export function forwardedSender(bodyText) {
   return from ? parseAddress(from[2]) : null
 }
 
-/** Original sender from Gmail API headers: Reply-To, X-Original-From, X-Original-Sender. */
-export function headerSender(headers = []) {
-  const value = (name) => headers.find((h) => h.name?.toLowerCase() === name)?.value
-  for (const name of ['x-original-from', 'reply-to', 'x-original-sender']) {
-    const parsed = parseAddress(value(name))
-    if (parsed) return parsed
+const ORIGINAL_HEADERS = ['x-original-from', 'reply-to', 'x-original-sender']
+
+/**
+ * Candidates for the original sender from Gmail API headers, most reliable
+ * first: X-Original-From and Reply-To (set by Google Groups "X via info@…"),
+ * X-Original-Sender. A group may put its own address in Reply-To, so callers
+ * take the first candidate that is not internal.
+ */
+export function headerSenders(headers = []) {
+  const candidates = []
+  for (const name of ORIGINAL_HEADERS) {
+    for (const header of headers.filter((h) => h.name?.toLowerCase() === name)) {
+      // Reply-To may list several addresses.
+      for (const part of String(header.value ?? '').split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)) {
+        const parsed = parseAddress(part)
+        if (parsed && !candidates.some((c) => c.email === parsed.email)) candidates.push(parsed)
+      }
+    }
   }
-  return null
+  return candidates
 }
+
+/** The first candidate (kept for callers that need just one). */
+export function headerSender(headers = []) {
+  return headerSenders(headers)[0] ?? null
+}
+
+/** First candidate that is not one of my internal addresses. */
+export const firstExternal = (candidates, isInternal) => [candidates ?? []].flat().filter(Boolean).find((c) => !isInternal(c.email)) ?? null
 
 /**
  * Counterparties of a thread, newest first. `messages` come from the content
@@ -89,8 +109,9 @@ export async function resolveParticipants(messages, { me, isInternal, lookupHead
     if (normalizeEmail(email) === myEmail) continue // my own replies
     let via = null
     if (isInternal(email)) {
-      const original = message.forwarded ?? (await lookupHeaders(message.messageId).catch(() => null))
-      if (!original || isInternal(original.email)) continue
+      const forwarded = message.forwarded && !isInternal(message.forwarded.email) ? message.forwarded : null
+      const original = forwarded ?? firstExternal(await lookupHeaders(message.messageId).catch(() => null), isInternal)
+      if (!original) continue
       via = normalizeEmail(email)
       ;({ email, name } = original)
     }

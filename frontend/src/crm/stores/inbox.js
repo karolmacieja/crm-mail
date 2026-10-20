@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '@/crm/api.js'
 import { internalMatcher, pickExternal } from '@/crm/lib/senders.js'
+import { useGoogleStore } from './google.js'
 import { useSettingsStore } from './settings.js'
 
 const MAX_THREADS = 30
@@ -20,6 +21,9 @@ export const useInboxStore = defineStore('inbox', () => {
   const myEmail = ref(null)
   /** Internal addresses (me, my company domain, Preferences → Poczta) are never "the sender". */
   const isInternal = computed(() => internalMatcher(myEmail.value, useSettingsStore().preferences?.mail ?? {}))
+  /** threadId -> { email, name } | null: real senders of rows that only show internal addresses. */
+  const resolved = ref(new Map())
+  const resolving = new Set()
   /** email -> { id, name, category } for senders already in the CRM */
   const knownSenders = ref(new Map())
   let order = 0
@@ -36,11 +40,41 @@ export const useInboxStore = defineStore('inbox', () => {
       .sort((a, b) => a.receivedOrder - b.receivedOrder)
       .slice(0, MAX_THREADS)
       .map((thread) => {
-        const sender = pickExternal(thread.contacts ?? [], isInternal.value)
+        const direct = pickExternal(thread.contacts ?? [], isInternal.value)
+        const sender = direct ?? resolved.value.get(thread.threadId) ?? null
         const fallback = thread.contacts?.[0]
-        return { ...thread, email: sender?.email ?? null, name: sender?.name || (sender ? '' : fallback?.name || fallback?.email || ''), viaInternal: !sender }
+        return {
+          ...thread,
+          email: sender?.email ?? null,
+          name: sender?.name || (sender ? '' : fallback?.name || fallback?.email || ''),
+          // Came through an internal address (e.g. a Google Group "X via info@…").
+          via: direct ? null : fallback?.email ?? null,
+          viaInternal: !sender,
+        }
       }),
   )
+
+  /**
+   * Rows whose only sender is internal: ask the Gmail API (when connected) who
+   * really wrote, from Reply-To / X-Original-From of the thread's messages.
+   */
+  async function resolveForwarded() {
+    const google = useGoogleStore()
+    const pending = recent.value.filter((row) => row.via && !resolved.value.has(row.threadId) && !resolving.has(row.threadId))
+    for (const row of pending) {
+      resolving.add(row.threadId)
+      const sender = await google.threadOriginalSender(row.threadId, isInternal.value).catch(() => null)
+      resolving.delete(row.threadId)
+      if (sender === undefined) return // Google not connected (yet)
+      const next = new Map(resolved.value)
+      next.set(row.threadId, sender)
+      resolved.value = next
+      if (sender && !knownSenders.value.has(sender.email)) {
+        pendingLookups.add(sender.email)
+        scheduleLookup()
+      }
+    }
+  }
 
   /** @param {Array<{threadId, subject, contacts, myEmail, date, unread}>} rows in Gmail's display order */
   function addThreads(rows) {
@@ -56,6 +90,7 @@ export const useInboxStore = defineStore('inbox', () => {
     // Keep memory bounded: drop the oldest beyond 3x what we show.
     threads.value = new Map([...next.entries()].sort((a, b) => a[1].receivedOrder - b[1].receivedOrder).slice(0, MAX_THREADS * 3))
     scheduleLookup()
+    resolveForwarded()
   }
 
   function scheduleLookup() {
@@ -96,10 +131,11 @@ export const useInboxStore = defineStore('inbox', () => {
   /** Account switch: the Gmail rows stay, but CRM matches belong to the old account. */
   function clear() {
     knownSenders.value = new Map()
+    resolved.value = new Map()
     pendingLookups.clear()
-    for (const thread of threads.value.values()) pendingLookups.add(thread.email)
+    for (const thread of threads.value.values()) for (const { email } of thread.contacts ?? []) if (email) pendingLookups.add(email)
     if (pendingLookups.size) scheduleLookup()
   }
 
-  return { recent, addThreads, senderContact, rememberSender, clear }
+  return { recent, addThreads, senderContact, rememberSender, resolveForwarded, clear }
 })

@@ -175,6 +175,7 @@ export default {
       unreadHintInbox: 'Nieprzeczytane maile widoczne na liście Gmaila. Połącz konto Google w Ustawieniach, aby liczyć całą skrzynkę.',
       reservationsCount: { one: 'Rezerwacja', few: 'Rezerwacje', many: 'Rezerwacji', other: 'Rezerwacji' },
       forwarded: 'przekazany – otwórz, aby zobaczyć nadawcę',
+      via: 'przez {address}',
       recentEmails: 'Ostatnie maile (Skrzynka odbiorcza)',
       inboxEmpty: 'Otwórz skrzynkę odbiorczą Gmaila, a najnowsze maile pojawią się tutaj.',
       emptyTasks: { overdue: 'Brak zaległych zadań.', today: 'Brak zadań na dziś.', upcoming: 'Brak zadań w ciągu 7 dni.' },

@@ -137,7 +137,8 @@
             <p class="truncate text-gray-900" :class="thread.unread ? 'font-bold' : 'font-medium'">
               {{ thread.name || thread.email }}
               <CategoryBadge v-if="thread.email" class="ml-2" :category="inbox.senderContact(thread.email)?.category" />
-              <span v-else class="ml-2 text-xs font-normal text-gray-400">{{ t('crm.dashboard.forwarded') }}</span>
+              <span v-if="thread.email && thread.via" class="ml-2 text-xs font-normal text-gray-400">{{ t('crm.dashboard.via', { address: thread.via }) }}</span>
+              <span v-else-if="!thread.email" class="ml-2 text-xs font-normal text-gray-400">{{ t('crm.dashboard.forwarded') }}</span>
             </p>
             <span class="shrink-0 text-xs font-medium text-gray-500">{{ thread.date }}</span>
           </div>
@@ -204,7 +205,7 @@ async function loadAccessRequests() {
 onMounted(() => {
   dashboard.fetch()
   loadAccessRequests()
-  google.refreshMail()
+  google.refreshMail().then(() => inbox.resolveForwarded())
 })
 // Answered from the client card: refresh the list when its requests change.
 watch(() => client.contact?.access_requests?.length, (now, before) => {

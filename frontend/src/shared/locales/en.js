@@ -170,6 +170,7 @@ export default {
       unreadHintInbox: 'Unread emails visible in the Gmail list. Connect your Google account in Settings to count the whole inbox.',
       reservationsCount: { one: 'Reservation', other: 'Reservations' },
       forwarded: 'forwarded – open to see the sender',
+      via: 'via {address}',
       recentEmails: 'Recent emails (Inbox)',
       inboxEmpty: 'Open your Gmail inbox and the latest emails will show up here.',
       emptyTasks: { overdue: 'No overdue tasks.', today: 'No tasks for today.', upcoming: 'No tasks in the next 7 days.' },

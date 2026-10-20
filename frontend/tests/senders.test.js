@@ -6,7 +6,7 @@ vi.mock('@/crm/api.js', async () => {
   return { api: { get: vi.fn(), post: vi.fn(() => Promise.resolve({ data: { data: [] } })) }, ApiError: errors.ApiError, toApiError: errors.toApiError, onApiError: errors.onApiError }
 })
 
-const { forwardedSender, headerSender, internalMatcher, resolveParticipants } = await import('@/crm/lib/senders.js')
+const { firstExternal, forwardedSender, headerSender, headerSenders, internalMatcher, resolveParticipants } = await import('@/crm/lib/senders.js')
 const { useInboxStore } = await import('@/crm/stores/inbox.js')
 const { useSettingsStore } = await import('@/crm/stores/settings.js')
 
@@ -71,6 +71,32 @@ describe('finding the real sender', () => {
   })
 })
 
+describe('Google Group "X via info@" (real example)', () => {
+  const headers = [
+    { name: 'From', value: "'MERSKA, SYLWIA' via info@lunchandwine.pl <info@lunchandwine.pl>" },
+    { name: 'Reply-To', value: '"MERSKA, SYLWIA" <Sylwia.Merska@impbrands.com>' },
+    { name: 'X-Original-Sender', value: 'info@lunchandwine.pl' },
+  ]
+
+  it('takes the client from Reply-To, never the group address', async () => {
+    const isInternal = internalMatcher('karol@lunchandwine.pl', {})
+    const participants = await resolveParticipants(
+      [{ email: 'info@lunchandwine.pl', name: "'MERSKA, SYLWIA' via info@lunchandwine.pl", messageId: 'm1' }],
+      { me: 'karol@lunchandwine.pl', isInternal, lookupHeaders: async () => headerSenders(headers) },
+    )
+    expect(participants).toEqual([{ email: 'sylwia.merska@impbrands.com', name: 'MERSKA, SYLWIA', messageId: 'm1', snippet: null, via: 'info@lunchandwine.pl' }])
+  })
+
+  it('skips a group address in Reply-To and uses the next header', () => {
+    const isInternal = internalMatcher('karol@lunchandwine.pl', {})
+    const candidates = headerSenders([
+      { name: 'Reply-To', value: 'info@lunchandwine.pl' },
+      { name: 'X-Original-Sender', value: 'sylwia.merska@impbrands.com' },
+    ])
+    expect(firstExternal(candidates, isInternal).email).toBe('sylwia.merska@impbrands.com')
+  })
+})
+
 describe('inbox list on the dashboard', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
@@ -84,5 +110,16 @@ describe('inbox list on the dashboard', () => {
     const [first, second] = inbox.recent
     expect(first).toMatchObject({ email: 'jan@klient.pl', name: 'Jan', viaInternal: false })
     expect(second).toMatchObject({ email: null, name: 'Info', viaInternal: true })
+  })
+
+  it('asks Gmail who really wrote a row that came through the group', async () => {
+    const { useGoogleStore } = await import('@/crm/stores/google.js')
+    const google = useGoogleStore()
+    google.threadOriginalSender = vi.fn(async () => ({ email: 'sylwia.merska@impbrands.com', name: 'MERSKA, SYLWIA' }))
+    const inbox = useInboxStore()
+    inbox.addThreads([{ threadId: 't9', myEmail: 'karol@lunchandwine.pl', contacts: [{ email: 'info@lunchandwine.pl', name: "'MERSKA, SYLWIA' via info" }], subject: 'Zapytanie ofertowe' }])
+    await vi.waitFor(() => expect(inbox.recent[0].email).toBe('sylwia.merska@impbrands.com'))
+    expect(inbox.recent[0]).toMatchObject({ name: 'MERSKA, SYLWIA', via: 'info@lunchandwine.pl', viaInternal: false })
+    expect(google.threadOriginalSender).toHaveBeenCalledWith('t9', expect.any(Function))
   })
 })

@@ -76,6 +76,14 @@ export async function originalSenderHeaders(messageId) {
   return message?.payload?.headers ?? []
 }
 
+/** Messages of a thread (newest first) with the headers that name senders. */
+export async function threadSenderHeaders(threadId) {
+  const params = new URLSearchParams({ format: 'metadata' })
+  for (const name of ['From', 'Reply-To', 'X-Original-From', 'X-Original-Sender']) params.append('metadataHeaders', name)
+  const thread = await googleApi('GET', `${GMAIL}/threads/${encodeURIComponent(threadId)}?${params}`)
+  return (thread?.messages ?? []).map((m) => ({ id: m.id, headers: m.payload?.headers ?? [] })).reverse()
+}
+
 /** Real send time of a Gmail message (internalDate), or null. */
 export async function messageDate(messageId) {
   if (!messageId || String(messageId).startsWith('thread:')) return null
