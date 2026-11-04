@@ -63,10 +63,16 @@ export function createPaginatedList(fetchPage, defaultFilters = {}) {
     })
   }
 
-  /** Replace or remove one item locally after a mutation. */
-  function upsert(item) {
+  /**
+   * Replace one item locally after a mutation; with `stillMatches`, drop it
+   * when it no longer belongs to the current filters (e.g. a task marked done
+   * while the "open" window is shown).
+   */
+  function upsert(item, stillMatches = null) {
     const index = state.items.findIndex((existing) => existing.id === item.id)
-    if (index !== -1) state.items[index] = { ...state.items[index], ...item }
+    if (index === -1) return
+    if (stillMatches && !stillMatches(item, state.filters)) remove(item.id)
+    else state.items[index] = { ...state.items[index], ...item }
   }
 
   function remove(id) {

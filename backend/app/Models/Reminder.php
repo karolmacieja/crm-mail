@@ -40,6 +40,7 @@ class Reminder extends Model
         'remind_at',
         'is_done',
         'source_email_id',
+        'source_thread_id',
         'source_email_subject',
     ];
 

@@ -35,6 +35,9 @@
         </span>
       </p>
     </div>
+    <button v-if="fromEmail && gmail?.openThread" type="button" class="ml-2 text-gray-300 hover:text-primary" :title="t('crm.reminders.details.openEmail')" @click.prevent="openEmail">
+      <Icon :icon="['far', 'envelope']" class="text-xs" />
+    </button>
     <CalendarLink v-if="task.due_date && !task.is_completed" kind="task" :item="task" class="ml-2" />
     <button v-if="task.can_edit !== false" type="button" class="ml-2 hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click.prevent="remove">
       <Icon icon="trash" class="text-xs" />
@@ -43,11 +46,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import CalendarLink from '@/crm/components/CalendarLink.vue'
+import { hasSourceEmail, sourceThreadId } from '@/crm/lib/emailSource.js'
 import { useTasksStore } from '@/crm/stores/tasks.js'
 
 const props = defineProps({
@@ -57,7 +61,14 @@ const props = defineProps({
 defineEmits(['open-contact'])
 
 const tasks = useTasksStore()
+const gmail = inject('gmail', null)
 const busy = ref(false)
+const fromEmail = computed(() => hasSourceEmail(props.task))
+
+async function openEmail() {
+  const threadId = await sourceThreadId(props.task)
+  if (threadId) gmail.openThread(threadId)
+}
 const urgent = computed(() => !props.task.is_completed && (props.task.priority === 'high' || ['overdue', 'today'].includes(props.task.time_status)))
 
 async function run(action) {

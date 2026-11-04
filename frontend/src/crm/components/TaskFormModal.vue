@@ -89,7 +89,9 @@ async function submit() {
       due_date: fromLocalInputValue(form.due),
       contact_id: form.contact_id,
       assigned_to: form.assigned_to,
-      ...(fromFocusedEmail ? { source_email_id: client.context.messageId, source_email_subject: client.context.subject ?? null } : {}),
+      ...(fromFocusedEmail
+        ? { source_email_id: client.context.messageId, source_thread_id: client.context.threadId ?? null, source_email_subject: client.context.subject ?? null }
+        : {}),
     })
     emit('saved', task)
     emit('close')

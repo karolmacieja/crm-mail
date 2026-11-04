@@ -72,7 +72,9 @@ async function submit() {
       contact_id: form.contact_id,
       reservation_id: form.type === 'reservation' ? form.reservation_id : null,
       notes: form.notes || null,
-      ...(fromFocusedEmail ? { source_email_id: client.context.messageId, source_email_subject: client.context.subject ?? null } : {}),
+      ...(fromFocusedEmail
+        ? { source_email_id: client.context.messageId, source_thread_id: client.context.threadId ?? null, source_email_subject: client.context.subject ?? null }
+        : {}),
     })
     emit('saved', reminder)
     emit('close')

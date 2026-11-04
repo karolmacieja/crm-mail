@@ -29,9 +29,14 @@ export const useTasksStore = defineStore('tasks', () => {
     return columns
   })
 
-  function afterChange(item, options) {
+  /** Done tasks only show under "Wykonane" (and "Wszystkie"). */
+  const matchesWindow = (task, filters) => filters.window === 'all' || (filters.window === 'done') === Boolean(task.is_completed)
+
+  function afterChange(item, options = {}) {
     useClientStore().syncTask(item, options)
-    useDashboardStore().invalidate()
+    const dashboard = useDashboardStore()
+    if (options.removed || item.is_completed) dashboard.dropItem('tasks', item.id)
+    dashboard.invalidate()
     // Own items also land in the person's Google Calendar (when enabled in Settings).
     useGoogleStore().syncCalendar('task', item, options)
   }
@@ -51,7 +56,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function update(task, patch) {
     try {
       const updated = (await api.patch(`/tasks/${task.id}`, patch)).data.data
-      list.upsert(updated)
+      list.upsert(updated, matchesWindow)
       afterChange(updated)
       return updated
     } catch (e) {

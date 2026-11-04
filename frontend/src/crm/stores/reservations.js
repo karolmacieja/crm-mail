@@ -14,9 +14,15 @@ export const useReservationsStore = defineStore('reservations', () => {
   const list = createPaginatedList((params) => api.get('/reservations', { params }), { window: 'today', search: '' })
   list.state.meta.per_page = 50
 
+  const isOpen = (reservation) => ['pending', 'confirmed'].includes(reservation.status)
+  /** Closed bookings (took place, no-show, cancelled) only show under "Zamknięte" / "Wszystkie". */
+  const matchesWindow = (reservation, filters) => filters.window === 'all' || (filters.window === 'done') === !isOpen(reservation)
+
   function afterChange(item, options = {}) {
     useClientStore().syncReservation(item, options)
-    useDashboardStore().invalidate()
+    const dashboard = useDashboardStore()
+    if (options.removed || !isOpen(item)) dashboard.dropItem('reservations', item.id)
+    dashboard.invalidate()
     const google = useGoogleStore()
     // Bookings I add land in my Google Calendar (Settings → Calendar), with their reminder.
     google.syncCalendar('reservation', item, options)
@@ -41,7 +47,7 @@ export const useReservationsStore = defineStore('reservations', () => {
   async function update(reservation, patch) {
     try {
       const updated = (await api.patch(`/reservations/${reservation.id}`, patch)).data.data
-      list.upsert(updated)
+      list.upsert(updated, matchesWindow)
       afterChange(updated)
       return updated
     } catch (e) {

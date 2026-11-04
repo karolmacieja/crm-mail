@@ -112,4 +112,15 @@ class TaskTest extends TestCase
 
         $this->getJson('/api/dashboard/summary?tz=Mars/Base')->assertStatus(422);
     }
+
+    public function test_tasks_and_reminders_remember_the_gmail_thread(): void
+    {
+        $this->postJson('/api/reminders', [
+            'title' => 'Oddzwonić', 'remind_at' => now()->addDay()->toIso8601String(),
+            'source_email_id' => '18c2a1', 'source_thread_id' => '18c29f', 'source_email_subject' => 'Wesele 12.06',
+        ])->assertCreated()->assertJsonPath('data.source_thread_id', '18c29f');
+
+        $this->postJson('/api/tasks', ['title' => 'Oferta', 'source_email_id' => '18c2a1', 'source_thread_id' => '18c29f'])
+            ->assertCreated()->assertJsonPath('data.source_thread_id', '18c29f');
+    }
 }

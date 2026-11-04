@@ -41,6 +41,7 @@ class Task extends Model
         'due_date',
         'is_completed',
         'source_email_id',
+        'source_thread_id',
         'source_email_subject',
     ];
 

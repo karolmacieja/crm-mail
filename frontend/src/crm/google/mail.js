@@ -84,6 +84,12 @@ export async function threadSenderHeaders(threadId) {
   return (thread?.messages ?? []).map((m) => ({ id: m.id, headers: m.payload?.headers ?? [] })).reverse()
 }
 
+/** Gmail thread of a message id (for items saved before the thread was remembered). */
+export async function threadOfMessage(messageId) {
+  const message = await googleApi('GET', `${GMAIL}/messages/${encodeURIComponent(messageId)}?format=minimal`)
+  return message?.threadId ?? null
+}
+
 /** Real send time of a Gmail message (internalDate), or null. */
 export async function messageDate(messageId) {
   if (!messageId || String(messageId).startsWith('thread:')) return null

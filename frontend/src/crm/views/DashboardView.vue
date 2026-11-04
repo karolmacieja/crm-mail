@@ -59,7 +59,7 @@
             >
               <Icon :icon="reminder.type === 'reservation' ? 'cake-candles' : ['far', 'envelope']" class="mr-3 mt-1" :class="reminder.time_status === 'overdue' ? 'text-red-400' : 'text-gray-400'" />
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-bold text-gray-900">{{ reminder.title }}</p>
+                <button type="button" class="text-left text-sm font-bold text-gray-900 hover:text-primary hover:underline" :title="t('crm.reminders.details.open')" @click="reminderDetails = reminder">{{ reminder.title }}</button>
                 <p class="mt-0.5 truncate text-xs text-gray-600">
                   <template v-if="reminder.source_email_subject">{{ t('crm.reminders.fromEmail', { subject: reminder.source_email_subject }) }}</template>
                   <template v-else-if="reminder.contact">{{ reminder.contact.name || reminder.contact.email }}</template>
@@ -154,6 +154,7 @@
 
     <TaskFormModal v-if="showTaskModal" @close="showTaskModal = false" />
     <ReminderFormModal v-if="showReminderModal" @close="showReminderModal = false" />
+    <ReminderDetailsModal v-if="reminderDetails" :reminder="reminderDetails" @close="reminderDetails = null" />
     <ReservationFormModal v-if="reservationForm.open" :reservation="reservationForm.reservation" @close="reservationForm = { open: false, reservation: null }" />
   </div>
 </template>
@@ -169,6 +170,7 @@ import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import MailStatsPanel from '@/crm/components/MailStatsPanel.vue'
+import ReminderDetailsModal from '@/crm/components/ReminderDetailsModal.vue'
 import ReminderFormModal from '@/crm/components/ReminderFormModal.vue'
 import ReservationFormModal from '@/crm/components/ReservationFormModal.vue'
 import ReservationItem from '@/crm/components/ReservationItem.vue'
@@ -222,6 +224,7 @@ const taskList = computed(() => summary.value?.tasks.lists[dashboard.tabs.tasks]
 const reminderList = computed(() => summary.value?.reminders.lists[dashboard.tabs.reminders] ?? [])
 const reservationList = computed(() => summary.value?.reservations?.lists?.[dashboard.tabs.reservations] ?? [])
 const reservationForm = ref({ open: false, reservation: null })
+const reminderDetails = ref(null)
 
 /**
  * "Nieodczytane": unread conversations of the whole inbox (clients, contacts

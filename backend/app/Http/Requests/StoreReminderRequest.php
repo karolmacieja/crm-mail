@@ -21,6 +21,7 @@ class StoreReminderRequest extends TenantRequest
             'contact_id' => ['nullable', 'integer', $this->visibleContact()],
             'reservation_id' => ['nullable', 'integer', $this->existsInGroup('reservations'), $this->visibleReservation()],
             'source_email_id' => ['nullable', 'string', 'max:255'],
+            'source_thread_id' => ['nullable', 'string', 'max:255'],
             'source_email_subject' => ['nullable', 'string', 'max:255'],
         ];
     }

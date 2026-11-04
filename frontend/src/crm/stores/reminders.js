@@ -20,9 +20,14 @@ export const useRemindersStore = defineStore('reminders', () => {
     return groups
   })
 
-  function afterChange(item, options) {
+  /** Done reminders only show under "Wykonane" (and "Wszystkie"). */
+  const matchesWindow = (reminder, filters) => filters.window === 'all' || (filters.window === 'done') === Boolean(reminder.is_done)
+
+  function afterChange(item, options = {}) {
     useClientStore().syncReminder(item, options)
-    useDashboardStore().invalidate()
+    const dashboard = useDashboardStore()
+    if (options.removed || item.is_done) dashboard.dropItem('reminders', item.id)
+    dashboard.invalidate()
     // Own items also land in the person's Google Calendar (when enabled in Settings).
     useGoogleStore().syncCalendar('reminder', item, options)
   }
@@ -42,7 +47,7 @@ export const useRemindersStore = defineStore('reminders', () => {
   async function update(reminder, patch) {
     try {
       const updated = (await api.patch(`/reminders/${reminder.id}`, patch)).data.data
-      list.upsert(updated)
+      list.upsert(updated, matchesWindow)
       afterChange(updated)
       return updated
     } catch (e) {

@@ -32,6 +32,7 @@ class TaskResource extends JsonResource
             'time_status' => $timeStatus,
             'completed_at' => $this->completed_at?->toIso8601String(),
             'source_email_id' => $this->source_email_id,
+            'source_thread_id' => $this->source_thread_id,
             'source_email_subject' => $this->source_email_subject,
             'contact' => $this->whenLoaded('contact', fn () => $this->contact ? [
                 'id' => $this->contact->id,

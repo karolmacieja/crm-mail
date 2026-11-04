@@ -24,6 +24,7 @@ class StoreTaskRequest extends TenantRequest
             'due_date' => ['nullable', 'date'],
             'is_completed' => ['boolean'],
             'source_email_id' => ['nullable', 'string', 'max:255'],
+            'source_thread_id' => ['nullable', 'string', 'max:255'],
             'source_email_subject' => ['nullable', 'string', 'max:255'],
         ];
     }

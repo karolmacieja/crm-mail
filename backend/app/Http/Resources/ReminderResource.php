@@ -30,6 +30,7 @@ class ReminderResource extends JsonResource
             'can_edit' => $request->user() === null || $this->canBeChangedBy($request->user()),
             'reservation_id' => $this->reservation_id,
             'source_email_id' => $this->source_email_id,
+            'source_thread_id' => $this->source_thread_id,
             'source_email_subject' => $this->source_email_subject,
             'contact' => $this->whenLoaded('contact', fn () => $this->contact ? [
                 'id' => $this->contact->id,

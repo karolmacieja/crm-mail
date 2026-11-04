@@ -5,7 +5,7 @@ import { t } from '@/shared/lib/i18n.js'
 import { googleConnect, googleDisconnect, googleStatus } from '@/crm/google/client.js'
 import { syncCalendarItem } from '@/crm/google/calendarSync.js'
 import { importEmailHistory } from '@/crm/google/emailHistory.js'
-import { mailStats, messageDate, originalSenderHeaders, threadSenderHeaders, unreadInboxCount } from '@/crm/google/mail.js'
+import { mailStats, messageDate, originalSenderHeaders, threadOfMessage, threadSenderHeaders, unreadInboxCount } from '@/crm/google/mail.js'
 import { headerSenders, parseAddress } from '@/crm/lib/senders.js'
 import { useAuthStore } from './auth.js'
 import { useSettingsStore } from './settings.js'
@@ -123,6 +123,12 @@ export const useGoogleStore = defineStore('google', () => {
     return mail
   }
 
+  /** Gmail thread of a message id (null without the integration). */
+  async function threadOf(messageId) {
+    if (!messageId || !(await ready())) return null
+    return threadOfMessage(messageId).catch(() => null)
+  }
+
   /** Real send time of an opened Gmail message (null without the integration). */
   async function sentAt(messageId) {
     if (!(await ready())) return null
@@ -159,5 +165,5 @@ export const useGoogleStore = defineStore('google', () => {
     lastError.value = null
   }
 
-  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, originalSender, threadOriginalSender, clear }
+  return { enabled, connected, lastError, history, mail, checkStatus, connect, disconnect, importHistory, maybeAutoImport, syncCalendar, refreshMail, sentAt, originalSender, threadOriginalSender, threadOf, clear }
 })

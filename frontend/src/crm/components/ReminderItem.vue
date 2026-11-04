@@ -5,7 +5,9 @@
         <Icon :icon="icon" />
       </div>
       <div class="min-w-0">
-        <h4 class="font-bold text-gray-900 group-hover:text-primary" :class="compact ? 'text-sm' : 'truncate'">{{ reminder.title }}</h4>
+        <h4 class="font-bold text-gray-900 group-hover:text-primary" :class="compact ? 'text-sm' : 'truncate'">
+          <button type="button" class="text-left hover:underline" :title="t('crm.reminders.details.open')" @click="showDetails = true">{{ reminder.title }}</button>
+        </h4>
         <p class="mt-1 truncate text-xs text-gray-500">
           <template v-if="reminder.source_email_subject">{{ t('crm.reminders.fromEmail', { subject: reminder.source_email_subject }) }}</template>
           <template v-else-if="reminder.contact && !compact">
@@ -21,20 +23,26 @@
     </div>
     <div class="flex shrink-0 items-center gap-2 text-right">
       <span v-if="!compact" class="inline-block rounded border px-2 py-1 text-xs font-bold" :class="badge">{{ when }}</span>
+      <button v-if="fromEmail && gmail?.openThread" type="button" class="rounded p-1 text-gray-300 hover:bg-blue-50 hover:text-primary" :title="t('crm.reminders.details.openEmail')" @click="openEmail">
+        <Icon :icon="['far', 'envelope']" />
+      </button>
       <CalendarLink kind="reminder" :item="reminder" />
       <button v-if="reminder.can_edit !== false" type="button" class="rounded p-1 text-gray-300 hover:bg-green-50 hover:text-green-600" :title="t('crm.reminders.markDone')" :disabled="busy" @click="done">
         <Icon icon="check" />
       </button>
     </div>
+    <ReminderDetailsModal v-if="showDetails" :reminder="reminder" @close="showDetails = false" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import CalendarLink from '@/crm/components/CalendarLink.vue'
+import ReminderDetailsModal from '@/crm/components/ReminderDetailsModal.vue'
+import { hasSourceEmail, sourceThreadId } from '@/crm/lib/emailSource.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
 
 const props = defineProps({
@@ -44,7 +52,15 @@ const props = defineProps({
 defineEmits(['open-contact'])
 
 const reminders = useRemindersStore()
+const gmail = inject('gmail', null)
 const busy = ref(false)
+const showDetails = ref(false)
+const fromEmail = computed(() => hasSourceEmail(props.reminder))
+
+async function openEmail() {
+  const threadId = await sourceThreadId(props.reminder)
+  if (threadId) gmail.openThread(threadId)
+}
 const overdue = computed(() => props.reminder.time_status === 'overdue')
 
 const icon = computed(() => {

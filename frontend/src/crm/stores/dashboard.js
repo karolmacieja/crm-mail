@@ -37,10 +37,28 @@ export const useDashboardStore = defineStore('dashboard', () => {
     })
   }
 
+  const COUNTERS = { overdue: 'overdue', today: 'due_today', upcoming: 'upcoming_week' }
+
+  /**
+   * A task / reminder / reservation was completed, cancelled or deleted:
+   * take it off the dashboard lists at once (the refetch then fixes counts).
+   */
+  function dropItem(section, id) {
+    const data = summary.value?.[section]
+    if (!data?.lists) return
+    for (const [key, items] of Object.entries(data.lists)) {
+      const kept = items.filter((item) => item.id !== id)
+      if (kept.length === items.length) continue
+      data.lists[key] = kept
+      const counter = COUNTERS[key]
+      if (counter && data[counter] > 0) data[counter]--
+    }
+  }
+
   function clear() {
     summary.value = null
     error.value = null
   }
 
-  return { summary, loading, error, tabs, fetch, invalidate, clear }
+  return { summary, loading, error, tabs, fetch, invalidate, dropItem, clear }
 })
