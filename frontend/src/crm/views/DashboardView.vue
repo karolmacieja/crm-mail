@@ -66,6 +66,7 @@
                   · {{ formatCalendar(reminder.remind_at) }}
                 </p>
               </div>
+              <button v-if="reminder.can_edit !== false" type="button" class="ml-2 text-gray-300 hover:text-primary" :title="t('crm.reminders.edit')" @click="reminderEdit = reminder"><Icon icon="pen" class="text-xs" /></button>
               <button type="button" class="ml-2 text-gray-300 hover:text-green-600" :title="t('crm.reminders.markDone')" @click="reminders.markDone(reminder)"><Icon icon="check" /></button>
             </div>
             <EmptyState v-if="summary && !reminderList.length" :icon="['far', 'bell']" :text="t(`crm.dashboard.emptyReminders.${dashboard.tabs.reminders}`)" />
@@ -155,6 +156,7 @@
     <TaskFormModal v-if="showTaskModal" @close="showTaskModal = false" />
     <ReminderFormModal v-if="showReminderModal" @close="showReminderModal = false" />
     <ReminderDetailsModal v-if="reminderDetails" :reminder="reminderDetails" @close="reminderDetails = null" />
+    <ReminderFormModal v-if="reminderEdit" :reminder="reminderEdit" @close="reminderEdit = null" />
     <ReservationFormModal v-if="reservationForm.open" :reservation="reservationForm.reservation" @close="reservationForm = { open: false, reservation: null }" />
   </div>
 </template>
@@ -225,6 +227,7 @@ const reminderList = computed(() => summary.value?.reminders.lists[dashboard.tab
 const reservationList = computed(() => summary.value?.reservations?.lists?.[dashboard.tabs.reservations] ?? [])
 const reservationForm = ref({ open: false, reservation: null })
 const reminderDetails = ref(null)
+const reminderEdit = ref(null)
 
 /**
  * "Nieodczytane": unread conversations of the whole inbox (clients, contacts

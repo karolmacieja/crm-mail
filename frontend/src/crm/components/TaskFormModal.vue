@@ -1,5 +1,5 @@
 <template>
-  <Modal open :title="t('crm.tasks.new')" @close="$emit('close')">
+  <Modal open :title="task ? t('crm.tasks.edit') : t('crm.tasks.new')" @close="$emit('close')">
     <form id="task-form" class="space-y-3" @submit.prevent="submit">
       <label class="block"><span class="gcrm-label">{{ t('crm.form.title') }}</span><input v-model.trim="form.title" class="gcrm-input" required maxlength="255" /></label>
       <div class="grid grid-cols-2 gap-3">
@@ -20,8 +20,9 @@
       <label class="block"><span class="gcrm-label">{{ t('tasks.dueDate') }}</span><input v-model="form.due" type="datetime-local" class="gcrm-input" /></label>
       <div>
         <span class="gcrm-label">{{ t('crm.form.contact') }}</span>
-        <ContactPicker v-model="form.contact_id" :initial="contact" />
+        <ContactPicker v-model="form.contact_id" :initial="contact ?? task?.contact ?? null" />
       </div>
+      <label class="block"><span class="gcrm-label">{{ t('crm.form.notes') }}</span><textarea v-model="form.description" rows="2" class="gcrm-input resize-none" maxlength="5000" /></label>
       <label class="block">
         <span class="gcrm-label">{{ t('crm.form.assignee') }}</span>
         <select v-model="form.assigned_to" class="gcrm-input">
@@ -41,7 +42,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import Modal from '@/shared/components/Modal.vue'
-import { defaultDueInputValue, fromLocalInputValue } from '@/shared/lib/format.js'
+import { defaultDueInputValue, fromLocalInputValue, toLocalInputValue } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import ContactPicker from '@/crm/components/ContactPicker.vue'
 import { useClientStore } from '@/crm/stores/client.js'
@@ -52,6 +53,8 @@ import { useTeamStore } from '@/crm/stores/team.js'
 const props = defineProps({
   /** Pre-selected contact (client card). */
   contact: { type: Object, default: null },
+  /** Task to edit (otherwise a new one is created). */
+  task: { type: Object, default: null },
 })
 const emit = defineEmits(['close', 'saved'])
 
@@ -59,13 +62,15 @@ const tasks = useTasksStore()
 const team = useTeamStore()
 const client = useClientStore()
 const settings = useSettingsStore()
+const editing = props.task
 const form = reactive({
-  title: '',
-  type: settings.taskCategories[0]?.key ?? 'follow_up',
-  priority: settings.preferences?.default_task_priority ?? 'normal',
-  due: defaultDueInputValue(settings.preferences, 'task'),
-  contact_id: props.contact?.id ?? null,
-  assigned_to: null,
+  title: editing?.title ?? '',
+  type: editing?.type ?? settings.taskCategories[0]?.key ?? 'follow_up',
+  priority: editing?.priority ?? settings.preferences?.default_task_priority ?? 'normal',
+  due: editing ? toLocalInputValue(editing.due_date) : defaultDueInputValue(settings.preferences, 'task'),
+  contact_id: editing ? editing.contact_id ?? null : props.contact?.id ?? null,
+  assigned_to: editing ? editing.assignee?.id ?? null : null,
+  description: editing?.description ?? '',
 })
 const saving = ref(false)
 const errors = ref([])
@@ -80,15 +85,19 @@ onMounted(() => {
 async function submit() {
   saving.value = true
   errors.value = []
-  const fromFocusedEmail = props.contact && client.context?.messageId && client.contact?.id === props.contact.id
+  const fromFocusedEmail = !editing && props.contact && client.context?.messageId && client.contact?.id === props.contact.id
+  const fields = {
+    title: form.title,
+    type: form.type,
+    priority: form.priority,
+    due_date: fromLocalInputValue(form.due),
+    contact_id: form.contact_id,
+    assigned_to: form.assigned_to,
+    description: form.description || null,
+  }
   try {
-    const task = await tasks.create({
-      title: form.title,
-      type: form.type,
-      priority: form.priority,
-      due_date: fromLocalInputValue(form.due),
-      contact_id: form.contact_id,
-      assigned_to: form.assigned_to,
+    const task = editing ? await tasks.update(editing, fields) : await tasks.create({
+      ...fields,
       ...(fromFocusedEmail
         ? { source_email_id: client.context.messageId, source_thread_id: client.context.threadId ?? null, source_email_subject: client.context.subject ?? null }
         : {}),

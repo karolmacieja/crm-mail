@@ -27,11 +27,15 @@
         <Icon :icon="['far', 'envelope']" />
       </button>
       <CalendarLink kind="reminder" :item="reminder" />
+      <button v-if="reminder.can_edit !== false" type="button" class="rounded p-1 text-gray-300 hover:bg-blue-50 hover:text-primary" :title="t('crm.reminders.edit')" :aria-label="t('crm.reminders.edit')" @click="editing = true">
+        <Icon icon="pen" />
+      </button>
       <button v-if="reminder.can_edit !== false" type="button" class="rounded p-1 text-gray-300 hover:bg-green-50 hover:text-green-600" :title="t('crm.reminders.markDone')" :disabled="busy" @click="done">
         <Icon icon="check" />
       </button>
     </div>
     <ReminderDetailsModal v-if="showDetails" :reminder="reminder" @close="showDetails = false" />
+    <ReminderFormModal v-if="editing" :reminder="reminder" @close="editing = false" />
   </div>
 </template>
 
@@ -42,6 +46,7 @@ import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import CalendarLink from '@/crm/components/CalendarLink.vue'
 import ReminderDetailsModal from '@/crm/components/ReminderDetailsModal.vue'
+import ReminderFormModal from '@/crm/components/ReminderFormModal.vue'
 import { hasSourceEmail, sourceThreadId } from '@/crm/lib/emailSource.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
 
@@ -55,6 +60,7 @@ const reminders = useRemindersStore()
 const gmail = inject('gmail', null)
 const busy = ref(false)
 const showDetails = ref(false)
+const editing = ref(false)
 const fromEmail = computed(() => hasSourceEmail(props.reminder))
 
 async function openEmail() {

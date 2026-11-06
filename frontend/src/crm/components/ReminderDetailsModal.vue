@@ -1,6 +1,7 @@
 <template>
   <!-- Reminder details: when, client, the email it was created from – open it in Gmail or reply. -->
-  <Modal open :title="reminder.title" @close="$emit('close')">
+  <ReminderFormModal v-if="editing" :reminder="reminder" @close="editing = false" @saved="$emit('close')" />
+  <Modal v-else open :title="reminder.title" @close="$emit('close')">
     <div class="space-y-4 text-sm">
       <div class="flex flex-wrap items-center gap-2">
         <span class="rounded border px-2 py-0.5 text-xs font-bold" :class="overdue ? 'border-red-200 bg-red-50 text-red-600' : 'border-blue-200 bg-blue-50 text-blue-600'">
@@ -41,6 +42,7 @@
 
     <template #footer>
       <button type="button" class="gcrm-btn-ghost" @click="$emit('close')">{{ t('common.close') }}</button>
+      <button v-if="reminder.can_edit !== false" type="button" class="gcrm-btn-secondary" @click="editing = true"><Icon icon="pen" /> {{ t('common.edit') }}</button>
       <button v-if="!reminder.is_done && reminder.can_edit !== false" type="button" class="gcrm-btn bg-green-600 text-white hover:bg-green-700" :disabled="busy" @click="markDone">
         <Icon icon="check" /> {{ t('crm.reminders.markDone') }}
       </button>
@@ -56,6 +58,7 @@ import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import { api } from '@/crm/api.js'
+import ReminderFormModal from '@/crm/components/ReminderFormModal.vue'
 import { hasSourceEmail, sourceThreadId } from '@/crm/lib/emailSource.js'
 import { useRemindersStore } from '@/crm/stores/reminders.js'
 
@@ -76,6 +79,7 @@ const contact = ref(null)
 const email = ref(null)
 const busy = ref(false)
 const opening = ref(false)
+const editing = ref(false)
 
 const overdue = computed(() => props.reminder.time_status === 'overdue')
 const fromEmail = computed(() => hasSourceEmail(props.reminder))

@@ -39,10 +39,14 @@
       <Icon :icon="['far', 'envelope']" class="text-xs" />
     </button>
     <CalendarLink v-if="task.due_date && !task.is_completed" kind="task" :item="task" class="ml-2" />
+    <button v-if="task.can_edit !== false" type="button" class="ml-2 text-gray-300 hover:text-primary" :title="t('crm.tasks.edit')" :aria-label="t('crm.tasks.edit')" @click.prevent="editing = true">
+      <Icon icon="pen" class="text-xs" />
+    </button>
     <button v-if="task.can_edit !== false" type="button" class="ml-2 hidden text-gray-300 hover:text-red-600 group-hover:block" :aria-label="t('common.delete')" @click.prevent="remove">
       <Icon icon="trash" class="text-xs" />
     </button>
   </label>
+  <TaskFormModal v-if="editing" :task="task" @close="editing = false" />
 </template>
 
 <script setup>
@@ -51,6 +55,7 @@ import { Icon } from '@/shared/icons.js'
 import { formatCalendar } from '@/shared/lib/format.js'
 import { t } from '@/shared/lib/i18n.js'
 import CalendarLink from '@/crm/components/CalendarLink.vue'
+import TaskFormModal from '@/crm/components/TaskFormModal.vue'
 import { hasSourceEmail, sourceThreadId } from '@/crm/lib/emailSource.js'
 import { useTasksStore } from '@/crm/stores/tasks.js'
 
@@ -63,6 +68,7 @@ defineEmits(['open-contact'])
 const tasks = useTasksStore()
 const gmail = inject('gmail', null)
 const busy = ref(false)
+const editing = ref(false)
 const fromEmail = computed(() => hasSourceEmail(props.task))
 
 async function openEmail() {
